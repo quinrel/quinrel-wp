@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
     OverviewIcon,
     VisibilityIcon,

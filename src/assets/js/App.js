@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { Button, TextControl, TextareaControl, Notice, Spinner, ToggleControl } from '@wordpress/components';
 
 import SetupWizard from './components/SetupWizard';
