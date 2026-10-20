@@ -398,6 +398,8 @@ class Plugin {
 		if ( $this->isIndexNowKeyRequest() ) {
 			add_action( 'init', array( $this, 'serveFrontendIndexNowKey' ) );
 		}
+
+		add_action( 'init', array( $this->container->get( 'ai_bot_tracker' ), 'trackRequest' ) );
 	}
 
 	public function retireHtaccessBackupsOnce(): void {
