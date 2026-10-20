@@ -99,4 +99,3 @@ class ContrastAuditor {
 		return $bgLum > 0.5 ? '#0f172a' : '#f8fafc';
 	}
 }
-
