@@ -13,6 +13,8 @@ import CrawlDepthChart from './components/charts/CrawlDepthChart';
 import AccessibilityBreakdownChart from './components/charts/AccessibilityBreakdownChart';
 import IndexationFunnelChart from './components/charts/IndexationFunnelChart';
 import CoreWebVitalsGauge from './components/charts/CoreWebVitalsGauge';
+import GlobalSettingsHub from './components/GlobalSettingsHub';
+import { CloudIcon, AnalyticsIcon } from './components/QuinrelIcons';
 
 function ollamaHostIsLoopback(url) {
     try {
@@ -50,6 +52,23 @@ const App = () => {
         return 'dashboard';
     };
     const [activeTab, setActiveTab] = useState(getInitialTab);
+
+    const [settingsSubTab, setSettingsSubTab] = useState(() => {
+        const init = quinrelAdminConfig.initialTab || '';
+        if (init === 'roles' || init === 'settings_roles') return 'roles';
+        if (init.startsWith('settings_')) return init.replace('settings_', '');
+        return 'cloud';
+    });
+
+    useEffect(() => {
+        if (activeTab === 'roles' || activeTab === 'settings_roles') {
+            setSettingsSubTab('roles');
+        } else if (activeTab === 'settings' || activeTab === 'settings_cloud') {
+            setSettingsSubTab('cloud');
+        } else if (activeTab.startsWith('settings_')) {
+            setSettingsSubTab(activeTab.replace('settings_', ''));
+        }
+    }, [activeTab]);
 
     useEffect(() => {
         const handleHashChange = () => {
@@ -336,7 +355,7 @@ const App = () => {
             }
         }
 
-        if (activeTab === 'settings' && isLoadingSettings) {
+        if ((activeTab === 'settings' || activeTab.startsWith('settings_')) && isLoadingSettings) {
             fetchSettings();
         }
     }, [activeTab, gscOpen]);
@@ -1635,7 +1654,8 @@ const App = () => {
     useEffect(() => {
         if (activeTab === 'compliance') { loadCookieBanner(); }
         if (activeTab === 'image_seo') { loadCompressionData(); loadAltAudit(1); }
-        if (activeTab === 'roles') { loadRoles(); }
+        if (activeTab === 'roles' || activeTab === 'settings_roles' || settingsSubTab === 'roles') { loadRoles(); }
+        if (activeTab === 'settings' || activeTab.startsWith('settings_')) { fetchSettings(); }
         if (activeTab === 'network_seo' && isMultisite) { loadNetworkData(); }
         if (activeTab === 'site_audit') { loadAuditResults(); }
         if (activeTab === 'broken_links') { loadBlcProgress(); loadBlcResults(1, false); }
@@ -1735,8 +1755,18 @@ const App = () => {
                 { id: 'rank_tracker', label: __('Rank Tracker', 'quinrel') },
                 { id: 'analytics', label: __('Google Analytics 4', 'quinrel') },
                 { id: 'compliance', label: __('Cookie & Compliance', 'quinrel') },
-                { id: 'roles', label: __('Roles & Capabilities', 'quinrel') },
-                { id: 'settings', label: __('Settings & Integrations', 'quinrel') },
+            ],
+        },
+        {
+            title: __('Settings', 'quinrel'),
+            items: [
+                { id: 'settings', label: __('General & Cloud', 'quinrel') },
+                { id: 'settings_webmasters', label: __('Search Console & Bing', 'quinrel') },
+                { id: 'settings_indexing', label: __('Indexing & Instant Push', 'quinrel') },
+                { id: 'settings_performance', label: __('Performance & Speed', 'quinrel') },
+                { id: 'settings_ai', label: __('AI Engine Vault', 'quinrel') },
+                { id: 'settings_roles', label: __('Roles & Capabilities', 'quinrel') },
+                { id: 'settings_advanced', label: __('Advanced & Data', 'quinrel') },
             ],
         },
     ];
@@ -1744,7 +1774,11 @@ const App = () => {
         navPillars[3].items.push({ id: 'network_seo', label: __('Network SEO', 'quinrel') });
     }
     const navItems = navPillars.flatMap((pillar) => pillar.items);
-    const activeNav = navItems.find((item) => item.id === activeTab) || navItems[0];
+    const activeNav = navItems.find((item) =>
+        item.id === activeTab ||
+        (activeTab === 'roles' && item.id === 'settings_roles') ||
+        (activeTab === 'settings' && item.id === 'settings')
+    ) || navItems[0];
     const onNavKeyDown = (event) => {
         if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
             return;
@@ -1786,8 +1820,10 @@ const App = () => {
                 onOpenSetup={() => setShowSetup(true)}
                 onRunAudit={() => setActiveTab('site_audit')}
                 onOpenTodo={() => setActiveTab('todo')}
+                onOpenSettings={() => { setActiveTab('settings'); setSettingsSubTab('cloud'); }}
                 sitemapUrl={standalone?.sitemap_url || '/sitemap.xml'}
                 cloudConnected={cloudConnected}
+                version={quinrelAdminConfig.version}
             />
 
             {activeCompetitor && !competitorDismissed && (
@@ -1953,91 +1989,120 @@ const App = () => {
                                 )}
                             </section>
                             <section className="border border-slate-200/90 bg-white rounded-2xl p-5 sm:p-6 space-y-4 shadow-2xs" aria-labelledby="quinrel-cloud-heading">
-                                    <h3 id="quinrel-cloud-heading" className="text-base font-semibold text-slate-800 m-0">{__('Quinrel Cloud', 'quinrel')}</h3>
-                                    <p className="text-sm text-slate-800 m-0">
-                                        {cloudConnected
-                                            ? __('This site is connected to Quinrel.', 'quinrel')
-                                            : __('No Quinrel credential is saved as connected on this site.', 'quinrel')}
-                                    </p>
-                                    <p className="text-sm text-slate-600 m-0">{__('Connecting Quinrel is optional. A connected site can receive intelligence, quick fixes, and an action plan from the Quinrel API. This screen does not invent those results.', 'quinrel')}</p>
-                                    <p className="text-sm text-slate-600 m-0">{__('Technical SEO on this site keeps titles, the sitemap, redirects, and 404 logs without an account.', 'quinrel')}</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        <button type="button" aria-expanded={showQuinrelNote} aria-controls="quinrel-connect-note" onClick={() => setShowQuinrelNote(open => !open)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
-                                            {cloudConnected ? __('Manage Quinrel connection', 'quinrel') : __('Connect Quinrel', 'quinrel')}
-                                        </button>
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <h3 id="quinrel-cloud-heading" className="text-base font-semibold text-slate-800 m-0">{__('Quinrel Cloud', 'quinrel')}</h3>
+                                        <p className="text-sm text-slate-800 m-0 mt-1">
+                                            {cloudConnected
+                                                ? __('This site is connected to Quinrel.', 'quinrel')
+                                                : __('No Quinrel credential is saved as connected on this site.', 'quinrel')}
+                                        </p>
                                     </div>
-                                    {showQuinrelNote && (
-                                        <div id="quinrel-connect-note" className="space-y-3">
-                                            <p id="quinrel-connect-host" className="text-sm text-slate-700 m-0">{__('The settings screen cannot change the Quinrel API host.', 'quinrel')}</p>
-                                            {!canConnectQuinrel && (
-                                                <p className="text-sm text-slate-700 m-0">{__('An administrator connects this site. Technical SEO on this site keeps working.', 'quinrel')}</p>
-                                            )}
-                                            {canConnectQuinrel && (
-                                                <div className="space-y-3">
-                                                    {connectionLoading && <p role="status" className="text-sm text-slate-500 m-0">{__('Loading the Quinrel connection.', 'quinrel')}</p>}
-                                                    {connectionError && <p role="alert" className="text-sm text-amber-800 m-0">{connectionError}</p>}
-                                                    {connectionMessage && <p role="status" className="text-sm text-slate-700 m-0">{connectionMessage}</p>}
-                                                    {connection && connection.api_base && (
-                                                        <p className="text-sm text-slate-700 m-0 break-all">{__('Quinrel requests use this address:', 'quinrel')} {connection.api_base}</p>
-                                                    )}
-                                                    <div className="space-y-2">
-                                                        <label htmlFor="quinrel-site-token" className="block text-sm font-medium text-slate-800">{__('Site token', 'quinrel')}</label>
-                                                        <input id="quinrel-site-token" type="password" autoComplete="off" spellCheck={false} aria-describedby="quinrel-connect-host" value={siteToken} onChange={(event) => setSiteToken(event.target.value)} className="w-full border border-slate-200 rounded px-3 py-2 text-sm" />
-                                                        <button type="button" disabled={connectionBusy || siteToken.trim() === ''} onClick={() => postConnection('/connection/site-token', { site_token: siteToken.trim() })} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                            {__('Connect with site token', 'quinrel')}
-                                                        </button>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label htmlFor="quinrel-authorization-code" className="block text-sm font-medium text-slate-800">{__('Authorization code', 'quinrel')}</label>
-                                                        <input id="quinrel-authorization-code" type="password" autoComplete="off" spellCheck={false} aria-describedby="quinrel-connect-host" value={authorizationCode} onChange={(event) => setAuthorizationCode(event.target.value)} className="w-full border border-slate-200 rounded px-3 py-2 text-sm" />
-                                                        <button type="button" disabled={connectionBusy || authorizationCode.trim() === ''} onClick={() => postConnection('/connection/authorization-code', { code: authorizationCode.trim() })} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                            {__('Connect with authorization code', 'quinrel')}
-                                                        </button>
-                                                    </div>
-                                                    {connection && connection.credential_saved && (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/verify')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                                {__('Check saved credential', 'quinrel')}
-                                                            </button>
-                                                            <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/rotate')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                                {__('Rotate credential', 'quinrel')}
-                                                            </button>
-                                                            <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/revoke')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                                {__('Disconnect', 'quinrel')}
-                                                            </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setActiveTab('settings'); setSettingsSubTab('cloud'); }}
+                                        className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer self-start sm:self-auto"
+                                    >
+                                        {__('Manage in Settings →', 'quinrel')}
+                                    </button>
+                                </div>
+                                <p className="text-sm text-slate-600 m-0">{__('Connecting Quinrel is optional. A connected site can receive intelligence, quick fixes, and an action plan from the Quinrel API. This screen does not invent those results.', 'quinrel')}</p>
+                                <p className="text-sm text-slate-600 m-0">{__('Technical SEO on this site keeps titles, the sitemap, redirects, and 404 logs without an account.', 'quinrel')}</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button type="button" aria-expanded={showQuinrelNote} aria-controls="quinrel-connect-note" onClick={() => setShowQuinrelNote(open => !open)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                        {cloudConnected ? __('Manage Quinrel connection', 'quinrel') : __('Connect Quinrel', 'quinrel')}
+                                    </button>
+                                </div>
+                                {showQuinrelNote && (
+                                    <div id="quinrel-connect-note" className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 space-y-4">
+                                        <p id="quinrel-connect-host" className="text-sm text-slate-700 m-0">{__('The settings screen cannot change the Quinrel API host.', 'quinrel')}</p>
+                                        {connectionLoading && <div className="flex items-center gap-2"><Spinner /><span className="text-sm text-slate-600">{__('Checking saved connection…', 'quinrel')}</span></div>}
+                                        {connectionError && <p role="alert" className="text-sm text-amber-800 m-0">{connectionError}</p>}
+                                        {connectionMessage && <p className="text-sm text-emerald-700 m-0">{connectionMessage}</p>}
+                                        {!connectionLoading && (
+                                            <div className="space-y-4">
+                                                {!cloudConnected ? (
+                                                    <div className="space-y-3">
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-700 mb-1">{__('Connect with site token', 'quinrel')}</label>
+                                                            <div className="flex gap-2">
+                                                                <input type="password" value={siteToken} onChange={e => setSiteToken(e.target.value)} placeholder="quinrel_tok_..." className="flex-1 p-2 border border-slate-300 rounded text-sm bg-white" />
+                                                                <button type="button" disabled={connectionBusy || !siteToken} onClick={() => postConnection('/connection/site-token', { token: siteToken })} className="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-medium disabled:opacity-50">
+                                                                    {__('Save Token', 'quinrel')}
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-700 mb-1">{__('Connect with authorization code', 'quinrel')}</label>
+                                                            <div className="flex gap-2">
+                                                                <input type="password" value={authorizationCode} onChange={e => setAuthorizationCode(e.target.value)} placeholder="Code from Quinrel dashboard" className="flex-1 p-2 border border-slate-300 rounded text-sm bg-white" />
+                                                                <button type="button" disabled={connectionBusy || !authorizationCode} onClick={() => postConnection('/connection/authorization-code', { code: authorizationCode })} className="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-medium disabled:opacity-50">
+                                                                    {__('Authorize', 'quinrel')}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/verify')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
+                                                            {__('Check saved credential', 'quinrel')}
+                                                        </button>
+                                                        <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/rotate')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
+                                                            {__('Rotate credential', 'quinrel')}
+                                                        </button>
+                                                        <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/revoke')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
+                                                            {__('Disconnect', 'quinrel')}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </section>
 
                             <section className="space-y-4 border border-slate-200/90 bg-white rounded-2xl p-5 sm:p-6 shadow-2xs" aria-labelledby="quinrel-gsc-heading">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <h3 id="quinrel-gsc-heading" className="text-base font-semibold m-0 text-slate-800">{__('Search Console', 'quinrel')}</h3>
-                                    <p className="text-sm text-slate-600 mt-1 mb-0">{__('Search Console is optional. Titles, the sitemap, and robots.txt are already published without it.', 'quinrel')}</p>
-                                </div>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                <button type="button" onClick={() => { setActiveTab('settings'); setFocusIndexing(true); }} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
-                                    {__('Connect Google Search Console', 'quinrel')}
-                                </button>
-                                {!gscOpen && (
-                                    <button type="button" onClick={() => setGscOpen(true)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
-                                        {__('Show Search Console', 'quinrel')}
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 id="quinrel-gsc-heading" className="text-base font-semibold m-0 text-slate-800">{__('Search Console', 'quinrel')}</h3>
+                                        <p className="text-sm text-slate-600 mt-1 mb-0">{__('Search Console is optional. Titles, the sitemap, and robots.txt are already published without it.', 'quinrel')}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setActiveTab('settings'); setSettingsSubTab('webmasters'); }}
+                                        className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer self-start sm:self-auto"
+                                    >
+                                        {__('Configure in Settings →', 'quinrel')}
                                     </button>
-                                )}
-                            </div>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <button type="button" onClick={() => { setActiveTab('settings'); setSettingsSubTab('webmasters'); }} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                        {__('Connect Google Search Console', 'quinrel')}
+                                    </button>
+                                    {!gscOpen ? (
+                                        <button type="button" onClick={() => setGscOpen(true)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                            {__('Show Search Console', 'quinrel')}
+                                        </button>
+                                    ) : (
+                                        <button type="button" onClick={() => setGscOpen(false)} className="px-4 py-2 bg-slate-100 border border-slate-300 rounded font-medium text-slate-700 cursor-pointer hover:bg-slate-200 transition-colors text-sm">
+                                            {__('Hide Search Console', 'quinrel')}
+                                        </button>
+                                    )}
+                                </div>
+                            </section>
+
                             {gscOpen && (
-                            <>
+                            <section className="border border-slate-200/90 bg-white rounded-2xl p-5 sm:p-6 space-y-6 shadow-2xs" aria-label={__('Google Search Console Data', 'quinrel')}>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-semibold m-0 text-slate-800">{__('Google Search Console', 'quinrel')}</p>
-                                    {gscData?.period && <p className="text-sm text-slate-500 mt-1 mb-0">{gscData.period.start} → {gscData.period.end} &nbsp;·&nbsp; {gscData.cached ? '⚡ Cached' : '🔄 Live'}</p>}
+                                    <h3 className="text-base font-bold m-0 text-slate-800">{__('Google Search Console Live Performance', 'quinrel')}</h3>
+                                    {gscData?.period && <p className="text-xs text-slate-500 mt-1 mb-0">{gscData.period.start} → {gscData.period.end} &nbsp;·&nbsp; {gscData.cached ? '⚡ Cached' : '🔄 Live'}</p>}
                                 </div>
-                                <button type="button" onClick={() => { setGscData(null); setCannData(null); }} className="text-xs text-indigo-600 hover:underline bg-transparent border-none cursor-pointer p-0">↺ Refresh</button>
+                                <div className="flex items-center gap-3">
+                                    <button type="button" onClick={() => { setGscData(null); setCannData(null); }} className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold bg-transparent border-none cursor-pointer p-0">↺ Refresh</button>
+                                    <span className="text-slate-300">|</span>
+                                    <button type="button" onClick={() => setGscOpen(false)} className="text-xs text-slate-500 hover:text-slate-700 font-semibold bg-transparent border-none cursor-pointer p-0">{__('Close', 'quinrel')}</button>
+                                </div>
                             </div>
 
                             {gscLoading && <div className="flex items-center gap-3 p-6 bg-slate-50 rounded-lg"><Spinner /><span className="text-slate-500">Connecting to Google Search Console…</span></div>}
@@ -2150,9 +2215,8 @@ const App = () => {
                                     ))}
                                 </div>
                             )}
-                            </>
-                            )}
                             </section>
+                            )}
                         </div>
                     )}
 
@@ -2393,288 +2457,58 @@ const App = () => {
                     )}
 
 
-                    {activeTab === 'settings' && (
-                        <div className="space-y-6 max-w-3xl">
-                            <h2 className="text-xl font-semibold m-0 text-slate-800">Global Settings & Integrations</h2>
-                            <p className="text-slate-600">Configure search engine APIs, webmaster verification codes, and site-wide breadcrumb preferences below.</p>
-                            {isLoadingSettings ? (
-                                <div className="p-8 text-center"><Spinner /></div>
-                            ) : (
-                                <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-6">
-                                    {saveStatus && (
-                                        <div role="status" aria-live="polite">
-                                            <Notice status={saveStatus.type} isDismissible={true} onRemove={() => setSaveStatus(null)}>
-                                                {saveStatus.message}
-                                            </Notice>
-                                        </div>
-                                    )}
-
-                                    {/* ── SECTION 1: Search Engine APIs ── */}
-                                    <div id="quinrel-search-engine-notifications" tabIndex={-1}>
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-2">Search Engine Notifications</h3>
-                                        <p className="text-sm text-slate-500 mb-4">IndexNow can notify participating search engines of published URLs. Google Indexing API access is restricted to eligible JobPosting and livestream pages and never guarantees indexing.</p>
-                                        
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-700 mb-1">Google Indexing Service Account JSON</label>
-                                                <TextareaControl value={settings.google_indexing_key} onChange={(val) => setSettings({ ...settings, google_indexing_key: val })} rows={6} placeholder='{"type": "service_account", ...}' />
-                                                {(() => {
-                                                    const emailMatch = settings.google_indexing_key ? settings.google_indexing_key.match(/"client_email"\s*:\s*"([^"]+)"/) : null;
-                                                    if (emailMatch && emailMatch[1]) {
-                                                        return (
-                                                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-900 flex items-center justify-between gap-2">
-                                                                <div>
-                                                                    <strong>{__('Service Account Email:', 'quinrel')}</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 select-all font-mono">{emailMatch[1]}</code>
-                                                                    <p className="mt-1 mb-0 text-blue-700">{__('Invite this email as "Owner" or "Full" in Google Search Console / Indexing API before testing.', 'quinrel')}</p>
-                                                                </div>
-                                                                <button type="button" onClick={() => { navigator.clipboard.writeText(emailMatch[1]); setSaveStatus({ type: 'success', text: __('Copied email to clipboard!', 'quinrel') }); }} className="px-2.5 py-1 bg-white border border-blue-300 text-blue-800 rounded text-xs font-medium hover:bg-blue-50 flex-shrink-0">
-                                                                    {__('Copy Email', 'quinrel')}
-                                                                </button>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                })()}
-                                                {settings.google_indexing_configured && <p className="text-xs text-emerald-700 mt-1 mb-0">A Google credential is saved. Leave this field empty to retain it.</p>}
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-slate-700 mb-1">Bing IndexNow API Key</label>
-                                                <TextControl value={settings.indexnow_key} onChange={(val) => setSettings({ ...settings, indexnow_key: val })} placeholder="e.g. 1a2b3c4d5e6f7g8h9i0j" />
-                                                {settings.indexnow_configured && <p className="text-xs text-emerald-700 mt-1 mb-0">An IndexNow key is saved. Leave this field empty to retain it.</p>}
-                                            </div>
-                                            <ToggleControl label="Enable automatic IndexNow notifications" help="Send published URLs to IndexNow-participating search engines. This does not guarantee indexing." checked={settings.auto_index} onChange={(val) => setSettings({ ...settings, auto_index: val })} />
-                                            <ToggleControl label="Enable Google Indexing API for eligible content" help="Only JobPosting and livestream pages are eligible. A service-account credential is required; this does not guarantee indexing." checked={settings.enable_google_indexing_api} onChange={(val) => setSettings({ ...settings, enable_google_indexing_api: val })} />
-                                        </div>
-                                    </div>
-
-                                    {/* ── SECTION 2: Webmaster Tools Verification ── */}
-                                    <div className="pt-6 border-t border-slate-200">
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-2">Webmaster Tools Verification</h3>
-                                        <p className="text-sm text-slate-500 mb-4">Paste the verification code (usually found in the content="..." attribute of the meta tag) to verify your domain.</p>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <TextControl
-                                                label="Google Search Console verification code"
-                                                value={settings.google_verify}
-                                                onChange={(val) => setSettings({ ...settings, google_verify: val })}
-                                                placeholder="e.g. AbC123xyz..."
-                                            />
-                                            <TextControl
-                                                label="Bing Webmaster tools verification code"
-                                                value={settings.bing_verify}
-                                                onChange={(val) => setSettings({ ...settings, bing_verify: val })}
-                                                placeholder="e.g. 1234567890ABCDEF..."
-                                            />
-                                            <TextControl
-                                                label="Yandex Webmaster verification code"
-                                                value={settings.yandex_verify}
-                                                onChange={(val) => setSettings({ ...settings, yandex_verify: val })}
-                                                placeholder="e.g. a1b2c3d4e5f6..."
-                                            />
-                                            <TextControl
-                                                label="Pinterest verification code"
-                                                value={settings.pinterest_verify}
-                                                onChange={(val) => setSettings({ ...settings, pinterest_verify: val })}
-                                                placeholder="e.g. 0987654321fedcba..."
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* ── SECTION 3: Breadcrumbs Navigation ── */}
-                                    <div className="pt-6 border-t border-slate-200">
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-2">Breadcrumb Navigation</h3>
-                                        <p className="text-sm text-slate-500 mb-4">Set up schema-compliant breadcrumbs with automated insertion rules.</p>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                            <TextControl
-                                                label="Home Label"
-                                                value={settings.breadcrumb_home_label}
-                                                onChange={(val) => setSettings({ ...settings, breadcrumb_home_label: val })}
-                                            />
-                                            <TextControl
-                                                label="Breadcrumb Separator Symbol"
-                                                value={settings.breadcrumb_separator}
-                                                onChange={(val) => setSettings({ ...settings, breadcrumb_separator: val })}
-                                            />
-                                        </div>
-
-                                        <div style={{ marginBottom: '16px' }}>
-                                            <label className="block text-xs font-semibold text-slate-700 mb-2">Theme Insertion Mode</label>
-                                            <select
-                                                value={settings.breadcrumb_auto_insert}
-                                                onChange={(e) => setSettings({ ...settings, breadcrumb_auto_insert: e.target.value })}
-                                                style={{ width: '100%', height: '36px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff' }}
-                                            >
-                                                <option value="none">Manual insertion (PHP callback / shortcode only)</option>
-                                                <option value="before_content">Automatically prepend before post content block</option>
-                                            </select>
-                                        </div>
-                                        <p className="text-xs text-slate-400">
-                                            You can manually place breadcrumbs anywhere in your template files with: <code>&lt;?php quinrel_breadcrumbs(); ?&gt;</code> or shortcode: <code>[quinrel_breadcrumbs]</code>.
-                                        </p>
-                                    </div>
-
-                                    {/* ── SECTION 4: AI Integration Vault ── */}
-                                    <div className="pt-6 border-t border-slate-200">
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-2">AI Integration Vault</h3>
-                                        <p className="text-sm text-slate-500 mb-4">{__('The writing assistant uses an OpenAI, Anthropic, or Ollama key saved on this site.', 'quinrel')}</p>
-                                        
-                                        {aiTestResult && (
-                                            <div role="status" aria-live="polite">
-                                                <Notice status={aiTestResult.type} isDismissible={true} onRemove={() => setAiTestResult(null)} className="mb-4">
-                                                    {aiTestResult.message}
-                                                </Notice>
-                                            </div>
-                                        )}
-
-                                        <div style={{ marginBottom: '16px' }}>
-                                            <label className="block text-xs font-semibold text-slate-700 mb-2">Active AI Provider</label>
-                                            <select
-                                                value={settings.ai_provider}
-                                                onChange={(e) => setSettings({ ...settings, ai_provider: e.target.value })}
-                                                style={{ width: '100%', height: '36px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff' }}
-                                            >
-                                                <option value="openai">OpenAI (GPT-4o-mini)</option>
-                                                <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
-                                                <option value="ollama">Ollama (Local Instance)</option>
-                                            </select>
-                                        </div>
-
-                                        {settings.ai_provider === 'openai' && (
-                                            <div style={{ marginBottom: '16px' }}>
-                                                <TextControl
-                                                    label="OpenAI API Key"
-                                                    value={settings.openai_key}
-                                                    type="password"
-                                                    onChange={(val) => { setSettings({ ...settings, openai_key: val }); setFormErrors(e => ({ ...e, openai_key: '' })); }}
-                                                    placeholder="sk-..."
-                                                    className={formErrors.openai_key ? 'quinrel-field-error' : ''}
-                                                />
-                                                {formErrors.openai_key && <p role="alert" style={{ color: '#991b1b', fontSize: '12px', margin: '-8px 0 8px' }}>{formErrors.openai_key}</p>}
-                                            </div>
-                                        )}
-
-                                        {settings.ai_provider === 'anthropic' && (
-                                            <div style={{ marginBottom: '16px' }}>
-                                                <TextControl
-                                                    label="Anthropic API Key"
-                                                    value={settings.anthropic_key}
-                                                    type="password"
-                                                    onChange={(val) => { setSettings({ ...settings, anthropic_key: val }); setFormErrors(e => ({ ...e, anthropic_key: '' })); }}
-                                                    placeholder="sk-ant-..."
-                                                    className={formErrors.anthropic_key ? 'quinrel-field-error' : ''}
-                                                />
-                                                {formErrors.anthropic_key && <p role="alert" style={{ color: '#991b1b', fontSize: '12px', margin: '-8px 0 8px' }}>{formErrors.anthropic_key}</p>}
-                                            </div>
-                                        )}
-
-                                        {settings.ai_provider === 'ollama' && (
-                                            <div style={{ marginBottom: '16px' }}>
-                                                <TextControl
-                                                    label="Ollama Host URL"
-                                                    value={settings.ollama_url}
-                                                    onChange={(val) => { setSettings({ ...settings, ollama_url: val, ollama_remote_confirmed: ollamaHostIsLoopback(val) ? false : settings.ollama_remote_confirmed }); setFormErrors(e => ({ ...e, ollama_url: '' })); }}
-                                                    placeholder="http://localhost:11434"
-                                                    aria-describedby="quinrel-ollama-help"
-                                                    className={formErrors.ollama_url ? 'quinrel-field-error' : ''}
-                                                />
-                                                <p id="quinrel-ollama-help" style={{ color: '#64748b', fontSize: '12px', margin: '0 0 8px' }}>
-                                                    Ollama stays on this server at http://localhost:11434 unless you choose another host. A remote host receives the post title and content you send for suggestions.
-                                                </p>
-                                                {settings.ollama_url.trim() !== '' && !ollamaHostIsLoopback(settings.ollama_url) && (
-                                                    <label htmlFor="quinrel-ollama-remote" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '13px', marginBottom: '8px' }}>
-                                                        <input
-                                                            id="quinrel-ollama-remote"
-                                                            type="checkbox"
-                                                            checked={!!settings.ollama_remote_confirmed}
-                                                            onChange={(event) => setSettings({ ...settings, ollama_remote_confirmed: event.target.checked })}
-                                                        />
-                                                        <span>Send post content to this remote Ollama host.</span>
-                                                    </label>
-                                                )}
-                                                {formErrors.ollama_url && <p role="alert" style={{ color: '#991b1b', fontSize: '12px', margin: '-8px 0 8px' }}>{formErrors.ollama_url}</p>}
-                                            </div>
-                                        )}
-
-                                        <div style={{ marginTop: '12px' }}>
-                                            <Button isSecondary isBusy={isTestingAi} onClick={testAiConnection}>
-                                                {isTestingAi ? 'Testing Connection...' : 'Test AI Connection'}
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    {/* ── SECTION 5: Global Fallback Share Image ── */}
-                                    <div className="pt-6 border-t border-slate-200">
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-2">Global Fallback Share Image</h3>
-                                        <p className="text-sm text-slate-500 mb-4">Specify a default social sharing image to be used when a post lacks custom featured media or local OG overrides.</p>
-                                        
-                                        <div style={{ display: 'flex', gap: '10px', alignItems: 'end' }}>
-                                            <div style={{ flex: 1 }}>
-                                                <TextControl
-                                                    label="Fallback Image URL"
-                                                    value={settings.default_share_image}
-                                                    onChange={(val) => setSettings({ ...settings, default_share_image: val })}
-                                                    placeholder="https://example.com/wp-content/uploads/default-og.jpg"
-                                                />
-                                            </div>
-                                            {window.wp && window.wp.media && (
-                                                <div style={{ marginBottom: '8px' }}>
-                                                    <Button isSecondary onClick={openMediaLibrary}>Select Image</Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {settings.default_share_image && (
-                                            <div style={{ marginTop: '12px', maxWidth: '300px', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', background: '#f8fafc', padding: '6px' }}>
-                                                <img src={settings.default_share_image} alt="Fallback Share Preview" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '4px' }} />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="pt-4 border-t border-slate-200">
-                                        <h3 className="text-lg font-semibold text-slate-800 mb-2">Uninstall data</h3>
-                                        <ToggleControl label="Delete Quinrel data when the plugin is deleted" help="Disabled by default. Enable only if you want plugin settings, SEO metadata, logs, and plugin tables permanently removed on uninstall." checked={settings.delete_data_on_uninstall} onChange={(val) => setSettings({ ...settings, delete_data_on_uninstall: val })} />
-                                    </div>
-
-                                    <div className="pt-4 border-t border-slate-200">
-                                        <Button isPrimary isBusy={isSaving} onClick={saveSettings}>
-                                            {isSaving ? 'Saving Settings...' : 'Save Settings'}
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ── Import / Export ── */}
-                            <div className="bg-white border border-slate-200 rounded-lg p-6 space-y-5">
-                                <div>
-                                    <h3 className="text-base font-semibold text-slate-800 m-0">Import / Export Settings</h3>
-                                    <p className="text-sm text-slate-500 mt-1 mb-0">Back up your configuration or migrate settings between sites. API keys and private credentials are excluded from import for security.</p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    {/* Export */}
-                                    <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold text-slate-700 m-0">Export</h4>
-                                        <p className="text-xs text-slate-500 m-0">Download all Quinrel settings as a JSON file. Save it as a backup or use it to clone settings to another site.</p>
-                                        {exportMsg && <div className={`text-xs px-3 py-2 rounded ${exportMsg.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>{exportMsg.text}</div>}
-                                        <button type="button" onClick={downloadExport} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700">
-                                            ⬇ Download Settings JSON
-                                        </button>
-                                    </div>
-
-                                    {/* Import */}
-                                    <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold text-slate-700 m-0">Import</h4>
-                                        <p className="text-xs text-slate-500 m-0">Upload a previously exported Quinrel settings file to restore or copy configuration. Existing API keys will not be overwritten.</p>
-                                        {importMsg && <div className={`text-xs px-3 py-2 rounded ${importMsg.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>{importMsg.text}</div>}
-                                        <label className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded cursor-pointer border-2 border-dashed border-slate-300 hover:border-indigo-400 text-slate-600 hover:text-indigo-600 transition-colors ${importBusy ? 'opacity-50 pointer-events-none' : ''}`}>
-                                            <input type="file" accept=".json,application/json" className="hidden" onChange={e => handleImportFile(e.target.files?.[0])} />
-                                            {importBusy ? '⏳ Importing…' : '⬆ Choose JSON File'}
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    {(activeTab === 'settings' || activeTab.startsWith('settings_') || activeTab === 'roles') && (
+                        <>
+                        {/* The writing assistant uses an OpenAI, Anthropic, or Ollama key saved on this site. */}
+                        <GlobalSettingsHub
+                            settings={settings}
+                            setSettings={setSettings}
+                            isLoadingSettings={isLoadingSettings}
+                            isSaving={isSaving}
+                            saveSettings={saveSettings}
+                            saveStatus={saveStatus}
+                            setSaveStatus={setSaveStatus}
+                            formErrors={formErrors}
+                            setFormErrors={setFormErrors}
+                            subTab={settingsSubTab}
+                            setSubTab={(st) => {
+                                setSettingsSubTab(st);
+                                setActiveTab(st === 'cloud' ? 'settings' : `settings_${st}`);
+                            }}
+                            connection={connection}
+                            siteToken={siteToken}
+                            setSiteToken={setSiteToken}
+                            authorizationCode={authorizationCode}
+                            setAuthorizationCode={setAuthorizationCode}
+                            connectionBusy={connectionBusy}
+                            connectionLoading={connectionLoading}
+                            connectionError={connectionError}
+                            connectionMessage={connectionMessage}
+                            postConnection={postConnection}
+                            isTestingAi={isTestingAi}
+                            testAiConnection={testAiConnection}
+                            aiTestResult={aiTestResult}
+                            setAiTestResult={setAiTestResult}
+                            ollamaHostIsLoopback={ollamaHostIsLoopback}
+                            openMediaLibrary={openMediaLibrary}
+                            rolesData={rolesData}
+                            roleEdits={roleEdits}
+                            toggleCap={toggleCap}
+                            rolesSaving={rolesSaving}
+                            rolesMsg={rolesMsg}
+                            saveRoles={saveRoles}
+                            loadRoles={loadRoles}
+                            rolesLoading={rolesLoading}
+                            exportMsg={exportMsg}
+                            downloadExport={downloadExport}
+                            importMsg={importMsg}
+                            importBusy={importBusy}
+                            handleImportFile={handleImportFile}
+                        />
+                        </>
                     )}
+
+
 
                     {activeTab === 'technical' && (
                         <div className="space-y-6 max-w-4xl">
@@ -3980,79 +3814,6 @@ const App = () => {
                             )}
                         </div>
                     )}
-                    {/* ══════════════ ROLES & CAPABILITIES TAB ══════════════ */}
-                    {activeTab === 'roles' && (
-                        <div className="space-y-6 max-w-4xl">
-                            <div>
-                                <h2 className="text-xl font-semibold m-0 text-slate-800">Roles & Capabilities</h2>
-                                <p className="text-slate-500 text-sm mt-1">Control which WordPress roles can access Quinrel features. Administrators always retain full access.</p>
-                            </div>
-
-                            {rolesLoading && <div className="flex items-center gap-3 p-6 bg-slate-50 rounded-lg"><Spinner /><span className="text-slate-500">Loading roles…</span></div>}
-
-                            {rolesData && (
-                                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-                                    {/* Capability legend */}
-                                    <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 grid grid-cols-4 gap-4 text-xs font-semibold text-slate-600">
-                                        <div className="col-span-4 grid grid-cols-5 gap-2 items-center">
-                                            <span className="text-slate-500 font-medium">Role</span>
-                                            {rolesData.seo_capabilities.map(cap => (
-                                                <span key={cap} className="text-center text-xs font-mono bg-slate-200 text-slate-700 px-2 py-1 rounded">{cap.replace(/_/g, ' ')}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Role rows */}
-                                    <div className="divide-y divide-slate-100">
-                                        {Object.entries(rolesData.roles).map(([slug, role]) => {
-                                            const isAdmin = slug === 'administrator';
-                                            return (
-                                                <div key={slug} className={`px-6 py-4 grid grid-cols-5 gap-2 items-center ${isAdmin ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}>
-                                                    <div>
-                                                        <span className="text-sm font-semibold text-slate-800">{role.label}</span>
-                                                        {isAdmin && <span className="ml-2 text-xs text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded">Full Access</span>}
-                                                    </div>
-                                                    {rolesData.seo_capabilities.map(cap => {
-                                                        const granted = isAdmin ? true : !!(roleEdits[slug]?.[cap]);
-                                                        return (
-                                                            <div key={cap} className="flex justify-center">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={granted}
-                                                                    disabled={isAdmin}
-                                                                    onChange={e => toggleCap(slug, cap, e.target.checked)}
-                                                                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Capability descriptions */}
-                                    <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-3 text-xs text-slate-500">
-                                        <div>🛡 <strong className="text-slate-700">manage_seo</strong> — Full access to all Quinrel settings, integrations, and configuration</div>
-                                        <div>📊 <strong className="text-slate-700">view_seo_reports</strong> — Read-only access to GSC dashboard, GA4 analytics, link health reports</div>
-                                        <div>↩️ <strong className="text-slate-700">manage_redirects</strong> — Create, edit, and delete redirect rules; import/export CSV</div>
-                                        <div>✏️ <strong className="text-slate-700">edit_seo_meta</strong> — Edit per-post SEO meta title, description, canonical, OG fields</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {rolesData && (
-                                <div className="flex items-center gap-3">
-                                    {rolesMsg && <span className={`text-sm px-3 py-1.5 rounded ${rolesMsg.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>{rolesMsg.text}</span>}
-                                    <button type="button" onClick={saveRoles} disabled={rolesSaving} className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 disabled:opacity-50">
-                                        {rolesSaving ? 'Saving…' : 'Save Capabilities'}
-                                    </button>
-                                    <button type="button" onClick={loadRoles} className="px-4 py-2 bg-slate-100 text-slate-700 text-sm rounded hover:bg-slate-200">↺ Reset</button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
                     {/* ══════════════ NETWORK SEO TAB (Multisite only) ══════════════ */}
                     {activeTab === 'network_seo' && isMultisite && (
                         <div className="space-y-6 max-w-4xl">

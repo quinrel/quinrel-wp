@@ -142,6 +142,7 @@ class AdminMenu {
 				'nonce'           => wp_create_nonce( 'wp_rest' ),
 				'setupComplete'   => get_option( 'quinrel_setup_complete' ) ? '1' : '0',
 				'initialTab'      => $initialTab,
+				'version'         => QUINREL_VERSION,
 				'isMultisite'     => is_multisite() ? '1' : '0',
 				'cloudConfigured' => \Quinrel\WordPress\Core\Mode\OperatingMode::isCloudConfigured() ? '1' : '0',
 				'capabilities'    => array(

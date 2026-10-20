@@ -1,14 +1,18 @@
 import React from 'react';
 import { __ } from '@wordpress/i18n';
-import { LogoMark, WandIcon, AuditIcon, ExternalLinkIcon, TodoIcon } from './QuinrelIcons';
+import { LogoMark, WandIcon, AuditIcon, ExternalLinkIcon, TodoIcon, SettingsIcon } from './QuinrelIcons';
 
 export const QuinrelHeader = ({
     onOpenSetup,
     onRunAudit,
     onOpenTodo,
+    onOpenSettings,
     sitemapUrl = '/sitemap.xml',
     cloudConnected = false,
+    version,
 }) => {
+    const displayVersion = version || window.quinrelAdminConfig?.version || '1.1.0';
+
     return (
         <header className="mb-6 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -21,7 +25,7 @@ export const QuinrelHeader = ({
                         <div className="flex flex-wrap items-center gap-2">
                             <h1 className="text-2xl font-black tracking-tight text-slate-900 m-0">Quinrel</h1>
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                                v1.0.1
+                                v{displayVersion}
                             </span>
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -67,6 +71,18 @@ export const QuinrelHeader = ({
                         <WandIcon className="w-3.5 h-3.5 text-indigo-600" />
                         <span>{__('Setup Wizard', 'quinrel')}</span>
                     </button>
+
+                    {onOpenSettings && (
+                        <button
+                            type="button"
+                            onClick={onOpenSettings}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-all cursor-pointer"
+                            title={__('Open Global Settings & Integrations', 'quinrel')}
+                        >
+                            <SettingsIcon className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>{__('Settings', 'quinrel')}</span>
+                        </button>
+                    )}
 
                     {sitemapUrl && (
                         <a

@@ -22,6 +22,9 @@ import {
     RolesIcon,
     SettingsIcon,
     TodoIcon,
+    CloudIcon,
+    SpeedIcon,
+    DatabaseIcon,
 } from './QuinrelIcons';
 
 const TOOL_ICONS = {
@@ -43,6 +46,13 @@ const TOOL_ICONS = {
     compliance: ComplianceIcon,
     roles: RolesIcon,
     settings: SettingsIcon,
+    settings_cloud: CloudIcon,
+    settings_webmasters: AnalyticsIcon,
+    settings_indexing: LinkIcon,
+    settings_performance: SpeedIcon,
+    settings_ai: AiBotIcon,
+    settings_roles: RolesIcon,
+    settings_advanced: DatabaseIcon,
     network_seo: TechIcon,
 };
 
@@ -71,9 +81,16 @@ const PILLAR_CONFIG = [
     {
         id: 'intelligence',
         title: __('Intelligence', 'quinrel'),
-        subtitle: __('LLMs, analytics & configuration', 'quinrel'),
+        subtitle: __('LLMs, rank tracking & analytics', 'quinrel'),
         icon: IntelligenceIcon,
         color: 'purple',
+    },
+    {
+        id: 'settings',
+        title: __('Settings', 'quinrel'),
+        subtitle: __('Cloud, APIs & module config', 'quinrel'),
+        icon: SettingsIcon,
+        color: 'slate',
     },
 ];
 
@@ -82,7 +99,11 @@ export const PillarNavigation = ({ navPillars, activeTab, setActiveTab }) => {
 
     // Determine current active pillar based on activeTab
     const currentPillarIndex = navPillars.findIndex((pillar) =>
-        pillar.items.some((item) => item.id === activeTab)
+        pillar.items.some((item) =>
+            item.id === activeTab ||
+            (activeTab === 'roles' && item.id === 'settings_roles') ||
+            (activeTab === 'settings' && item.id.startsWith('settings'))
+        )
     );
     const activePillarIdx = currentPillarIndex >= 0 ? currentPillarIndex : 0;
     const activePillar = navPillars[activePillarIdx];
@@ -93,7 +114,11 @@ export const PillarNavigation = ({ navPillars, activeTab, setActiveTab }) => {
         if (!pillar) return;
 
         // If clicking a pillar whose items do not contain the active tab, switch to the first item
-        const hasActiveTab = pillar.items.some((item) => item.id === activeTab);
+        const hasActiveTab = pillar.items.some((item) =>
+            item.id === activeTab ||
+            (activeTab === 'roles' && item.id === 'settings_roles') ||
+            (activeTab === 'settings' && item.id.startsWith('settings'))
+        );
         if (!hasActiveTab && pillar.items.length > 0) {
             setActiveTab(pillar.items[0].id);
         }
@@ -104,7 +129,11 @@ export const PillarNavigation = ({ navPillars, activeTab, setActiveTab }) => {
             return;
         }
         event.preventDefault();
-        const currentIndex = currentSubItems.findIndex((item) => item.id === activeTab);
+        const currentIndex = currentSubItems.findIndex((item) =>
+            item.id === activeTab ||
+            (activeTab === 'roles' && item.id === 'settings_roles') ||
+            (activeTab === 'settings' && item.id === 'settings')
+        );
         let nextIndex = currentIndex < 0 ? 0 : currentIndex;
 
         if (event.key === 'ArrowRight') {
@@ -129,9 +158,9 @@ export const PillarNavigation = ({ navPillars, activeTab, setActiveTab }) => {
 
     return (
         <div className="quinrel-navigation space-y-4 mb-6">
-            {/* ══════════ MASTER 4-PILLAR SEGMENTED DECK ══════════ */}
+            {/* ══════════ MASTER 5-PILLAR SEGMENTED DECK ══════════ */}
             <div
-                className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3"
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3"
                 role="tablist"
                 aria-label={__('Quinrel Core Pillars', 'quinrel')}
             >
@@ -213,7 +242,9 @@ export const PillarNavigation = ({ navPillars, activeTab, setActiveTab }) => {
                 aria-label={sprintf(__('%s Tools', 'quinrel'), activePillar ? activePillar.title : __('Tools', 'quinrel'))}
             >
                 {currentSubItems.map((item) => {
-                    const isTabActive = activeTab === item.id;
+                    const isTabActive = activeTab === item.id ||
+                        (activeTab === 'settings' && item.id === 'settings') ||
+                        (activeTab === 'roles' && item.id === 'settings_roles');
                     const ItemIcon = TOOL_ICONS[item.id] || TechIcon;
 
                     return (

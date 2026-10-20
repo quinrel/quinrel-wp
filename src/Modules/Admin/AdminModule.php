@@ -267,6 +267,11 @@ class AdminModule {
 		$anthropicKey       = ! empty( $anthropicKeyStored ) ? '••••••••••••' : '';
 		$rawGoogleKey       = (string) get_option( 'quinrel_google_indexing_key', '' );
 
+		$gscConfig       = (array) get_option( 'quinrel_gsc_config', array() );
+		$gscToken        = (array) get_option( 'quinrel_gsc_token', array() );
+		$gscConnected    = ! empty( $gscToken['access_token'] ) || ! empty( $gscToken['refresh_token'] );
+		$gscSecretStored = ! empty( $gscConfig['client_secret'] ) ? '••••••••••••' : '';
+
 		return rest_ensure_response(
 			array(
 				'google_indexing_configured' => $rawGoogleKey !== '',
@@ -285,6 +290,16 @@ class AdminModule {
 				'breadcrumb_auto_insert'     => get_option( 'quinrel_breadcrumb_auto_insert', 'none' ),
 				'sitemap_exclude_post_types' => get_option( 'quinrel_sitemap_exclude_post_types', '' ),
 				'sitemap_exclude_posts'      => get_option( 'quinrel_sitemap_exclude_posts', '' ),
+
+				// Performance
+				'defer_non_critical_scripts' => get_option( 'quinrel_defer_non_critical_scripts', 'yes' ) === 'yes',
+				'font_display_swap'          => get_option( 'quinrel_font_display_swap', 'yes' ) === 'yes',
+
+				// Google Search Console & Bing Webmaster
+				'gsc_client_id'              => (string) ( $gscConfig['client_id'] ?? '' ),
+				'gsc_client_secret'          => $gscSecretStored,
+				'gsc_connected'              => $gscConnected,
+				'bing_api_key'               => (string) get_option( 'quinrel_bing_api_key', '' ),
 
 				// Secure AI Vault settings
 				'ai_provider'                => get_option( 'quinrel_ai_provider', 'openai' ),
@@ -426,6 +441,29 @@ class AdminModule {
 
 		if ( isset( $params['default_share_image'] ) ) {
 			update_option( 'quinrel_default_share_image', esc_url_raw( $params['default_share_image'] ) );
+		}
+
+		if ( isset( $params['defer_non_critical_scripts'] ) ) {
+			update_option( 'quinrel_defer_non_critical_scripts', $params['defer_non_critical_scripts'] ? 'yes' : 'no' );
+		}
+
+		if ( isset( $params['font_display_swap'] ) ) {
+			update_option( 'quinrel_font_display_swap', $params['font_display_swap'] ? 'yes' : 'no' );
+		}
+
+		if ( isset( $params['bing_api_key'] ) ) {
+			update_option( 'quinrel_bing_api_key', sanitize_text_field( wp_unslash( $params['bing_api_key'] ) ) );
+		}
+
+		if ( isset( $params['gsc_client_id'] ) || isset( $params['gsc_client_secret'] ) ) {
+			$existingGsc = (array) get_option( 'quinrel_gsc_config', array() );
+			if ( isset( $params['gsc_client_id'] ) ) {
+				$existingGsc['client_id'] = sanitize_text_field( wp_unslash( $params['gsc_client_id'] ) );
+			}
+			if ( isset( $params['gsc_client_secret'] ) && $params['gsc_client_secret'] !== '••••••••••••' && $params['gsc_client_secret'] !== '' ) {
+				$existingGsc['client_secret'] = sanitize_text_field( wp_unslash( $params['gsc_client_secret'] ) );
+			}
+			update_option( 'quinrel_gsc_config', $existingGsc );
 		}
 
 		return rest_ensure_response( array( 'success' => true ) );

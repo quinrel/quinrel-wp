@@ -222,3 +222,31 @@ export const TodoIcon = ({ className = 'w-4 h-4' }) => (
     </svg>
 );
 
+export const CloudIcon = ({ className = 'w-4 h-4' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+    </svg>
+);
+
+export const SpeedIcon = ({ className = 'w-4 h-4' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+);
+
+export const KeyIcon = ({ className = 'w-4 h-4' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1-1-4 4 1.5 1.5-1.5 1.5 2 2 1.5-1.5L11 17l4-4 1.5 1.5 1.5-1.5 2 2 2-2-1-1z" />
+        <circle cx="7.5" cy="16.5" r="3.5" />
+    </svg>
+);
+
+export const DatabaseIcon = ({ className = 'w-4 h-4' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <ellipse cx="12" cy="5" rx="9" ry="3" />
+        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+    </svg>
+);
+
+
