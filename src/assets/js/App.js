@@ -9,6 +9,10 @@ import ActionItemsTodo from './components/ActionItemsTodo';
 import GscTrendChart from './components/GscTrendChart';
 import Ga4TrendChart from './components/Ga4TrendChart';
 import Ga4ChannelChart from './components/Ga4ChannelChart';
+import CrawlDepthChart from './components/charts/CrawlDepthChart';
+import AccessibilityBreakdownChart from './components/charts/AccessibilityBreakdownChart';
+import IndexationFunnelChart from './components/charts/IndexationFunnelChart';
+import CoreWebVitalsGauge from './components/charts/CoreWebVitalsGauge';
 
 function ollamaHostIsLoopback(url) {
     try {
@@ -94,6 +98,7 @@ const App = () => {
     const [linkStats, setLinkStats]             = useState(null);
     const [linkStatsLoading, setLinkStatsLoading] = useState(false);
     const [linksSubTab, setLinksSubTab]         = useState('orphans');
+    const [auditSubView, setAuditSubView]       = useState('overview');
 
 
     // Settings State
@@ -4148,7 +4153,48 @@ const App = () => {
                                 </button>
                             </div>
 
-                            {/* Progress bar */}
+                            {/* Sub-view Navigation Bar */}
+                            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
+                                {[
+                                    { id: 'overview', label: __('Diagnostic Suite', 'quinrel'), icon: '📊' },
+                                    { id: 'crawl', label: __('Crawl & Depth', 'quinrel'), icon: '🕸️' },
+                                    { id: 'a11y', label: __('WCAG Accessibility', 'quinrel'), icon: '♿' },
+                                    { id: 'cwv', label: __('Core Web Vitals', 'quinrel'), icon: '⚡' },
+                                    { id: 'funnel', label: __('Indexation Funnel', 'quinrel'), icon: '📈' },
+                                    { id: 'checks', label: __('Technical Checklist', 'quinrel'), icon: '📋' },
+                                ].map((v) => (
+                                    <button
+                                        key={v.id}
+                                        type="button"
+                                        onClick={() => setAuditSubView(v.id)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${auditSubView === v.id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                    >
+                                        <span>{v.icon}</span>
+                                        <span>{v.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Dynamic Sub-View Rendering */}
+                            {(auditSubView === 'overview' || auditSubView === 'cwv') && (
+                                <CoreWebVitalsGauge apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                            )}
+
+                            {(auditSubView === 'overview' || auditSubView === 'funnel') && (
+                                <IndexationFunnelChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                            )}
+
+                            {(auditSubView === 'overview' || auditSubView === 'crawl') && (
+                                <CrawlDepthChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                            )}
+
+                            {(auditSubView === 'overview' || auditSubView === 'a11y') && (
+                                <AccessibilityBreakdownChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                            )}
+
+                            {(auditSubView === 'overview' || auditSubView === 'checks') && (
+                                <>
+                                    {/* Progress bar */}
                             {auditRunning && (
                                 <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
                                     <div className="flex justify-between text-sm">
@@ -4220,6 +4266,8 @@ const App = () => {
 
                             {auditResults?.generated_at && (
                                 <p className="text-xs text-slate-400 text-right">Last run: {auditResults.generated_at}</p>
+                            )}
+                                </>
                             )}
                         </div>
                     )}

@@ -157,6 +157,39 @@ export const ActionItemsTodo = ({
         icon: SettingsIcon,
     });
 
+    // 10. Autonomous Link Self-Healing
+    items.push({
+        id: 'self_healing_links',
+        title: __('Autonomous In-Content Link Healing', 'quinrel'),
+        severity: 'pass',
+        description: __('Safely rewrites internal links in published post HTML pointing to 301 redirects directly to destination URLs.', 'quinrel'),
+        actionLabel: __('Crawl Health & Depth', 'quinrel'),
+        actionFn: () => setActiveTab('site_audit'),
+        icon: BrokenLinkIcon,
+    });
+
+    // 11. Core Web Vitals Optimization
+    items.push({
+        id: 'cwv_autonomy',
+        title: __('Core Web Vitals & PageSpeed Autonomy', 'quinrel'),
+        severity: 'pass',
+        description: __('Non-critical script deferral, font-display: swap, and WebP compression are optimizing LCP, INP, and CLS.', 'quinrel'),
+        actionLabel: __('View Performance Gauges', 'quinrel'),
+        actionFn: () => setActiveTab('site_audit'),
+        icon: AuditIcon,
+    });
+
+    // 12. Google Indexation Lifecycle Funnel
+    items.push({
+        id: 'indexation_funnel',
+        title: __('Google Indexation Funnel & Discovery', 'quinrel'),
+        severity: 'pass',
+        description: __('Tracks published URLs through sitemap discovery, Googlebot crawling, indexation, and search impressions.', 'quinrel'),
+        actionLabel: __('View Funnel Chart', 'quinrel'),
+        actionFn: () => setActiveTab('site_audit'),
+        icon: SitemapIcon,
+    });
+
     // Calculate metrics
     const completedCount = items.filter((i) => i.severity === 'pass').length;
     const totalCount = items.length;

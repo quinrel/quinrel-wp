@@ -498,6 +498,16 @@ class Plugin {
 		( new \Quinrel\WordPress\Modules\ImageSeo\ImageCompressor() )->registerRoutes();
 		( new \Quinrel\WordPress\Modules\TechnicalSeo\Custom404Handler() )->registerRoutes();
 		( new \Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkChecker() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\TechnicalSeo\ContentLinkHealer() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\TechnicalSeo\RedirectChainCollapser() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\ContentAssistant\OrphanLinker() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\Accessibility\ContrastAuditor() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\Accessibility\DomAccessibilityScanner() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\ImageSeo\AiAltQueueWorker() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\Indexing\GscIndexSyncWorker() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\Indexing\BulkIndexingDispatcher() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\Analytics\CannibalizationResolver() )->registerRoutes();
+		( new \Quinrel\WordPress\Modules\Analytics\PageSpeedScheduler() )->registerRoutes();
 	}
 
 	/**
@@ -860,6 +870,10 @@ class Plugin {
 		// Broken Link Checker (BL-018)
 		$brokenLinkChecker = new \Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkChecker();
 		$brokenLinkChecker->register();
+
+		// Performance Optimizers (defer scripts, font-display: swap)
+		( new \Quinrel\WordPress\Modules\Performance\ScriptOptimizer() )->register();
+		( new \Quinrel\WordPress\Modules\Performance\FontOptimizer() )->register();
 	}
 
 	public function getContainer(): Container {
@@ -908,7 +922,11 @@ class Plugin {
 		// 7. Create broken link checker results table
 		\Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkChecker::createTable();
 
-		// 8. Register custom SEO capabilities
+		// 8. Create PageSpeed history and Google Index Status tables
+		\Quinrel\WordPress\Modules\Analytics\PageSpeedScheduler::createTable();
+		\Quinrel\WordPress\Modules\Indexing\GscIndexSyncWorker::createTable();
+
+		// 9. Register custom SEO capabilities
 		\Quinrel\WordPress\Modules\Admin\CustomSeoUserRoles::addCapabilities();
 
 		// 9. Register and persist sitemap routes during activation. The normal

@@ -4,6 +4,7 @@
 * [About Quinrel](about.md)
 * [Features](features.md)
 * [Product Roadmap](roadmap.md)
+* [Audits, Autofix & UX Charts Backlog](audit-autofix-and-charts-backlog.md)
 
 ## Architecture & API
 * [Headless REST API](rest-api.md)

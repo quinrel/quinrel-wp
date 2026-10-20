@@ -81,6 +81,8 @@ class Installer {
 		\Quinrel\WordPress\Modules\Admin\SeoAuditHistoryLog::createTable();
 		\Quinrel\WordPress\Modules\Analytics\KeywordRankTracker::createTable();
 		\Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkChecker::createTable();
+		\Quinrel\WordPress\Modules\Analytics\PageSpeedScheduler::createTable();
+		\Quinrel\WordPress\Modules\Indexing\GscIndexSyncWorker::createTable();
 
 		update_option( 'quinrel_db_version', QUINREL_VERSION, true );
 	}
