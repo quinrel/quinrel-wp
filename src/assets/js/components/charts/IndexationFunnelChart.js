@@ -147,3 +147,4 @@ export const IndexationFunnelChart = ({ apiBase, nonce, onActionComplete }) => {
     );
 };
 export default IndexationFunnelChart;
+

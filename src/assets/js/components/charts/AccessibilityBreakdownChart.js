@@ -161,3 +161,4 @@ export const AccessibilityBreakdownChart = ({ apiBase, nonce, onActionComplete }
     );
 };
 export default AccessibilityBreakdownChart;
+

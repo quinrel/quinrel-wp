@@ -138,3 +138,4 @@ export const CoreWebVitalsGauge = ({ apiBase, nonce, onActionComplete }) => {
     );
 };
 export default CoreWebVitalsGauge;
+

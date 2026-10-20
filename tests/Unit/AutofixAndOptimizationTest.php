@@ -110,3 +110,4 @@ class AutofixAndOptimizationTest extends TestCase {
 		$this->assertEmpty( $clean );
 	}
 }
+
