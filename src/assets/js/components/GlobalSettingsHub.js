@@ -1285,3 +1285,4 @@ export const GlobalSettingsHub = ({
 };
 
 export default GlobalSettingsHub;
+

@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Skoorite Limited
+# Copyright (C) 2026 Skoorite Team
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
@@ -35,7 +35,7 @@ msgstr ""
 
 #. Author of the plugin
 #: quinrel.php
-msgid "Skoorite Limited"
+msgid "Skoorite Team"
 msgstr ""
 
 #. translators: 1: Required PHP version, 2: Current PHP version

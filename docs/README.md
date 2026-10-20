@@ -1,6 +1,6 @@
 # Quinrel Developer Documentation
 
-Welcome to the official developer documentation for **Quinrel**, engineered by **Skoorite Limited**.
+Welcome to the official developer documentation for **Quinrel**, engineered by **Skoorite Team**.
 
 Quinrel is a next-generation, headless-ready WordPress SEO and AEO (Artificial Intelligence Engine Optimization) architecture. Unlike traditional SEO plugins that inject heavy PHP processing on every page load, Quinrel operates via a highly optimized React interface and communicates exclusively through secure REST endpoints.
 

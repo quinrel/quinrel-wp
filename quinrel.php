@@ -4,7 +4,7 @@
  * Plugin URI: https://quinrel.com
  * Description: Visibility & Discovery Intelligence for WordPress, with technical SEO included.
  * Version: 1.1.0
- * Author: Skoorite Limited
+ * Author: Skoorite Team
  * Author URI: https://quinrel.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
