@@ -871,6 +871,18 @@ class Plugin {
 		$brokenLinkChecker = new \Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkChecker();
 		$brokenLinkChecker->register();
 
+		// Autonomous Audits & Self-Healing Engines
+		( new \Quinrel\WordPress\Modules\TechnicalSeo\ContentLinkHealer() )->register();
+		( new \Quinrel\WordPress\Modules\TechnicalSeo\RedirectChainCollapser() )->register();
+		( new \Quinrel\WordPress\Modules\ContentAssistant\OrphanLinker() )->register();
+		( new \Quinrel\WordPress\Modules\Accessibility\ContrastAuditor() )->register();
+		( new \Quinrel\WordPress\Modules\Accessibility\DomAccessibilityScanner() )->register();
+		( new \Quinrel\WordPress\Modules\ImageSeo\AiAltQueueWorker() )->register();
+		( new \Quinrel\WordPress\Modules\Indexing\GscIndexSyncWorker() )->register();
+		( new \Quinrel\WordPress\Modules\Indexing\BulkIndexingDispatcher() )->register();
+		( new \Quinrel\WordPress\Modules\Analytics\CannibalizationResolver() )->register();
+		( new \Quinrel\WordPress\Modules\Analytics\PageSpeedScheduler() )->register();
+
 		// Performance Optimizers (defer scripts, font-display: swap)
 		( new \Quinrel\WordPress\Modules\Performance\ScriptOptimizer() )->register();
 		( new \Quinrel\WordPress\Modules\Performance\FontOptimizer() )->register();
