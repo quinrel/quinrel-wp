@@ -48,22 +48,31 @@ class SeoScoreColumn {
 			return;
 		}
 
-		$score = $this->calculateScore( $postId );
-		$color = $score >= 80 ? '#22c55e' : ( $score >= 50 ? '#f59e0b' : '#ef4444' );
-		$label = $score >= 80 ? 'Good' : ( $score >= 50 ? 'OK' : 'Poor' );
+		$score   = $this->calculateScore( $postId );
+		$color   = $score >= 80 ? '#22c55e' : ( $score >= 50 ? '#f59e0b' : '#ef4444' );
+		$label   = $score >= 80 ? 'Good' : ( $score >= 50 ? 'OK' : 'Poor' );
+		$title   = (string) get_post_meta( $postId, '_quinrel_meta_title', true );
+		$desc    = (string) get_post_meta( $postId, '_quinrel_meta_description', true );
+		$noindex = get_post_meta( $postId, '_quinrel_noindex', true ) === 'yes' ? '1' : '0';
 
 		printf(
 			'<span title="%s — %d/100" style="display:inline-flex;align-items:center;gap:4px;">
                 <span style="display:inline-block;width:10px;height:10px;border-radius:50%%;background:%s;" aria-hidden="true"></span>
                 <span style="font-size:12px;font-weight:500;color:%s;">%d</span>
                 <span class="screen-reader-text">%s</span>
-            </span>',
+            </span>
+            <span class="quinrel-post-meta-title" style="display:none;">%s</span>
+            <span class="quinrel-post-meta-desc" style="display:none;">%s</span>
+            <span class="quinrel-post-noindex" style="display:none;">%s</span>',
 			esc_attr( $label ),
 			esc_html( $score ),
 			esc_attr( $color ),
 			esc_attr( $color ),
 			esc_html( $score ),
-			esc_html( $label )
+			esc_html( $label ),
+			esc_html( $title ),
+			esc_html( $desc ),
+			esc_html( $noindex )
 		);
 	}
 

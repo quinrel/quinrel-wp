@@ -29,6 +29,14 @@ class AdminModule {
 		// Register SEO Score column in Posts/Pages list tables
 		$seoScoreColumn = new SeoScoreColumn();
 		$seoScoreColumn->register();
+
+		// Register Taxonomy SEO fields and column (Categories, Tags)
+		$taxonomySeo = new TaxonomySeo();
+		$taxonomySeo->register();
+
+		// Register Quick Edit SEO fields on Posts/Pages
+		$postQuickEdit = new PostQuickEdit();
+		$postQuickEdit->register();
 	}
 
 	public function registerRestRoutes(): void {

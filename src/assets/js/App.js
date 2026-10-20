@@ -5,6 +5,7 @@ import { Button, TextControl, TextareaControl, Notice, Spinner, ToggleControl } 
 import SetupWizard from './components/SetupWizard';
 import QuinrelHeader from './components/QuinrelHeader';
 import PillarNavigation from './components/PillarNavigation';
+import ActionItemsTodo from './components/ActionItemsTodo';
 import GscTrendChart from './components/GscTrendChart';
 import Ga4TrendChart from './components/Ga4TrendChart';
 import Ga4ChannelChart from './components/Ga4ChannelChart';
@@ -37,7 +38,23 @@ const App = () => {
     const quinrelAdminConfig = window.quinrelAdminConfig || {};
     const [showSetup, setShowSetup] = useState(window.location.hash === '#setup');
     const [setupFinished, setSetupFinished] = useState(quinrelAdminConfig.setupComplete === '1');
-    const [activeTab, setActiveTab] = useState('dashboard');
+
+    const getInitialTab = () => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash) return hash;
+        if (quinrelAdminConfig.initialTab) return quinrelAdminConfig.initialTab;
+        return 'dashboard';
+    };
+    const [activeTab, setActiveTab] = useState(getInitialTab);
+
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace('#', '');
+            if (hash) setActiveTab(hash);
+        };
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
     const [focusIndexing, setFocusIndexing] = useState(false);
     const [showQuinrelNote, setShowQuinrelNote] = useState(false);
     const [connection, setConnection] = useState(null);
@@ -1683,6 +1700,16 @@ const App = () => {
             title: __('Overview', 'quinrel'),
             items: [
                 { id: 'dashboard', label: __('Dashboard', 'quinrel') },
+                { id: 'todo', label: __('Action Items', 'quinrel') },
+            ],
+        },
+        {
+            title: __('Site Health', 'quinrel'),
+            items: [
+                { id: 'site_audit', label: __('Site Audit', 'quinrel') },
+                { id: 'technical', label: __('Technical SEO', 'quinrel') },
+                { id: 'links', label: __('Link Health', 'quinrel') },
+                { id: 'broken_links', label: __('Broken Links', 'quinrel') },
             ],
         },
         {
@@ -1702,15 +1729,6 @@ const App = () => {
                 { id: 'llms', label: __('AI Discovery (llms.txt)', 'quinrel') },
                 { id: 'rank_tracker', label: __('Rank Tracker', 'quinrel') },
                 { id: 'analytics', label: __('Google Analytics 4', 'quinrel') },
-            ],
-        },
-        {
-            title: __('Site Health', 'quinrel'),
-            items: [
-                { id: 'site_audit', label: __('Site Audit', 'quinrel') },
-                { id: 'technical', label: __('Technical SEO', 'quinrel') },
-                { id: 'links', label: __('Link Health', 'quinrel') },
-                { id: 'broken_links', label: __('Broken Links', 'quinrel') },
                 { id: 'compliance', label: __('Cookie & Compliance', 'quinrel') },
                 { id: 'roles', label: __('Roles & Capabilities', 'quinrel') },
                 { id: 'settings', label: __('Settings & Integrations', 'quinrel') },
@@ -1762,6 +1780,7 @@ const App = () => {
             <QuinrelHeader
                 onOpenSetup={() => setShowSetup(true)}
                 onRunAudit={() => setActiveTab('site_audit')}
+                onOpenTodo={() => setActiveTab('todo')}
                 sitemapUrl={standalone?.sitemap_url || '/sitemap.xml'}
                 cloudConnected={cloudConnected}
             />
@@ -2130,6 +2149,22 @@ const App = () => {
                             )}
                             </section>
                         </div>
+                    )}
+
+                    {/* ══════════════ ACTION ITEMS / TO-DO TAB ══════════════ */}
+                    {activeTab === 'todo' && (
+                        <ActionItemsTodo
+                            standalone={standalone}
+                            setupFinished={setupFinished}
+                            setShowSetup={setShowSetup}
+                            cloudConnected={cloudConnected}
+                            aiBotActivity={aiBotActivity}
+                            setActiveTab={setActiveTab}
+                            setTechSubTab={setTechSubTab}
+                            activeCompetitor={activeCompetitor}
+                            deactivateCompetitorFromApp={deactivateCompetitorFromApp}
+                            linkStats={linkStats}
+                        />
                     )}
 
                     {/* ══════════════ GA4 ANALYTICS TAB ══════════════ */}

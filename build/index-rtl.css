@@ -260,6 +260,9 @@
 .mt-5 {
 	margin-top: 1.25rem;
 }
+.mt-6 {
+	margin-top: 1.5rem;
+}
 .mt-8 {
 	margin-top: 2rem;
 }
@@ -732,6 +735,10 @@
 .border-indigo-100\/80 {
 	border-color: rgb(224 231 255 / 0.8);
 }
+.border-indigo-200 {
+	--tw-border-opacity: 1;
+	border-color: rgb(199 210 254 / var(--tw-border-opacity, 1));
+}
 .border-indigo-200\/80 {
 	border-color: rgb(199 210 254 / 0.8);
 }
@@ -801,6 +808,9 @@
 .bg-amber-50 {
 	--tw-bg-opacity: 1;
 	background-color: rgb(255 251 235 / var(--tw-bg-opacity, 1));
+}
+.bg-amber-50\/60 {
+	background-color: rgb(255 251 235 / 0.6);
 }
 .bg-amber-500 {
 	--tw-bg-opacity: 1;
@@ -897,9 +907,16 @@
 	--tw-bg-opacity: 1;
 	background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
 }
+.bg-rose-100 {
+	--tw-bg-opacity: 1;
+	background-color: rgb(255 228 230 / var(--tw-bg-opacity, 1));
+}
 .bg-rose-50 {
 	--tw-bg-opacity: 1;
 	background-color: rgb(255 241 242 / var(--tw-bg-opacity, 1));
+}
+.bg-rose-50\/60 {
+	background-color: rgb(255 241 242 / 0.6);
 }
 .bg-sky-400 {
 	--tw-bg-opacity: 1;
@@ -997,6 +1014,9 @@
 }
 .to-brand-500 {
 	--tw-gradient-to: #4361ee var(--tw-gradient-to-position);
+}
+.to-emerald-500 {
+	--tw-gradient-to: #10b981 var(--tw-gradient-to-position);
 }
 .to-indigo-50\/40 {
 	--tw-gradient-to: rgb(238 242 255 / 0.4) var(--tw-gradient-to-position);
@@ -1939,8 +1959,14 @@
 	.sm\:self-auto {
 		align-self: auto;
 	}
+	.sm\:self-center {
+		align-self: center;
+	}
 	.sm\:p-4 {
 		padding: 1rem;
+	}
+	.sm\:p-5 {
+		padding: 1.25rem;
 	}
 	.sm\:p-6 {
 		padding: 1.5rem;
@@ -1963,6 +1989,9 @@
 	}
 	.md\:col-span-4 {
 		grid-column: span 4 / span 4;
+	}
+	.md\:w-64 {
+		width: 16rem;
 	}
 	.md\:grid-cols-12 {
 		grid-template-columns: repeat(12, minmax(0, 1fr));

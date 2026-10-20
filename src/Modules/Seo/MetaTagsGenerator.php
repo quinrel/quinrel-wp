@@ -69,6 +69,17 @@ class MetaTagsGenerator {
 			return get_the_title() . ' - ' . get_bloginfo( 'name' );
 		}
 
+		if ( is_category() || is_tag() || is_tax() ) {
+			$term = get_queried_object();
+			if ( $term instanceof \WP_Term ) {
+				$customTitle = (string) get_term_meta( $term->term_id, '_quinrel_meta_title', true );
+				if ( '' !== trim( $customTitle ) ) {
+					return $customTitle;
+				}
+				return single_term_title( '', false ) . ' - ' . get_bloginfo( 'name' );
+			}
+		}
+
 		return get_bloginfo( 'name' ) . ' - ' . get_bloginfo( 'description' );
 	}
 
@@ -98,6 +109,10 @@ class MetaTagsGenerator {
 		if ( is_category() || is_tag() || is_tax() ) {
 			$term = get_queried_object();
 			if ( $term instanceof \WP_Term ) {
+				$customDesc = (string) get_term_meta( $term->term_id, '_quinrel_meta_description', true );
+				if ( '' !== trim( $customDesc ) ) {
+					return $customDesc;
+				}
 				$termDesc = term_description( $term );
 				$termDesc = wp_strip_all_tags( $termDesc );
 				if ( ! empty( $termDesc ) ) {
@@ -236,6 +251,13 @@ class MetaTagsGenerator {
 		if ( is_category() || is_tag() || is_tax() ) {
 			$term = get_queried_object();
 			if ( $term instanceof \WP_Term ) {
+				if ( get_term_meta( $term->term_id, '_quinrel_noindex', true ) === 'yes' ) {
+					return '';
+				}
+				$customCanonical = (string) get_term_meta( $term->term_id, '_quinrel_canonical_url', true );
+				if ( '' !== trim( $customCanonical ) ) {
+					return $customCanonical;
+				}
 				$link = get_term_link( $term );
 				return ! is_wp_error( $link ) ? $link : '';
 			}
@@ -301,6 +323,17 @@ class MetaTagsGenerator {
 		// ── Date archives (day/month/year): thin content — noindex ──
 		if ( is_date() ) {
 			return 'noindex, follow';
+		}
+
+		// ── Taxonomy archives (category, tag, custom taxonomy) ──
+		if ( is_category() || is_tag() || is_tax() ) {
+			$term = get_queried_object();
+			if ( $term instanceof \WP_Term ) {
+				$noindex = get_term_meta( $term->term_id, '_quinrel_noindex', true );
+				if ( 'yes' === $noindex ) {
+					return 'noindex, follow';
+				}
+			}
 		}
 
 		// ── All other contexts (category, tag, author, CPT archives, home) ──

@@ -1,10 +1,11 @@
 import React from 'react';
 import { __ } from '@wordpress/i18n';
-import { LogoMark, WandIcon, AuditIcon, ExternalLinkIcon } from './QuinrelIcons';
+import { LogoMark, WandIcon, AuditIcon, ExternalLinkIcon, TodoIcon } from './QuinrelIcons';
 
 export const QuinrelHeader = ({
     onOpenSetup,
     onRunAudit,
+    onOpenTodo,
     sitemapUrl = '/sitemap.xml',
     cloudConnected = false,
 }) => {
@@ -35,6 +36,18 @@ export const QuinrelHeader = ({
 
                 {/* Quick Utility Actions */}
                 <div className="flex flex-wrap items-center gap-2 self-stretch md:self-auto justify-end">
+                    {onOpenTodo && (
+                        <button
+                            type="button"
+                            onClick={onOpenTodo}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg shadow-sm transition-all cursor-pointer"
+                            title={__('View pending action items', 'quinrel')}
+                        >
+                            <TodoIcon className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>{__('Action Items', 'quinrel')}</span>
+                        </button>
+                    )}
+
                     <button
                         type="button"
                         onClick={onRunAudit}

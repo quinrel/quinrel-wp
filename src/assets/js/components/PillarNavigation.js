@@ -21,10 +21,12 @@ import {
     ComplianceIcon,
     RolesIcon,
     SettingsIcon,
+    TodoIcon,
 } from './QuinrelIcons';
 
 const TOOL_ICONS = {
     dashboard: OverviewIcon,
+    todo: TodoIcon,
     bulk_meta: TitlesIcon,
     sitemaps: SitemapIcon,
     html_sitemap: HtmlSitemapIcon,
@@ -48,9 +50,16 @@ const PILLAR_CONFIG = [
     {
         id: 'overview',
         title: __('Overview', 'quinrel'),
-        subtitle: __('Executive KPIs & AI crawlers', 'quinrel'),
+        subtitle: __('Executive KPIs & action tasks', 'quinrel'),
         icon: OverviewIcon,
         color: 'indigo',
+    },
+    {
+        id: 'health',
+        title: __('Site Health', 'quinrel'),
+        subtitle: __('Audits, redirects & security', 'quinrel'),
+        icon: HealthIcon,
+        color: 'emerald',
     },
     {
         id: 'visibility',
@@ -62,16 +71,9 @@ const PILLAR_CONFIG = [
     {
         id: 'intelligence',
         title: __('Intelligence', 'quinrel'),
-        subtitle: __('LLMs, rankings & analytics', 'quinrel'),
+        subtitle: __('LLMs, analytics & configuration', 'quinrel'),
         icon: IntelligenceIcon,
         color: 'purple',
-    },
-    {
-        id: 'health',
-        title: __('Site Health', 'quinrel'),
-        subtitle: __('Audits, redirects & security', 'quinrel'),
-        icon: HealthIcon,
-        color: 'emerald',
     },
 ];
 

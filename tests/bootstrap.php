@@ -812,6 +812,48 @@ if (!function_exists('delete_post_meta')) {
     }
 }
 
+if (!function_exists('get_term_meta')) {
+    function get_term_meta(int $term_id, string $key = '', bool $single = false) {
+        global $mock_term_meta;
+        if (empty($key)) {
+            return $mock_term_meta[$term_id] ?? [];
+        }
+        return $mock_term_meta[$term_id][$key] ?? ($single ? '' : []);
+    }
+}
+
+if (!function_exists('update_term_meta')) {
+    function update_term_meta(int $term_id, string $key, $value, $prev_value = ''): bool {
+        global $mock_term_meta;
+        if (!isset($mock_term_meta[$term_id])) {
+            $mock_term_meta[$term_id] = [];
+        }
+        $mock_term_meta[$term_id][$key] = $value;
+        return true;
+    }
+}
+
+if (!function_exists('delete_term_meta')) {
+    function delete_term_meta(int $term_id, string $key, $value = ''): bool {
+        unset($GLOBALS['mock_term_meta'][$term_id][$key]);
+        return true;
+    }
+}
+
+if (!function_exists('add_menu_page')) {
+    function add_menu_page($page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null) {
+        $GLOBALS['mock_admin_menus'][$menu_slug] = compact('page_title', 'menu_title', 'capability', 'menu_slug', 'callback', 'icon_url', 'position');
+        return 'toplevel_page_' . $menu_slug;
+    }
+}
+
+if (!function_exists('add_submenu_page')) {
+    function add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null) {
+        $GLOBALS['mock_admin_submenus'][$parent_slug][$menu_slug] = compact('parent_slug', 'page_title', 'menu_title', 'capability', 'menu_slug', 'callback', 'position');
+        return $parent_slug . '_page_' . $menu_slug;
+    }
+}
+
 if (!function_exists('get_attached_file')) {
     function get_attached_file($attachment_id, bool $unfiltered = true): string|false {
         unset($unfiltered);
