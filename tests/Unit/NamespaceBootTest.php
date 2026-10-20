@@ -1,19 +1,19 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Plugin;
+use Quinrel\WordPress\Plugin;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Proves the ameverywhere rename left a single autoloadable namespace.
+ * Proves the rename left a single autoloadable namespace.
  *
- * Composer maps Holvek\WordPress\ to src/. Every class whose file name matches
- * its class name must load. holvek.php must reference that same class.
+ * Composer maps Quinrel\WordPress\ to src/. Every class whose file name matches
+ * its class name must load. quinrel.php must reference that same class.
  */
 class NamespaceBootTest extends TestCase {
 
-	public function testEveryMatchingClassAutoloadsUnderHolvekWordPress(): void {
+	public function testEveryMatchingClassAutoloadsUnderQuinrelWordPress(): void {
 		$src = dirname( __DIR__, 2 ) . '/src';
 		$loaded = array();
 		$failures = array();
@@ -34,7 +34,7 @@ class NamespaceBootTest extends TestCase {
 			}
 
 			$namespace = trim( $namespaceMatch[1] );
-			if ( ! str_starts_with( $namespace, 'Holvek\\WordPress' ) ) {
+			if ( ! str_starts_with( $namespace, 'Quinrel\\WordPress' ) ) {
 				$failures[] = $file->getPathname() . " uses {$namespace}";
 				continue;
 			}
@@ -46,8 +46,6 @@ class NamespaceBootTest extends TestCase {
 			$class = $classMatch[1];
 			$fqcn  = $namespace . '\\' . $class;
 
-			// PSR-4 requires the file name to match the class. The gateway file
-			// still uses the old name and is covered by its own assertion.
 			if ( $file->getBasename( '.php' ) !== $class ) {
 				continue;
 			}
@@ -65,33 +63,34 @@ class NamespaceBootTest extends TestCase {
 	}
 
 	public function testBootstrapReferencesTheAutoloadablePluginClass(): void {
-		$bootstrap = file_get_contents( dirname( __DIR__, 2 ) . '/holvek.php' );
+		$bootstrap = file_get_contents( dirname( __DIR__, 2 ) . '/quinrel.php' );
 
-		$this->assertStringContainsString( 'Holvek\\WordPress\\Plugin::getInstance()', $bootstrap );
-		$this->assertStringContainsString( 'Holvek\\WordPress\\Plugin::class', $bootstrap );
-		$this->assertDoesNotMatchRegularExpression( '/\\\\Holvek\\\\Plugin(?!\\\\)/', $bootstrap );
-		$this->assertDoesNotMatchRegularExpression( '/\\\\Holvek\\\\(Core|Modules)\\\\/', $bootstrap );
+		$this->assertStringContainsString( 'Quinrel\\WordPress\\Plugin::getInstance()', $bootstrap );
+		$this->assertStringContainsString( 'Quinrel\\WordPress\\Plugin::class', $bootstrap );
+		$this->assertDoesNotMatchRegularExpression( '/\\\\(?:Holvek|Quinrel)\\\\Plugin(?!\\\\)/', $bootstrap );
+		$this->assertDoesNotMatchRegularExpression( '/\\\\(?:Holvek|Quinrel)\\\\(Core|Modules)\\\\/', $bootstrap );
 
-		require_once dirname( __DIR__, 2 ) . '/holvek.php';
+		require_once dirname( __DIR__, 2 ) . '/quinrel.php';
 
-		$this->assertTrue( function_exists( 'holvek_init' ) );
+		$this->assertTrue( function_exists( 'quinrel_init' ) );
 		$this->assertTrue( class_exists( Plugin::class ) );
 		$this->assertInstanceOf( Plugin::class, Plugin::getInstance() );
 		$this->assertSame( Plugin::getInstance(), Plugin::getInstance() );
 	}
 
-	public function testHolvekApiGatewayAutoloadsFromItsClassFilename(): void {
+	public function testQuinrelApiGatewayAutoloadsFromItsClassFilename(): void {
 		$root = dirname( __DIR__, 2 );
 		$this->assertFileDoesNotExist( $root . '/src/Core/Api/AmEveryWhereApiGateway.php' );
-		$this->assertFileExists( $root . '/src/Core/Api/HolvekApiGateway.php' );
-		$this->assertTrue( class_exists( \Holvek\WordPress\Core\Api\HolvekApiGateway::class ) );
+		$this->assertFileDoesNotExist( $root . '/src/Core/Api/HolvekApiGateway.php' );
+		$this->assertFileExists( $root . '/src/Core/Api/QuinrelApiGateway.php' );
+		$this->assertTrue( class_exists( \Quinrel\WordPress\Core\Api\QuinrelApiGateway::class ) );
 	}
 
 	public function testSourceAndTestsHaveNoLegacyNamespacePrefix(): void {
 		$roots = array(
 			dirname( __DIR__, 2 ) . '/src',
 			dirname( __DIR__, 2 ) . '/tests',
-			dirname( __DIR__, 2 ) . '/holvek.php',
+			dirname( __DIR__, 2 ) . '/quinrel.php',
 		);
 		$stale = array();
 
@@ -99,13 +98,13 @@ class NamespaceBootTest extends TestCase {
 			$files = is_file( $root ) ? array( new \SplFileInfo( $root ) ) : $this->phpFiles( $root );
 			foreach ( $files as $file ) {
 				$contents = file_get_contents( $file->getPathname() );
-				if ( preg_match( '/Holvek\\\\(?!WordPress\\\\)(Core|Modules|Plugin)\\\\/', $contents ) ) {
+				if ( preg_match( '/(?:Holvek|AmEveryWhere)\\\\/', $contents ) ) {
 					$stale[] = $file->getPathname();
 				}
 			}
 		}
 
-		$this->assertSame( array(), $stale, "Legacy Holvek\\ prefix remains in:\n" . implode( "\n", $stale ) );
+		$this->assertSame( array(), $stale, "Legacy namespace prefix remains in:\n" . implode( "\n", $stale ) );
 	}
 
 	/**

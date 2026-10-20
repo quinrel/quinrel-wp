@@ -19,8 +19,8 @@ descriptions in the `== Screenshots ==` section of readme.txt.
 
 | File | Contents |
 |---|---|
-| `screenshot-1.png` | Holvek dashboard with local counts |
-| `screenshot-2.png` | Holvek panel in the block editor |
+| `screenshot-1.png` | Quinrel dashboard with local counts |
+| `screenshot-2.png` | Quinrel panel in the block editor |
 | `screenshot-3.png` | Redirects Manager |
 | `screenshot-4.png` | Technical SEO audit before a scan |
 | `screenshot-5.png` | Image SEO |
@@ -33,5 +33,5 @@ descriptions in the `== Screenshots ==` section of readme.txt.
 - Do NOT commit screenshots to trunk — only to /assets/
 - Max file size: 1 MB per asset
 - The icon files are 128 and 256 pixels. They do not contain a product name and were left unchanged.
-- The banner files are 772 by 250 and 1544 by 500. They use the same mark and map, with the word Holvek.
-- screenshot-1.png through screenshot-8.png, here and in assets/screenshots/, are captures from the Holvek admin on the local UAT site. readme.txt names those files.
+- The banner files are 772 by 250 and 1544 by 500. They use the same mark and map, with the word Quinrel.
+- screenshot-1.png through screenshot-8.png, here and in assets/screenshots/, are captures from the Quinrel admin on the local UAT site. readme.txt names those files.

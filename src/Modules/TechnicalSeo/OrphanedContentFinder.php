@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,10 +17,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class OrphanedContentFinder {
 
-	private const INBOUND_META_KEY = '_holvek_inbound_links';
-	private const LAST_RUN_OPTION  = 'holvek_orphan_scan_last_run';
-	private const PENDING_OPTION   = 'holvek_orphan_scan_pending';
-	private const CRON_HOOK        = 'holvek_scan_orphaned';
+	private const INBOUND_META_KEY = '_quinrel_inbound_links';
+	private const LAST_RUN_OPTION  = 'quinrel_orphan_scan_last_run';
+	private const PENDING_OPTION   = 'quinrel_orphan_scan_pending';
+	private const CRON_HOOK        = 'quinrel_scan_orphaned';
 	private const POST_BATCH       = 20;
 
 	public function register(): void {
@@ -32,7 +32,7 @@ class OrphanedContentFinder {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/orphaned-content',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -56,7 +56,7 @@ class OrphanedContentFinder {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/orphaned-content/refresh',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -125,7 +125,7 @@ class OrphanedContentFinder {
 				array(
 					'success' => true,
 					'queued'  => true,
-					'message' => __( 'An orphaned content scan is already queued.', 'holvek' ),
+					'message' => __( 'An orphaned content scan is already queued.', 'quinrel' ),
 				)
 			);
 		}
@@ -136,7 +136,7 @@ class OrphanedContentFinder {
 			array(
 				'success' => true,
 				'queued'  => true,
-				'message' => __( 'Orphaned content scan scheduled. Results will be available within a few minutes.', 'holvek' ),
+				'message' => __( 'Orphaned content scan scheduled. Results will be available within a few minutes.', 'quinrel' ),
 			)
 		);
 	}
@@ -177,11 +177,16 @@ class OrphanedContentFinder {
 			)
 		);
 
-		$ids = is_array( $query->posts ) ? $query->posts : array();
+		$ids        = is_array( $query->posts ) ? $query->posts : array();
+		$linkEngine = new \Quinrel\WordPress\Modules\ContentAssistant\InternalLinkEngine();
 		foreach ( $ids as $postId ) {
 			$postId = (int) $postId;
 			if ( $postId < 1 ) {
 				continue;
+			}
+			$post = get_post( $postId );
+			if ( $post instanceof \WP_Post && '' !== $post->post_content ) {
+				$linkEngine->indexPostLinks( $postId, $post );
 			}
 			$this->storeInboundCount( $postId );
 		}
@@ -197,7 +202,7 @@ class OrphanedContentFinder {
 
 	private function enqueueScan( int $offset ): void {
 		update_option( self::PENDING_OPTION, time(), false );
-		( new \Holvek\WordPress\Core\Queue\QueueManager() )->push(
+		( new \Quinrel\WordPress\Core\Queue\QueueManager() )->push(
 			OrphanScanJob::class,
 			array( 'offset' => max( 0, $offset ) )
 		);
@@ -231,12 +236,18 @@ class OrphanedContentFinder {
 			$relative = '';
 		}
 
+		$normalizedRel = '' !== $relative ? ( '/' === $relative ? '/' : '/' . ltrim( $relative, '/' ) ) : '/';
+		$altRel        = ( '/' !== $normalizedRel )
+			? ( str_ends_with( $normalizedRel, '/' ) ? rtrim( $normalizedRel, '/' ) : $normalizedRel . '/' )
+			: '/';
+
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'publish' AND ID != %d AND (post_content LIKE %s OR post_content LIKE %s)",
+				"SELECT COUNT(DISTINCT post_id) FROM {$wpdb->prefix}quinrel_links WHERE post_id != %d AND target_url IN (%s, %s, %s)",
 				$postId,
-				'%' . $wpdb->esc_like( $permalink ) . '%',
-				'%' . $wpdb->esc_like( $relative ) . '%'
+				$permalink,
+				$normalizedRel,
+				$altRel
 			)
 		);
 

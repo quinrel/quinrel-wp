@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Custom404Handler {
 
-	private const OPTION_PAGE_ID = 'holvek_custom_404_page_id';
+	private const OPTION_PAGE_ID = 'quinrel_custom_404_page_id';
 
 	public function register(): void {
 		add_filter( 'template_include', array( $this, 'maybeServeCustom404' ), 99 );
@@ -62,7 +62,7 @@ class Custom404Handler {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/404-page',
 			array(
 				array(

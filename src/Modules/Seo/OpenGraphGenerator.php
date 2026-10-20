@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Seo;
+namespace Quinrel\WordPress\Modules\Seo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,7 +13,7 @@ class OpenGraphGenerator {
 			return;
 		}
 
-		echo "<!-- Holvek Social Meta Tags -->\n";
+		echo "<!-- Quinrel Social Meta Tags -->\n";
 
 		$title       = $this->getContextTitle();
 		$description = $this->getContextDescription();
@@ -22,7 +22,8 @@ class OpenGraphGenerator {
 		$image       = $this->getContextImage();
 
 		// Open Graph
-		printf( '<meta property="og:locale" content="%s" />' . "\n", esc_attr( get_locale() ) );
+		$locale = function_exists( 'get_locale' ) ? get_locale() : 'en_US';
+		printf( '<meta property="og:locale" content="%s" />' . "\n", esc_attr( $locale ) );
 		printf( '<meta property="og:type" content="%s" />' . "\n", esc_attr( $ogType ) );
 		printf( '<meta property="og:title" content="%s" />' . "\n", esc_attr( $title ) );
 		printf( '<meta property="og:description" content="%s" />' . "\n", esc_attr( $description ) );
@@ -37,19 +38,26 @@ class OpenGraphGenerator {
 			if ( ! empty( $image['height'] ) ) {
 				printf( '<meta property="og:image:height" content="%d" />' . "\n", (int) $image['height'] );
 			}
-			echo '<meta property="og:image:type" content="image/jpeg" />' . "\n";
+			$mimeType = ! empty( $image['mime'] ) ? $image['mime'] : $this->detectImageMimeType( (string) $image['url'] );
+			if ( '' !== $mimeType ) {
+				printf( '<meta property="og:image:type" content="%s" />' . "\n", esc_attr( $mimeType ) );
+			}
 		}
 
-		// Twitter Cards
+		// Twitter Cards (check explicit Twitter overrides before falling back to Open Graph values)
+		$twitterTitle       = $this->getTwitterTitle( $title );
+		$twitterDescription = $this->getTwitterDescription( $description );
+		$twitterImage       = $this->getTwitterImage( (string) ( $image['url'] ?? '' ) );
+
 		echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
-		printf( '<meta name="twitter:title" content="%s" />' . "\n", esc_attr( $title ) );
-		printf( '<meta name="twitter:description" content="%s" />' . "\n", esc_attr( $description ) );
+		printf( '<meta name="twitter:title" content="%s" />' . "\n", esc_attr( $twitterTitle ) );
+		printf( '<meta name="twitter:description" content="%s" />' . "\n", esc_attr( $twitterDescription ) );
 
-		if ( ! empty( $image['url'] ) ) {
-			printf( '<meta name="twitter:image" content="%s" />' . "\n", esc_url( $image['url'] ) );
+		if ( '' !== $twitterImage ) {
+			printf( '<meta name="twitter:image" content="%s" />' . "\n", esc_url( $twitterImage ) );
 		}
 
-		echo "<!-- /Holvek Social Meta Tags -->\n\n";
+		echo "<!-- /Quinrel Social Meta Tags -->\n\n";
 	}
 
 	// ── Context helpers ──────────────────────────────────────────────────────
@@ -71,8 +79,24 @@ class OpenGraphGenerator {
 
 	private function getContextTitle(): string {
 		if ( is_singular() ) {
-			$custom = get_post_meta( get_the_ID(), '_holvek_og_title', true );
-			return ! empty( $custom ) ? $custom : get_the_title();
+			$postId = (int) get_the_ID();
+			$og     = trim( (string) get_post_meta( $postId, '_quinrel_og_title', true ) );
+			if ( '' !== $og ) {
+				$resolved = SmartTagResolver::resolve( $og, $postId );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
+			}
+
+			$metaTitle = trim( (string) get_post_meta( $postId, '_quinrel_meta_title', true ) );
+			if ( '' !== $metaTitle ) {
+				$resolved = SmartTagResolver::resolve( $metaTitle, $postId );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
+			}
+
+			return get_the_title();
 		}
 
 		if ( is_front_page() || is_home() ) {
@@ -107,14 +131,29 @@ class OpenGraphGenerator {
 
 	private function getContextDescription(): string {
 		if ( is_singular() ) {
-			$custom = get_post_meta( get_the_ID(), '_holvek_og_description', true );
-			if ( ! empty( $custom ) ) {
-				return $custom;
+			$postId = (int) get_the_ID();
+			$ogDesc = trim( (string) get_post_meta( $postId, '_quinrel_og_description', true ) );
+			if ( '' !== $ogDesc ) {
+				$resolved = SmartTagResolver::resolve( $ogDesc, $postId );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
 			}
-			$excerpt = get_post_field( 'post_excerpt', get_the_ID() );
-			return ! empty( $excerpt )
-				? wp_trim_words( $excerpt, 25 )
-				: wp_trim_words( get_post_field( 'post_content', get_the_ID() ), 25 );
+
+			$metaDesc = trim( (string) get_post_meta( $postId, '_quinrel_meta_description', true ) );
+			if ( '' !== $metaDesc ) {
+				$resolved = SmartTagResolver::resolve( $metaDesc, $postId );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
+			}
+
+			$excerpt = (string) get_post_field( 'post_excerpt', $postId );
+			if ( '' !== trim( $excerpt ) ) {
+				return SmartTagResolver::cleanContentSnippet( $excerpt, 25 );
+			}
+
+			return SmartTagResolver::cleanContentSnippet( (string) get_post_field( 'post_content', $postId ), 25 );
 		}
 
 		if ( is_front_page() || is_home() ) {
@@ -138,44 +177,84 @@ class OpenGraphGenerator {
 		return get_bloginfo( 'description' );
 	}
 
+	private function getTwitterTitle( string $fallbackTitle ): string {
+		if ( is_singular() ) {
+			$postId  = (int) get_the_ID();
+			$twitter = trim( (string) get_post_meta( $postId, '_quinrel_twitter_title', true ) );
+			if ( '' !== $twitter ) {
+				$resolved = SmartTagResolver::resolve( $twitter, $postId );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
+			}
+		}
+		return $fallbackTitle;
+	}
+
+	private function getTwitterDescription( string $fallbackDescription ): string {
+		if ( is_singular() ) {
+			$postId  = (int) get_the_ID();
+			$twitter = trim( (string) get_post_meta( $postId, '_quinrel_twitter_description', true ) );
+			if ( '' !== $twitter ) {
+				$resolved = SmartTagResolver::resolve( $twitter, $postId );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
+			}
+		}
+		return $fallbackDescription;
+	}
+
+	private function getTwitterImage( string $fallbackImageUrl ): string {
+		if ( is_singular() ) {
+			$postId  = (int) get_the_ID();
+			$twitter = trim( (string) get_post_meta( $postId, '_quinrel_twitter_image', true ) );
+			if ( '' !== $twitter ) {
+				return $twitter;
+			}
+		}
+		return $fallbackImageUrl;
+	}
+
 	/**
-	 * Returns ['url' => string, 'width' => int, 'height' => int] or empty array.
+	 * Returns ['url' => string, 'width' => int, 'height' => int, 'mime' => string].
 	 * Tries in order: post custom meta, featured image, site default option.
 	 *
-	 * @return array{url:string,width:int,height:int}
+	 * @return array{url:string,width:int,height:int,mime?:string}
 	 */
 	private function getContextImage(): array {
 		// Singular: check custom OG image meta, then featured image
 		if ( is_singular() ) {
 			$postId    = get_the_ID();
-			$customUrl = get_post_meta( $postId, '_holvek_og_image', true );
+			$customUrl = get_post_meta( $postId, '_quinrel_og_image', true );
 			if ( ! empty( $customUrl ) ) {
-				return $this->resolveDimensions( $customUrl );
+				return $this->resolveDimensions( (string) $customUrl );
 			}
-			if ( has_post_thumbnail( $postId ) ) {
+			if ( function_exists( 'has_post_thumbnail' ) && has_post_thumbnail( $postId ) ) {
 				$thumbId = get_post_thumbnail_id( $postId );
 				return $this->resolveAttachmentImage( (int) $thumbId );
 			}
 		}
 
 		// Site default share image
-		$defaultId = (int) get_option( 'holvek_default_share_image_id', 0 );
+		$defaultId = (int) get_option( 'quinrel_default_share_image_id', 0 );
 		if ( $defaultId > 0 ) {
 			return $this->resolveAttachmentImage( $defaultId );
 		}
 
-		$defaultUrl = (string) get_option( 'holvek_default_share_image', '' );
+		$defaultUrl = (string) get_option( 'quinrel_default_share_image', '' );
 		if ( ! empty( $defaultUrl ) ) {
 			return $this->resolveDimensions( $defaultUrl );
 		}
 
 		// Site icon as last resort
-		$siteIconUrl = get_site_icon_url( 512 );
+		$siteIconUrl = function_exists( 'get_site_icon_url' ) ? get_site_icon_url( 512 ) : '';
 		if ( ! empty( $siteIconUrl ) ) {
 			return array(
 				'url'    => $siteIconUrl,
 				'width'  => 512,
 				'height' => 512,
+				'mime'   => $this->detectImageMimeType( (string) $siteIconUrl ),
 			);
 		}
 
@@ -183,37 +262,41 @@ class OpenGraphGenerator {
 			'url'    => '',
 			'width'  => 0,
 			'height' => 0,
+			'mime'   => '',
 		);
 	}
 
 	/**
 	 * Resolve dimensions from an attachment ID.
 	 *
-	 * @return array{url:string,width:int,height:int}
+	 * @return array{url:string,width:int,height:int,mime:string}
 	 */
 	private function resolveAttachmentImage( int $attachmentId ): array {
-		$src = wp_get_attachment_image_src( $attachmentId, 'full' );
+		$src = function_exists( 'wp_get_attachment_image_src' ) ? wp_get_attachment_image_src( $attachmentId, 'full' ) : false;
 		if ( $src === false || empty( $src[0] ) ) {
 			return array(
 				'url'    => '',
 				'width'  => 0,
 				'height' => 0,
+				'mime'   => '',
 			);
 		}
+		$mime = function_exists( 'get_post_mime_type' ) ? (string) get_post_mime_type( $attachmentId ) : '';
 		return array(
 			'url'    => $src[0],
 			'width'  => (int) ( $src[1] ?? 0 ),
 			'height' => (int) ( $src[2] ?? 0 ),
+			'mime'   => '' !== $mime ? $mime : $this->detectImageMimeType( (string) $src[0] ),
 		);
 	}
 
 	/**
 	 * Resolve dimensions from a URL by looking up the attachment.
 	 *
-	 * @return array{url:string,width:int,height:int}
+	 * @return array{url:string,width:int,height:int,mime:string}
 	 */
 	private function resolveDimensions( string $url ): array {
-		$attachmentId = attachment_url_to_postid( $url );
+		$attachmentId = function_exists( 'attachment_url_to_postid' ) ? (int) attachment_url_to_postid( $url ) : 0;
 		if ( $attachmentId > 0 ) {
 			return $this->resolveAttachmentImage( $attachmentId );
 		}
@@ -222,6 +305,30 @@ class OpenGraphGenerator {
 			'url'    => $url,
 			'width'  => 0,
 			'height' => 0,
+			'mime'   => $this->detectImageMimeType( $url ),
 		);
+	}
+
+	/**
+	 * Detect MIME type from an image URL path extension.
+	 */
+	private function detectImageMimeType( string $url ): string {
+		$path = strtolower( (string) wp_parse_url( $url, PHP_URL_PATH ) );
+		if ( str_ends_with( $path, '.png' ) ) {
+			return 'image/png';
+		}
+		if ( str_ends_with( $path, '.webp' ) ) {
+			return 'image/webp';
+		}
+		if ( str_ends_with( $path, '.gif' ) ) {
+			return 'image/gif';
+		}
+		if ( str_ends_with( $path, '.avif' ) ) {
+			return 'image/avif';
+		}
+		if ( str_ends_with( $path, '.svg' ) ) {
+			return 'image/svg+xml';
+		}
+		return 'image/jpeg';
 	}
 }

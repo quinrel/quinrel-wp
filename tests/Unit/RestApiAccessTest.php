@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
@@ -41,9 +41,9 @@ class RestApiAccessTest extends TestCase {
 
 		// Whitelist intentional public headless / machine-readable endpoints
 		$whitelisted = array(
-			'holvek/v1/schemamap',
-			'holvek/v1/seo/(?P<post_id>\d+)',
-			'holvek/v1/seo/global'
+			'quinrel/v1/schemamap',
+			'quinrel/v1/seo/(?P<post_id>\d+)',
+			'quinrel/v1/seo/global'
 		);
 
 		foreach ( $mock_rest_routes as $route => $args ) {

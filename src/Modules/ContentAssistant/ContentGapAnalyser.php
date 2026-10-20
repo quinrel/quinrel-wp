@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ContentAssistant;
+namespace Quinrel\WordPress\Modules\ContentAssistant;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,7 +20,7 @@ class ContentGapAnalyser {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/content/gap-analysis',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -30,7 +30,7 @@ class ContentGapAnalyser {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/content/gap-drafts',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -48,11 +48,11 @@ class ContentGapAnalyser {
 		$postId  = absint( $params['post_id'] ?? 0 );
 
 		if ( empty( $keyword ) ) {
-			return new \WP_Error( 'missing_keyword', __( 'A target keyword is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_keyword', __( 'A target keyword is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
-		if ( $this->getApiKey() === '' && ! \Holvek\WordPress\Core\Mode\OperatingMode::isCloudConfigured() ) {
-			return \Holvek\WordPress\Core\Mode\OperatingMode::disconnected( __( 'Cloud content-gap analysis', 'holvek' ) );
+		if ( $this->getApiKey() === '' && ! \Quinrel\WordPress\Core\Mode\OperatingMode::isCloudConfigured() ) {
+			return \Quinrel\WordPress\Core\Mode\OperatingMode::disconnected( __( 'Cloud content-gap analysis', 'quinrel' ) );
 		}
 
 		// Build a map of existing content topics
@@ -80,7 +80,7 @@ class ContentGapAnalyser {
 		$topics = $params['topics'] ?? array();
 
 		if ( empty( $topics ) || ! is_array( $topics ) ) {
-			return new \WP_Error( 'missing_topics', __( 'topics array is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_topics', __( 'topics array is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$created = array();
@@ -97,13 +97,13 @@ class ContentGapAnalyser {
 					'post_title'   => $title,
 					'post_status'  => 'draft',
 					'post_type'    => 'post',
-					'post_content' => sprintf( '<!-- Draft created by Holvek Content Gap Analysis for keyword: %s -->', esc_html( $keyword ) ),
+					'post_content' => sprintf( '<!-- Draft created by Quinrel Content Gap Analysis for keyword: %s -->', esc_html( $keyword ) ),
 				)
 			);
 
 			if ( ! is_wp_error( $postId ) ) {
-				update_post_meta( $postId, '_holvek_focus_keyword', $keyword );
-				update_post_meta( $postId, '_holvek_gap_analysis_source', 'yes' );
+				update_post_meta( $postId, '_quinrel_focus_keyword', $keyword );
+				update_post_meta( $postId, '_quinrel_gap_analysis_source', 'yes' );
 				$created[] = array(
 					'post_id'  => $postId,
 					'title'    => $title,
@@ -134,7 +134,7 @@ class ContentGapAnalyser {
 
 		$topics = array();
 		foreach ( $posts as $id ) {
-			$kw = get_post_meta( $id, '_holvek_focus_keyword', true );
+			$kw = get_post_meta( $id, '_quinrel_focus_keyword', true );
 			if ( ! empty( $kw ) ) {
 				$topics[] = (string) $kw;
 			}
@@ -146,17 +146,17 @@ class ContentGapAnalyser {
 
 	private function askLlmForGapTopics( string $keyword, array $existing ): array|\WP_Error {
 		$userId   = get_current_user_id();
-		$metering = class_exists( \Holvek\WordPress\Modules\Ai\UsageMeteringManager::class )
-			? \Holvek\WordPress\Modules\Ai\UsageMeteringManager::getInstance()
+		$metering = class_exists( \Quinrel\WordPress\Modules\Ai\UsageMeteringManager::class )
+			? \Quinrel\WordPress\Modules\Ai\UsageMeteringManager::getInstance()
 			: null;
 
 		if ( $userId && $metering && ! $metering->checkLimit( $userId, 'openai' ) ) {
-			return new \WP_Error( 'rate_limit_exceeded', __( 'AI token usage limit exceeded for this billing cycle.', 'holvek' ), array( 'status' => 429 ) );
+			return new \WP_Error( 'rate_limit_exceeded', __( 'AI token usage limit exceeded for this billing cycle.', 'quinrel' ), array( 'status' => 429 ) );
 		}
 
 		$apiKey = $this->getApiKey();
 		if ( $apiKey === '' ) {
-			$offload = ( new \Holvek\WordPress\Core\Api\BackendApiClient() )->analyzeContentGap( $keyword, $existing );
+			$offload = ( new \Quinrel\WordPress\Core\Api\BackendApiClient() )->analyzeContentGap( $keyword, $existing );
 			if ( is_wp_error( $offload ) ) {
 				return $offload;
 			}
@@ -164,7 +164,7 @@ class ContentGapAnalyser {
 			if ( empty( $offload['success'] ) ) {
 				$message = isset( $offload['message'] ) && is_string( $offload['message'] ) && $offload['message'] !== ''
 					? $offload['message']
-					: __( 'Cloud content-gap analysis did not return a result.', 'holvek' );
+					: __( 'Cloud content-gap analysis did not return a result.', 'quinrel' );
 				return new \WP_Error( 'content_gap_unavailable', $message, array( 'status' => 502 ) );
 			}
 
@@ -183,8 +183,8 @@ class ContentGapAnalyser {
 			. "but which are NOT already in my list. Format: JSON array of objects with 'title' and 'keyword' fields. "
 			. 'Return ONLY the JSON array.';
 
-		$provider = get_option( 'holvek_ai_provider', 'openai' );
-		$model    = get_option( 'holvek_ai_model', get_option( 'holvek_openai_model', 'gpt-4o-mini' ) );
+		$provider = get_option( 'quinrel_ai_provider', 'openai' );
+		$model    = get_option( 'quinrel_ai_model', get_option( 'quinrel_openai_model', 'gpt-4o-mini' ) );
 
 		$response = wp_safe_remote_post(
 			'https://api.openai.com/v1/chat/completions',
@@ -230,10 +230,10 @@ class ContentGapAnalyser {
 	}
 
 	private function getApiKey(): string {
-		$encryptedKey = get_option( 'holvek_openai_key', '' );
+		$encryptedKey = get_option( 'quinrel_openai_key', '' );
 		if ( empty( $encryptedKey ) ) {
-			$encryptedKey = get_option( 'holvek_openai_api_key', '' );
+			$encryptedKey = get_option( 'quinrel_openai_api_key', '' );
 		}
-		return \Holvek\WordPress\Core\Security\KeyVault::decrypt( $encryptedKey );
+		return \Quinrel\WordPress\Core\Security\KeyVault::decrypt( $encryptedKey );
 	}
 }

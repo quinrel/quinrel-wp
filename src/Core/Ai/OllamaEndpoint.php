@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Core\Ai;
+namespace Quinrel\WordPress\Core\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -15,8 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class OllamaEndpoint {
 
 	public const DEFAULT_URL = 'http://localhost:11434';
-	public const URL_OPTION  = 'holvek_ollama_url';
-	public const ACK_OPTION  = 'holvek_ollama_remote_ack';
+	public const URL_OPTION  = 'quinrel_ollama_url';
+	public const ACK_OPTION  = 'quinrel_ollama_remote_ack';
 
 	public static function displayUrl(): string {
 		$stored = get_option( self::URL_OPTION, self::DEFAULT_URL );
@@ -59,7 +59,7 @@ class OllamaEndpoint {
 		if ( null === $normalized || self::isRejectedHost( $normalized ) ) {
 			return new \WP_Error(
 				'invalid_ollama_url',
-				__( 'Enter an http or https Ollama address, such as http://localhost:11434.', 'holvek' ),
+				__( 'Enter an http or https Ollama address, such as http://localhost:11434.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -68,7 +68,7 @@ class OllamaEndpoint {
 		if ( ! $loopback && ! $remoteConfirmed ) {
 			return new \WP_Error(
 				'ollama_remote_unconfirmed',
-				__( 'A remote Ollama host receives the post content you send for suggestions. Confirm that before saving.', 'holvek' ),
+				__( 'A remote Ollama host receives the post content you send for suggestions. Confirm that before saving.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}

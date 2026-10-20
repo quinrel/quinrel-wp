@@ -1,19 +1,19 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Core\Security\KeyVault;
-use Holvek\WordPress\Modules\Admin\TechnicalSeoAuditEngine;
-use Holvek\WordPress\Modules\Analytics\KeywordRankTracker;
-use Holvek\WordPress\Modules\Indexing\BingIndexNowApi;
-use Holvek\WordPress\Modules\Indexing\IndexNowFlushJob;
-use Holvek\WordPress\Modules\Social\AutoShareJob;
-use Holvek\WordPress\Modules\Social\SocialModule;
-use Holvek\WordPress\Modules\TechnicalSeo\BrokenLinkChecker;
-use Holvek\WordPress\Modules\TechnicalSeo\BrokenLinkScanJob;
-use Holvek\WordPress\Modules\TechnicalSeo\OrphanedContentFinder;
-use Holvek\WordPress\Modules\TechnicalSeo\OrphanScanJob;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Modules\Admin\TechnicalSeoAuditEngine;
+use Quinrel\WordPress\Modules\Analytics\KeywordRankTracker;
+use Quinrel\WordPress\Modules\Indexing\BingIndexNowApi;
+use Quinrel\WordPress\Modules\Indexing\IndexNowFlushJob;
+use Quinrel\WordPress\Modules\Social\AutoShareJob;
+use Quinrel\WordPress\Modules\Social\SocialModule;
+use Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkChecker;
+use Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkScanJob;
+use Quinrel\WordPress\Modules\TechnicalSeo\OrphanedContentFinder;
+use Quinrel\WordPress\Modules\TechnicalSeo\OrphanScanJob;
 use PHPUnit\Framework\TestCase;
 
 class BackgroundWorkTest extends TestCase {
@@ -36,18 +36,19 @@ class BackgroundWorkTest extends TestCase {
 		);
 		delete_option( BingIndexNowApi::QUEUE_OPTION );
 		delete_option( BingIndexNowApi::FLUSH_PENDING );
-		delete_option( 'holvek_indexnow_key' );
-		delete_option( 'holvek_auto_index' );
-		delete_option( 'holvek_blc_scan_lock' );
-		delete_option( 'holvek_blc_progress' );
-		delete_option( 'holvek_orphan_scan_pending' );
-		delete_option( 'holvek_orphan_scan_last_run' );
-		delete_option( 'holvek_audit_progress' );
-		delete_option( 'holvek_audit_results' );
-		delete_option( 'holvek_tracked_keywords' );
-		delete_option( 'holvek_serpapi_key' );
-		delete_option( 'holvek_social_accounts' );
-		delete_option( 'holvek_global_auto_share' );
+		delete_option( 'quinrel_indexnow_key' );
+		delete_option( 'quinrel_auto_index' );
+		delete_option( 'quinrel_blc_scan_lock' );
+		delete_option( 'quinrel_blc_progress' );
+		BrokenLinkChecker::clearCache();
+		delete_option( 'quinrel_orphan_scan_pending' );
+		delete_option( 'quinrel_orphan_scan_last_run' );
+		delete_option( 'quinrel_audit_progress' );
+		delete_option( 'quinrel_audit_results' );
+		delete_option( 'quinrel_tracked_keywords' );
+		delete_option( 'quinrel_serpapi_key' );
+		delete_option( 'quinrel_social_accounts' );
+		delete_option( 'quinrel_global_auto_share' );
 	}
 
 	protected function tearDown(): void {
@@ -66,8 +67,8 @@ class BackgroundWorkTest extends TestCase {
 	}
 
 	public function testIndexNowPublishSchedulesOneBatchJob(): void {
-		update_option( 'holvek_indexnow_key', 'abcd1234' );
-		update_option( 'holvek_auto_index', 'yes' );
+		update_option( 'quinrel_indexnow_key', 'abcd1234' );
+		update_option( 'quinrel_auto_index', 'yes' );
 		$GLOBALS['mock_http_responses']['api.indexnow.org'] = array(
 			'response' => array( 'code' => 202 ),
 		);
@@ -90,8 +91,8 @@ class BackgroundWorkTest extends TestCase {
 	}
 
 	public function testManualShareAndPublishOnlyEnqueueABoundedAccountBatch(): void {
-		update_option( 'holvek_encryption_salt', 'social-test-salt-0123456789abcdef' );
-		update_option( 'holvek_global_auto_share', 'yes' );
+		update_option( 'quinrel_encryption_salt', 'social-test-salt-0123456789abcdef' );
+		update_option( 'quinrel_global_auto_share', 'yes' );
 		$accounts = array();
 		for ( $i = 1; $i <= 4; $i++ ) {
 			$token = KeyVault::encrypt( 'token-' . $i );
@@ -103,7 +104,7 @@ class BackgroundWorkTest extends TestCase {
 				'auto_share'   => true,
 			);
 		}
-		update_option( 'holvek_social_accounts', $accounts );
+		update_option( 'quinrel_social_accounts', $accounts );
 		$GLOBALS['mock_posts'][4] = new \WP_Post(
 			array(
 				'ID'           => 4,
@@ -144,9 +145,9 @@ class BackgroundWorkTest extends TestCase {
 		$this->assertCount( 1, $this->jobsFor( AutoShareJob::class ) );
 
 		$this->assertSame( 1, $this->drainJobs() );
-		$this->assertNotSame( '1', get_post_meta( 4, '_holvek_auto_shared', true ) );
+		$this->assertNotSame( '1', get_post_meta( 4, '_quinrel_auto_shared', true ) );
 		$this->assertSame( 1, $this->drainJobs() );
-		$this->assertSame( '1', get_post_meta( 4, '_holvek_auto_shared', true ) );
+		$this->assertSame( '1', get_post_meta( 4, '_quinrel_auto_shared', true ) );
 	}
 
 	public function testBrokenLinkScanChecksAFixedNumberOfUrlsAndResumes(): void {
@@ -182,6 +183,7 @@ class BackgroundWorkTest extends TestCase {
 		);
 
 		$checker = new BrokenLinkChecker();
+		update_option( 'quinrel_blc_scan_lock', (string) ( time() - 300 ), false );
 		$started = $checker->startScan( new \WP_REST_Request() );
 		$this->assertTrue( $started->get_data()['success'] );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
@@ -190,7 +192,7 @@ class BackgroundWorkTest extends TestCase {
 		$GLOBALS['mock_cron_events'] = array();
 		$checker->processBatch();
 		$this->assertCount( 10, $GLOBALS['mock_http_log'] );
-		$progress = get_option( 'holvek_blc_progress' );
+		$progress = get_option( 'quinrel_blc_progress' );
 		$this->assertSame( 'running', $progress['status'] );
 		$this->assertSame( 11, $progress['cursor'] );
 		$this->assertSame( 2, $progress['link_offset'] );
@@ -201,11 +203,21 @@ class BackgroundWorkTest extends TestCase {
 		$GLOBALS['mock_cron_events'] = array();
 		$checker->processBatch();
 		$this->assertCount( 6, $GLOBALS['mock_http_log'] );
-		$this->assertSame( 'done', get_option( 'holvek_blc_progress' )['status'] );
+		$this->assertSame( 'done', get_option( 'quinrel_blc_progress' )['status'] );
+		$this->assertFalse( get_option( 'quinrel_blc_scan_lock', false ) );
 		$this->assertSame( array(), $this->jobsFor( BrokenLinkScanJob::class ) );
 
-		$GLOBALS['mock_http_log'] = array();
-		$recheck                  = new \WP_REST_Request();
+		$GLOBALS['mock_http_log']   = array();
+		$GLOBALS['mock_http_queue'] = array(
+			array( 'response' => array( 'code' => 405 ) ),
+			array( 'response' => array( 'code' => 200 ) ),
+		);
+		$updatedCode                = null;
+		$GLOBALS['mock_wpdb_update'] = static function ( $table, $data ) use ( &$updatedCode ) {
+			$updatedCode = $data['http_code'] ?? null;
+			return 1;
+		};
+		$recheck                    = new \WP_REST_Request();
 		$recheck->set_json_params(
 			array(
 				'id'  => 5,
@@ -216,7 +228,19 @@ class BackgroundWorkTest extends TestCase {
 		$this->assertTrue( $queued->get_data()['queued'] );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 		$this->assertSame( 1, $this->drainJobs() );
-		$this->assertCount( 1, $GLOBALS['mock_http_log'] );
+		$this->assertCount( 2, $GLOBALS['mock_http_log'] );
+		$this->assertSame( 'bytes=0-2048', $GLOBALS['mock_http_log'][1]['args']['headers']['Range'] ?? '' );
+		$this->assertSame( 200, $updatedCode );
+
+		$GLOBALS['mock_http_log'] = array();
+		$checker->recheckQueued(
+			array(
+				'id'  => 6,
+				'url' => 'https://8.8.8.8:6379/redis-probe',
+			)
+		);
+		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
+		unset( $GLOBALS['mock_http_queue'] );
 	}
 
 	public function testOrphanScanPagesThroughTheQueue(): void {
@@ -234,7 +258,7 @@ class BackgroundWorkTest extends TestCase {
 		$finder = new OrphanedContentFinder();
 		$first  = $finder->refreshScan( new \WP_REST_Request() );
 		$this->assertTrue( $first->get_data()['queued'] );
-		$this->assertFalse( get_option( 'holvek_orphan_scan_last_run', false ) );
+		$this->assertFalse( get_option( 'quinrel_orphan_scan_last_run', false ) );
 		$this->assertCount( 1, $this->jobsFor( OrphanScanJob::class ) );
 
 		$second = $finder->refreshScan( new \WP_REST_Request() );
@@ -249,23 +273,34 @@ class BackgroundWorkTest extends TestCase {
 		$this->assertTrue( $seen[0]['ignore_sticky_posts'] );
 		$this->assertSame( 'ID', $seen[0]['orderby'] );
 		$this->assertSame( 'ASC', $seen[0]['order'] );
-		$this->assertSame( 3, (int) get_post_meta( 1, '_holvek_inbound_links', true ) );
-		$this->assertSame( '', (string) get_post_meta( 21, '_holvek_inbound_links', true ) );
-		$this->assertFalse( get_option( 'holvek_orphan_scan_last_run', false ) );
+		$this->assertSame( 3, (int) get_post_meta( 1, '_quinrel_inbound_links', true ) );
+		$this->assertSame( '', (string) get_post_meta( 21, '_quinrel_inbound_links', true ) );
+		$this->assertFalse( get_option( 'quinrel_orphan_scan_last_run', false ) );
 		$next = $this->jobsFor( OrphanScanJob::class );
 		$this->assertCount( 1, $next );
 		$this->assertSame( 20, $next[0]['args'][1]['offset'] );
 
 		$this->assertSame( 1, $this->drainJobs() );
-		$this->assertSame( 3, (int) get_post_meta( 21, '_holvek_inbound_links', true ) );
-		$this->assertSame( '2026-10-02 12:00:00', get_option( 'holvek_orphan_scan_last_run' ) );
+		$this->assertSame( 3, (int) get_post_meta( 21, '_quinrel_inbound_links', true ) );
+		$this->assertSame( '2026-10-02 12:00:00', get_option( 'quinrel_orphan_scan_last_run' ) );
 		$this->assertSame( array(), $this->jobsFor( OrphanScanJob::class ) );
+		$sawLinksTable = false;
+		foreach ( $GLOBALS['wpdb']->queries as $query ) {
+			if ( ! is_string( $query ) ) {
+				continue;
+			}
+			$this->assertStringNotContainsString( 'post_content LIKE', $query );
+			if ( str_contains( $query, 'quinrel_links' ) && str_contains( $query, 'target_url IN' ) ) {
+				$sawLinksTable = true;
+			}
+		}
+		$this->assertTrue( $sawLinksTable );
 	}
 
 	public function testRankCheckNowEnqueuesSlicesOfFive(): void {
-		update_option( 'holvek_serpapi_key', 'test-key' );
+		update_option( 'quinrel_serpapi_key', 'test-key' );
 		update_option(
-			'holvek_tracked_keywords',
+			'quinrel_tracked_keywords',
 			array( 'one', 'two', 'three', 'four', 'five', 'six', 'seven' )
 		);
 		$tracker = new KeywordRankTracker();
@@ -280,17 +315,17 @@ class BackgroundWorkTest extends TestCase {
 
 		$this->assertSame( 1, $this->drainJobs() );
 		$this->assertCount( KeywordRankTracker::KEYWORD_BATCH, $GLOBALS['mock_http_log'] );
-		$this->assertCount( 1, $this->jobsFor( \Holvek\WordPress\Modules\Analytics\RankCheckJob::class ) );
+		$this->assertCount( 1, $this->jobsFor( \Quinrel\WordPress\Modules\Analytics\RankCheckJob::class ) );
 
 		$this->assertSame( 1, $this->drainJobs() );
 		$this->assertCount( 7, $GLOBALS['mock_http_log'] );
-		$this->assertSame( array(), $this->jobsFor( \Holvek\WordPress\Modules\Analytics\RankCheckJob::class ) );
+		$this->assertSame( array(), $this->jobsFor( \Quinrel\WordPress\Modules\Analytics\RankCheckJob::class ) );
 
 		$GLOBALS['mock_http_log']    = array();
 		$GLOBALS['mock_cron_events'] = array();
 		$tracker->checkAllKeywords();
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
-		$this->assertCount( 1, $this->jobsFor( \Holvek\WordPress\Modules\Analytics\RankCheckJob::class ) );
+		$this->assertCount( 1, $this->jobsFor( \Quinrel\WordPress\Modules\Analytics\RankCheckJob::class ) );
 	}
 
 	public function testTechnicalAuditRunsTwoChecksPerJob(): void {
@@ -309,11 +344,11 @@ class BackgroundWorkTest extends TestCase {
 		} while ( $ran > 0 && $guard < 20 );
 
 		$this->assertLessThan( 20, $guard );
-		$this->assertSame( 'done', get_option( 'holvek_audit_progress' )['status'] );
+		$this->assertSame( 'done', get_option( 'quinrel_audit_progress' )['status'] );
 		$this->assertLessThanOrEqual( TechnicalSeoAuditEngine::CHECK_BATCH, max( $deltas ) );
 		$this->assertSame( 2, array_sum( $deltas ) );
-		$this->assertCount( 14, get_option( 'holvek_audit_results' )['checks'] );
-		$this->assertSame( array(), $this->jobsFor( \Holvek\WordPress\Modules\Admin\TechnicalAuditJob::class ) );
+		$this->assertCount( 14, get_option( 'quinrel_audit_results' )['checks'] );
+		$this->assertSame( array(), $this->jobsFor( \Quinrel\WordPress\Modules\Admin\TechnicalAuditJob::class ) );
 	}
 
 	/**
@@ -329,7 +364,7 @@ class BackgroundWorkTest extends TestCase {
 			array_filter(
 				$events,
 				static fn( $event ) => is_array( $event )
-					&& 'holvek_process_job' === ( $event['hook'] ?? '' )
+					&& 'quinrel_process_job' === ( $event['hook'] ?? '' )
 					&& $class === ( $event['args'][0] ?? '' )
 			)
 		);
@@ -344,7 +379,7 @@ class BackgroundWorkTest extends TestCase {
 
 		$ran = 0;
 		foreach ( $events as $event ) {
-			if ( ! is_array( $event ) || 'holvek_process_job' !== ( $event['hook'] ?? '' ) ) {
+			if ( ! is_array( $event ) || 'quinrel_process_job' !== ( $event['hook'] ?? '' ) ) {
 				continue;
 			}
 			$class = $event['args'][0] ?? '';

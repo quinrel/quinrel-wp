@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Queue\QueueManager;
+use Quinrel\WordPress\Core\Queue\QueueManager;
 
 /**
  * BrokenLinkChecker
@@ -15,16 +15,32 @@ use Holvek\WordPress\Core\Queue\QueueManager;
  * Batches posts across staggered WP-Cron events so it never bogs
  * down the server.
  *
- * Results table: holvek_broken_links
+ * Results table: quinrel_broken_links
  */
 class BrokenLinkChecker {
 
-	private const RESULTS_TABLE   = 'holvek_broken_links';
-	private const PROGRESS_OPTION = 'holvek_blc_progress';
-	private const SCAN_HOOK       = 'holvek_blc_scan_batch';
-	private const LOCK_OPTION     = 'holvek_blc_scan_lock';
-	private const BATCH_SIZE      = 10;
-	private const URL_BATCH       = 10;
+	private const RESULTS_TABLE     = 'quinrel_broken_links';
+	private const PROGRESS_OPTION   = 'quinrel_blc_progress';
+	private const SCAN_HOOK         = 'quinrel_blc_scan_batch';
+	private const LOCK_OPTION       = 'quinrel_blc_scan_lock';
+	private const LOCK_TTL          = 120;
+	private const BATCH_SIZE        = 10;
+	private const URL_BATCH         = 10;
+	private const BATCH_TIME_BUDGET = 15.0;
+
+	/**
+	 * Per-request URL status code cache.
+	 *
+	 * @var array<string, int|null>
+	 */
+	private static array $urlCache = array();
+
+	/**
+	 * Clear the in-memory URL status cache.
+	 */
+	public static function clearCache(): void {
+		self::$urlCache = array();
+	}
 
 	public function register(): void {
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
@@ -47,7 +63,9 @@ class BrokenLinkChecker {
             KEY idx_post_id (post_id),
             KEY idx_resolved (resolved)
         ) {$charset};";
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 	}
 
@@ -56,7 +74,7 @@ class BrokenLinkChecker {
 		$reportCap = fn() => current_user_can( 'view_seo_reports' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/broken-links',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -77,7 +95,7 @@ class BrokenLinkChecker {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/broken-links/scan',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -87,7 +105,7 @@ class BrokenLinkChecker {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/broken-links/progress',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -107,7 +125,7 @@ class BrokenLinkChecker {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/broken-links/(?P<id>\d+)/resolve',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -117,7 +135,7 @@ class BrokenLinkChecker {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/broken-links/recheck',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -131,12 +149,17 @@ class BrokenLinkChecker {
 		global $wpdb;
 		$table = $wpdb->prefix . self::RESULTS_TABLE;
 
+		$existingLock = get_option( self::LOCK_OPTION, false );
+		if ( false !== $existingLock && is_numeric( $existingLock ) && ( time() - (int) $existingLock ) >= self::LOCK_TTL ) {
+			delete_option( self::LOCK_OPTION );
+		}
+
 		if ( ! add_option( self::LOCK_OPTION, (string) time(), '', 'no' ) ) {
-			return new \WP_Error( 'scan_in_progress', __( 'A broken-link scan is already running.', 'holvek' ), array( 'status' => 409 ) );
+			return new \WP_Error( 'scan_in_progress', __( 'A broken-link scan is already running.', 'quinrel' ), array( 'status' => 409 ) );
 		}
 
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) === $table ) {
-			$wpdb->query( "DELETE FROM {$wpdb->prefix}holvek_broken_links WHERE resolved = 0" );
+			$wpdb->query( "DELETE FROM {$wpdb->prefix}quinrel_broken_links WHERE resolved = 0" );
 		}
 
 		$total = (int) $wpdb->get_var(
@@ -172,7 +195,7 @@ class BrokenLinkChecker {
 					'success'     => true,
 					'total_posts' => 0,
 					'batches'     => 0,
-					'message'     => __( 'No published posts or pages to scan.', 'holvek' ),
+					'message'     => __( 'No published posts or pages to scan.', 'quinrel' ),
 				)
 			);
 		}
@@ -185,7 +208,7 @@ class BrokenLinkChecker {
 				'success'     => true,
 				'total_posts' => $total,
 				'batches'     => (int) ceil( $total / self::BATCH_SIZE ),
-				'message'     => sprintf( /* translators: %d: Number of posts to process */ __( 'Scan started — %d posts will be processed in bounded batches.', 'holvek' ), $total ),
+				'message'     => sprintf( /* translators: %d: Number of posts to process */ __( 'Scan started — %d posts will be processed in bounded batches.', 'quinrel' ), $total ),
 			)
 		);
 	}
@@ -208,89 +231,101 @@ class BrokenLinkChecker {
 			return;
 		}
 
-		$cursor       = max( 0, (int) ( $progress['cursor'] ?? 0 ) );
-		$linkOffset   = max( 0, (int) ( $progress['link_offset'] ?? 0 ) );
-		$found        = (int) ( $progress['found'] ?? 0 );
-		$scanned      = (int) ( $progress['scanned'] ?? 0 );
-		$total        = (int) ( $progress['total'] ?? 0 );
-		$checks       = 0;
-		$postsThisRun = 0;
+		update_option( self::LOCK_OPTION, (string) time(), false );
+		$keepLock   = false;
+		$batchStart = microtime( true );
 
-		while ( $postsThisRun < self::BATCH_SIZE && $checks < self::URL_BATCH ) {
-			$postId = $this->nextPostId( $cursor );
-			if ( $postId < 1 ) {
-				$this->saveProgress( $scanned, $total, $found, $cursor, 0 );
-				$this->finishScan(
-					array(
-						'scanned' => $scanned,
-						'total'   => $total,
-						'found'   => $found,
-					)
-				);
-				return;
-			}
+		try {
+			$cursor       = max( 0, (int) ( $progress['cursor'] ?? 0 ) );
+			$linkOffset   = max( 0, (int) ( $progress['link_offset'] ?? 0 ) );
+			$found        = (int) ( $progress['found'] ?? 0 );
+			$scanned      = (int) ( $progress['scanned'] ?? 0 );
+			$total        = (int) ( $progress['total'] ?? 0 );
+			$checks       = 0;
+			$postsThisRun = 0;
 
-			$content      = (string) get_post_field( 'post_content', $postId );
-			$links        = '' === $content ? array() : $this->extractLinks( $content );
-			$linkCount    = count( $links );
-			$start        = min( $linkOffset, $linkCount );
-			$finishedPost = true;
-
-			for ( $i = $start; $i < $linkCount; $i++ ) {
-				if ( $checks >= self::URL_BATCH ) {
-					$finishedPost = false;
-					$linkOffset   = $i;
-					break;
+			while ( $postsThisRun < self::BATCH_SIZE && $checks < self::URL_BATCH ) {
+				$postId = $this->nextPostId( $cursor );
+				if ( $postId < 1 ) {
+					$this->saveProgress( $scanned, $total, $found, $cursor, 0 );
+					$this->finishScan(
+						array(
+							'scanned' => $scanned,
+							'total'   => $total,
+							'found'   => $found,
+						)
+					);
+					return;
 				}
 
-				$url    = $links[ $i ]['url'];
-				$anchor = $links[ $i ]['anchor'];
-				$code   = $this->checkUrl( $url );
-				++$checks;
+				$content      = (string) get_post_field( 'post_content', $postId );
+				$links        = '' === $content ? array() : $this->extractLinks( $content );
+				$linkCount    = count( $links );
+				$start        = min( $linkOffset, $linkCount );
+				$finishedPost = true;
 
-				if ( null === $code || $code < 400 ) {
-					continue;
+				for ( $i = $start; $i < $linkCount; $i++ ) {
+					if ( $checks >= self::URL_BATCH || ( $checks > 0 && ( microtime( true ) - $batchStart ) >= self::BATCH_TIME_BUDGET ) ) {
+						$finishedPost = false;
+						$linkOffset   = $i;
+						break;
+					}
+
+					$url    = $links[ $i ]['url'];
+					$anchor = $links[ $i ]['anchor'];
+					$code   = $this->checkUrl( $url );
+					++$checks;
+
+					if ( null === $code || $code < 400 ) {
+						continue;
+					}
+
+					$wpdb->insert(
+						$table,
+						array(
+							'post_id'      => $postId,
+							'url'          => $url,
+							'http_code'    => $code,
+							'anchor_text'  => mb_substr( $anchor, 0, 255 ),
+							'last_checked' => current_time( 'mysql' ),
+							'resolved'     => 0,
+						)
+					);
+					++$found;
 				}
 
-				$wpdb->insert(
-					$table,
-					array(
-						'post_id'      => $postId,
-						'url'          => $url,
-						'http_code'    => $code,
-						'anchor_text'  => mb_substr( $anchor, 0, 255 ),
-						'last_checked' => current_time( 'mysql' ),
-						'resolved'     => 0,
-					)
-				);
-				++$found;
+				if ( ! $finishedPost ) {
+					$this->saveProgress( $scanned, $total, $found, $cursor, $linkOffset );
+					$this->scheduleNextBatch( 15 );
+					$keepLock = true;
+					return;
+				}
+
+				$cursor     = $postId;
+				$linkOffset = 0;
+				++$scanned;
+				++$postsThisRun;
 			}
 
-			if ( ! $finishedPost ) {
-				$this->saveProgress( $scanned, $total, $found, $cursor, $linkOffset );
+			$this->saveProgress( $scanned, $total, $found, $cursor, 0 );
+			if ( $this->nextPostId( $cursor ) > 0 ) {
 				$this->scheduleNextBatch( 15 );
+				$keepLock = true;
 				return;
 			}
 
-			$cursor     = $postId;
-			$linkOffset = 0;
-			++$scanned;
-			++$postsThisRun;
+			$this->finishScan(
+				array(
+					'scanned' => $scanned,
+					'total'   => $total,
+					'found'   => $found,
+				)
+			);
+		} finally {
+			if ( ! $keepLock ) {
+				delete_option( self::LOCK_OPTION );
+			}
 		}
-
-		$this->saveProgress( $scanned, $total, $found, $cursor, 0 );
-		if ( $this->nextPostId( $cursor ) > 0 ) {
-			$this->scheduleNextBatch( 15 );
-			return;
-		}
-
-		$this->finishScan(
-			array(
-				'scanned' => $scanned,
-				'total'   => $total,
-				'found'   => $found,
-			)
-		);
 	}
 
 	public function getResults( \WP_REST_Request $request ): \WP_REST_Response {
@@ -312,7 +347,7 @@ class BrokenLinkChecker {
 
 		$total = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}holvek_broken_links WHERE resolved = %d",
+				"SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_broken_links WHERE resolved = %d",
 				$resolved
 			)
 		);
@@ -320,7 +355,7 @@ class BrokenLinkChecker {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT b.id, b.post_id, b.url, b.http_code, b.anchor_text, b.last_checked, b.resolved, p.post_title
-             FROM {$wpdb->prefix}holvek_broken_links b
+             FROM {$wpdb->prefix}quinrel_broken_links b
              LEFT JOIN {$wpdb->posts} p ON p.ID = b.post_id
              WHERE b.resolved = %d
              ORDER BY b.http_code DESC, b.last_checked DESC
@@ -362,7 +397,7 @@ class BrokenLinkChecker {
 		$url    = is_string( $rawUrl ) ? esc_url_raw( $rawUrl ) : '';
 
 		if ( ! $id || ! $url ) {
-			return new \WP_Error( 'missing_params', __( 'A link ID and URL are required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_params', __( 'A link ID and URL are required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		( new QueueManager() )->push(
@@ -377,7 +412,7 @@ class BrokenLinkChecker {
 			array(
 				'success' => true,
 				'queued'  => true,
-				'message' => __( 'Recheck queued. Refresh the list after the background check finishes.', 'holvek' ),
+				'message' => __( 'Recheck queued. Refresh the list after the background check finishes.', 'quinrel' ),
 			)
 		);
 	}
@@ -472,9 +507,8 @@ class BrokenLinkChecker {
 	}
 
 	private function checkUrl( string $url ): ?int {
-		static $cache = array();
-		if ( isset( $cache[ $url ] ) ) {
-			return $cache[ $url ];
+		if ( array_key_exists( $url, self::$urlCache ) ) {
+			return self::$urlCache[ $url ];
 		}
 
 		if ( ! $this->isSafeExternalUrl( $url ) ) {
@@ -482,24 +516,28 @@ class BrokenLinkChecker {
 		}
 
 		$args = array(
-			'timeout'             => 10,
+			'timeout'             => 5,
 			'redirection'         => 3,
-			'user-agent'          => 'Mozilla/5.0 (compatible; Holvek-BLC/1.0)',
+			'reject_unsafe_urls'  => true,
+			'user-agent'          => 'Mozilla/5.0 (compatible; Quinrel-BLC/1.0)',
 			'limit_response_size' => 1024,
 		);
 
 		$response = wp_safe_remote_head( $url, $args );
-		if ( is_wp_error( $response ) ) {
-			$response = wp_safe_remote_get( $url, $args );
+		$headCode = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+		if ( is_wp_error( $response ) || in_array( $headCode, array( 403, 405, 501 ), true ) ) {
+			$getArgs            = $args;
+			$getArgs['headers'] = array( 'Range' => 'bytes=0-2048' );
+			$response           = wp_safe_remote_get( $url, $getArgs );
 		}
 
 		if ( is_wp_error( $response ) ) {
-			$cache[ $url ] = null;
+			self::$urlCache[ $url ] = null;
 			return null;
 		}
 
-		$code          = (int) wp_remote_retrieve_response_code( $response );
-		$cache[ $url ] = $code;
+		$code                   = (int) wp_remote_retrieve_response_code( $response );
+		self::$urlCache[ $url ] = $code;
 		return $code;
 	}
 
@@ -519,6 +557,16 @@ class BrokenLinkChecker {
 
 	private function isSafeExternalUrl( string $url ): bool {
 		if ( ! wp_http_validate_url( $url ) ) {
+			return false;
+		}
+
+		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			return false;
+		}
+
+		$port = wp_parse_url( $url, PHP_URL_PORT );
+		if ( null !== $port && ! in_array( (int) $port, array( 80, 443 ), true ) ) {
 			return false;
 		}
 

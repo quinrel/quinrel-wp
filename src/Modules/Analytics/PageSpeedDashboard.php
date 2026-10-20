@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Analytics;
+namespace Quinrel\WordPress\Modules\Analytics;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Mode\OperatingMode;
+use Quinrel\WordPress\Core\Mode\OperatingMode;
 
 /**
  * PageSpeedDashboard
@@ -17,7 +17,7 @@ use Holvek\WordPress\Core\Mode\OperatingMode;
 class PageSpeedDashboard {
 
 	private const API_BASE    = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
-	private const CACHE_GROUP = 'holvek_psi';
+	private const CACHE_GROUP = 'quinrel_psi';
 
 	public function register(): void {
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
@@ -27,7 +27,7 @@ class PageSpeedDashboard {
 		$reportCap = fn() => current_user_can( 'view_seo_reports' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/analytics/pagespeed',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -48,7 +48,7 @@ class PageSpeedDashboard {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/analytics/pagespeed/bulk',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -64,10 +64,10 @@ class PageSpeedDashboard {
 			? $request->get_param( 'strategy' ) : 'mobile';
 		$force    = (bool) $request->get_param( 'force' );
 
-		$apiKey = (string) get_option( 'holvek_pagespeed_api_key', '' );
+		$apiKey = (string) get_option( 'quinrel_pagespeed_api_key', '' );
 		if ( $apiKey === '' ) {
 			if ( ! OperatingMode::isCloudConfigured() ) {
-				return OperatingMode::disconnected( __( 'PageSpeed through Holvek', 'holvek' ) );
+				return OperatingMode::disconnected( __( 'PageSpeed through Quinrel', 'quinrel' ) );
 			}
 
 			$proxied = $this->fetchViaProxy( $url, $strategy );
@@ -116,15 +116,15 @@ class PageSpeedDashboard {
 
 		$requested = isset( $params['strategy'] ) && is_string( $params['strategy'] ) ? $params['strategy'] : 'mobile';
 		$strategy  = in_array( $requested, array( 'mobile', 'desktop' ), true ) ? $requested : 'mobile';
-		$apiKey    = (string) get_option( 'holvek_pagespeed_api_key', '' );
+		$apiKey    = (string) get_option( 'quinrel_pagespeed_api_key', '' );
 
 		if ( $apiKey === '' ) {
 			if ( ! OperatingMode::isCloudConfigured() ) {
-				return OperatingMode::disconnected( __( 'PageSpeed through Holvek', 'holvek' ) );
+				return OperatingMode::disconnected( __( 'PageSpeed through Quinrel', 'quinrel' ) );
 			}
 
 			if ( $urls === array() ) {
-				return new \WP_Error( 'missing_urls', __( 'Add at least one URL to check.', 'holvek' ), array( 'status' => 400 ) );
+				return new \WP_Error( 'missing_urls', __( 'Add at least one URL to check.', 'quinrel' ), array( 'status' => 400 ) );
 			}
 
 			$proxied = array();
@@ -141,7 +141,7 @@ class PageSpeedDashboard {
 		}
 
 		if ( $urls === array() ) {
-			return new \WP_Error( 'missing_urls', __( 'Add at least one URL to check.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_urls', __( 'Add at least one URL to check.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$results = array();
@@ -236,7 +236,7 @@ class PageSpeedDashboard {
 		return array_slice( $opps, 0, 10 );
 	}
 	private function fetchViaProxy( string $url, string $strategy ): array|\WP_Error {
-		$result = \Holvek\WordPress\Core\Api\HolvekApiGateway::proxyRequest(
+		$result = \Quinrel\WordPress\Core\Api\QuinrelApiGateway::proxyRequest(
 			'pagespeed',
 			array(
 				'url'      => $url,

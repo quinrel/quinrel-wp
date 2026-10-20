@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Compliance;
+namespace Quinrel\WordPress\Modules\Compliance;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class CcpaPrivacyTools {
 
-	private const RETENTION_OPTION  = 'holvek_privacy_retention';
-	private const HONOUR_GPC_OPTION = 'holvek_honour_gpc';
-	private const CRON_HOOK         = 'holvek_apply_retention';
+	private const RETENTION_OPTION  = 'quinrel_privacy_retention';
+	private const HONOUR_GPC_OPTION = 'quinrel_honour_gpc';
+	private const CRON_HOOK         = 'quinrel_apply_retention';
 
 	public function boot(): void {
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
@@ -56,9 +56,9 @@ class CcpaPrivacyTools {
 			: '';
 		if ( '1' === $gpc ) {
 			// Signal to other modules that AI/tracking features should be suppressed
-			do_action( 'holvek_gpc_opt_out' );
+			do_action( 'quinrel_gpc_opt_out' );
 			setcookie(
-				'holvek_gpc',
+				'quinrel_gpc',
 				'1',
 				array(
 					'expires'  => time() + YEAR_IN_SECONDS,
@@ -77,7 +77,7 @@ class CcpaPrivacyTools {
 		$adminCap = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/privacy/data-inventory',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -87,7 +87,7 @@ class CcpaPrivacyTools {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/privacy/export',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -97,7 +97,7 @@ class CcpaPrivacyTools {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/privacy/delete',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -107,7 +107,7 @@ class CcpaPrivacyTools {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/privacy/retention-settings',
 			array(
 				array(
@@ -124,7 +124,7 @@ class CcpaPrivacyTools {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/privacy/apply-retention',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -134,7 +134,7 @@ class CcpaPrivacyTools {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/privacy/gpc-settings',
 			array(
 				array(
@@ -162,31 +162,31 @@ class CcpaPrivacyTools {
 			array(
 				'data_types' => array(
 					array(
-						'store'       => 'holvek_404_logs (DB table)',
+						'store'       => 'quinrel_404_logs (DB table)',
 						'data_type'   => 'URL request logs, referrer URLs, User-Agent strings',
 						'sensitivity' => 'low',
 						'retention'   => 'Configurable (default: 90 days)',
 					),
 					array(
-						'store'       => 'holvek_redirects (DB table)',
+						'store'       => 'quinrel_redirects (DB table)',
 						'data_type'   => 'Redirect rules (URLs only, no PII)',
 						'sensitivity' => 'none',
 						'retention'   => 'Indefinite',
 					),
 					array(
-						'store'       => 'holvek_ai_usage (DB table)',
+						'store'       => 'quinrel_ai_usage (DB table)',
 						'data_type'   => 'AI token usage per WordPress user ID',
 						'sensitivity' => 'low',
 						'retention'   => 'Configurable (default: 365 days)',
 					),
 					array(
-						'store'       => 'wp_options (holvek_* keys)',
+						'store'       => 'wp_options (quinrel_* keys)',
 						'data_type'   => 'Plugin settings, API keys (encrypted)',
 						'sensitivity' => 'medium',
 						'retention'   => 'Until plugin uninstalled',
 					),
 					array(
-						'store'       => 'wp_postmeta (_holvek_* keys)',
+						'store'       => 'wp_postmeta (_quinrel_* keys)',
 						'data_type'   => 'Per-post SEO metadata (titles, descriptions, schema overrides)',
 						'sensitivity' => 'none',
 						'retention'   => 'Until post deleted',
@@ -201,7 +201,7 @@ class CcpaPrivacyTools {
 		$email  = sanitize_email( $params['email'] ?? '' );
 
 		if ( ! is_email( $email ) ) {
-			return new \WP_Error( 'invalid_email', __( 'A valid email address is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_email', __( 'A valid email address is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		return rest_ensure_response(
@@ -217,7 +217,7 @@ class CcpaPrivacyTools {
 		$email  = sanitize_email( $params['email'] ?? '' );
 
 		if ( ! is_email( $email ) ) {
-			return new \WP_Error( 'invalid_email', __( 'A valid email address is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_email', __( 'A valid email address is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$deleted = $this->eraseUserData( $email );
@@ -258,7 +258,7 @@ class CcpaPrivacyTools {
 		return rest_ensure_response(
 			array(
 				'success' => true,
-				'message' => __( 'Retention purge scheduled.', 'holvek' ),
+				'message' => __( 'Retention purge scheduled.', 'quinrel' ),
 			)
 		);
 	}
@@ -279,24 +279,24 @@ class CcpaPrivacyTools {
 		);
 
 		// Purge old 404 logs
-		$logsTable   = $wpdb->prefix . 'holvek_404_logs';
+		$logsTable   = $wpdb->prefix . 'quinrel_404_logs';
 		$tableExists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $logsTable ) ) );
 		if ( $tableExists ) {
 			$wpdb->query(
 				$wpdb->prepare(
-					"DELETE FROM {$wpdb->prefix}holvek_404_logs WHERE last_hit < DATE_SUB(NOW(), INTERVAL %d DAY)",
+					"DELETE FROM {$wpdb->prefix}quinrel_404_logs WHERE last_hit < DATE_SUB(NOW(), INTERVAL %d DAY)",
 					$config['keep_404_logs_days']
 				)
 			);
 		}
 
 		// Purge old AI usage logs
-		$usageTable  = $wpdb->prefix . 'holvek_ai_usage';
+		$usageTable  = $wpdb->prefix . 'quinrel_ai_usage';
 		$tableExists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $usageTable ) ) );
 		if ( $tableExists ) {
 			$wpdb->query(
 				$wpdb->prepare(
-					"DELETE FROM {$wpdb->prefix}holvek_ai_usage WHERE created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
+					"DELETE FROM {$wpdb->prefix}quinrel_ai_usage WHERE created_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
 					$config['keep_usage_logs_days']
 				)
 			);
@@ -311,34 +311,34 @@ class CcpaPrivacyTools {
 		}
 
 		$items   = array(
-			__( '<strong>AI features:</strong> If an editor runs AI-assisted writing, an excerpt of the post may be sent to the provider configured on this site, such as OpenAI, Anthropic, or a confirmed Ollama host.', 'holvek' ),
-			__( '<strong>External services:</strong> Indexing features send published URLs only after an administrator turns them on.', 'holvek' ),
-			__( '<strong>404 logs:</strong> Holvek stores the missing path, the referring address without its query string, and a shortened browser name. Rows are kept for 90 days and then deleted. They are not linked to a WordPress account unless the stored path or referrer contains that account email or login.', 'holvek' ),
-			__( '<strong>AI usage:</strong> Token counts are stored with the WordPress user ID of the person who ran the feature. A personal-data export and erase include those rows. They are kept for 365 days by default.', 'holvek' ),
-			__( '<strong>Audit log:</strong> Changes to titles, descriptions, and settings are stored with the WordPress user ID of the person who made the change. A personal-data export and erase include that person’s rows.', 'holvek' ),
-			__( '<strong>Search Console and Analytics:</strong> Google Search Console and Google Analytics 4 credentials are site settings. They are not included in a visitor or account export.', 'holvek' ),
-			__( '<strong>Cookie notice:</strong> The visitor’s choice is stored in the holvek_consent cookie in the browser. It does not store an email address or a WordPress user ID, so it is not part of an account export.', 'holvek' ),
+			__( '<strong>AI features:</strong> If an editor runs AI-assisted writing, an excerpt of the post may be sent to the provider configured on this site, such as OpenAI, Anthropic, or a confirmed Ollama host.', 'quinrel' ),
+			__( '<strong>External services:</strong> Indexing features send published URLs only after an administrator turns them on.', 'quinrel' ),
+			__( '<strong>404 logs:</strong> Quinrel stores the missing path, the referring address without its query string, and a shortened browser name. Rows are kept for 90 days and then deleted. They are not linked to a WordPress account unless the stored path or referrer contains that account email or login.', 'quinrel' ),
+			__( '<strong>AI usage:</strong> Token counts are stored with the WordPress user ID of the person who ran the feature. A personal-data export and erase include those rows. They are kept for 365 days by default.', 'quinrel' ),
+			__( '<strong>Audit log:</strong> Changes to titles, descriptions, and settings are stored with the WordPress user ID of the person who made the change. A personal-data export and erase include that person’s rows.', 'quinrel' ),
+			__( '<strong>Search Console and Analytics:</strong> Google Search Console and Google Analytics 4 credentials are site settings. They are not included in a visitor or account export.', 'quinrel' ),
+			__( '<strong>Cookie notice:</strong> The visitor’s choice is stored in the quinrel_consent cookie in the browser. It does not store an email address or a WordPress user ID, so it is not part of an account export.', 'quinrel' ),
 		);
-		$content = '<p>' . __( 'Holvek stores these records on this site. The site owner decides the legal basis. This plugin does not make a site compliant with a privacy law.', 'holvek' ) . '</p><ul>';
+		$content = '<p>' . __( 'Quinrel stores these records on this site. The site owner decides the legal basis. This plugin does not make a site compliant with a privacy law.', 'quinrel' ) . '</p><ul>';
 		foreach ( $items as $item ) {
 			$content .= '<li>' . $item . '</li>';
 		}
 		$content .= '</ul>';
 
-		wp_add_privacy_policy_content( __( 'Holvek SEO', 'holvek' ), $content );
+		wp_add_privacy_policy_content( __( 'Quinrel SEO', 'quinrel' ), $content );
 	}
 
 	public function registerExporter( array $exporters ): array {
-		$exporters['holvek'] = array(
-			'exporter_friendly_name' => __( 'Holvek SEO Data', 'holvek' ),
+		$exporters['quinrel'] = array(
+			'exporter_friendly_name' => __( 'Quinrel SEO Data', 'quinrel' ),
 			'callback'               => array( $this, 'wpPrivacyExporter' ),
 		);
 		return $exporters;
 	}
 
 	public function registerEraser( array $erasers ): array {
-		$erasers['holvek'] = array(
-			'eraser_friendly_name' => __( 'Holvek SEO Data', 'holvek' ),
+		$erasers['quinrel'] = array(
+			'eraser_friendly_name' => __( 'Quinrel SEO Data', 'quinrel' ),
 			'callback'             => array( $this, 'wpPrivacyEraser' ),
 		);
 		return $erasers;
@@ -350,8 +350,8 @@ class CcpaPrivacyTools {
 
 		foreach ( $data['records']['ai_usage'] as $row ) {
 			$items[] = array(
-				'group_id'    => 'holvek_ai_usage',
-				'group_label' => __( 'Holvek AI Usage', 'holvek' ),
+				'group_id'    => 'quinrel_ai_usage',
+				'group_label' => __( 'Quinrel AI Usage', 'quinrel' ),
 				'item_id'     => 'ai-usage-' . $row->id,
 				'data'        => array(
 					array(
@@ -376,24 +376,24 @@ class CcpaPrivacyTools {
 
 		foreach ( $data['records']['logs_404'] as $row ) {
 			$items[] = array(
-				'group_id'    => 'holvek_404_logs',
-				'group_label' => __( 'Holvek 404 logs', 'holvek' ),
+				'group_id'    => 'quinrel_404_logs',
+				'group_label' => __( 'Quinrel 404 logs', 'quinrel' ),
 				'item_id'     => '404-' . $row->id,
 				'data'        => array(
 					array(
-						'name'  => __( 'Missing path', 'holvek' ),
+						'name'  => __( 'Missing path', 'quinrel' ),
 						'value' => (string) $row->uri,
 					),
 					array(
-						'name'  => __( 'Referrer', 'holvek' ),
+						'name'  => __( 'Referrer', 'quinrel' ),
 						'value' => (string) $row->referer,
 					),
 					array(
-						'name'  => __( 'Browser', 'holvek' ),
+						'name'  => __( 'Browser', 'quinrel' ),
 						'value' => (string) $row->user_agent,
 					),
 					array(
-						'name'  => __( 'Last seen', 'holvek' ),
+						'name'  => __( 'Last seen', 'quinrel' ),
 						'value' => (string) $row->last_hit,
 					),
 				),
@@ -402,24 +402,24 @@ class CcpaPrivacyTools {
 
 		foreach ( $data['records']['audit_log'] as $row ) {
 			$items[] = array(
-				'group_id'    => 'holvek_audit_log',
-				'group_label' => __( 'Holvek audit log', 'holvek' ),
+				'group_id'    => 'quinrel_audit_log',
+				'group_label' => __( 'Quinrel audit log', 'quinrel' ),
 				'item_id'     => 'audit-' . $row->id,
 				'data'        => array(
 					array(
-						'name'  => __( 'Action', 'holvek' ),
+						'name'  => __( 'Action', 'quinrel' ),
 						'value' => (string) $row->action,
 					),
 					array(
-						'name'  => __( 'Field', 'holvek' ),
+						'name'  => __( 'Field', 'quinrel' ),
 						'value' => (string) $row->field,
 					),
 					array(
-						'name'  => __( 'Post ID', 'holvek' ),
+						'name'  => __( 'Post ID', 'quinrel' ),
 						'value' => (string) $row->post_id,
 					),
 					array(
-						'name'  => __( 'Date', 'holvek' ),
+						'name'  => __( 'Date', 'quinrel' ),
 						'value' => (string) $row->created_at,
 					),
 				),
@@ -429,8 +429,8 @@ class CcpaPrivacyTools {
 		if ( $page === 1 ) {
 			foreach ( $data['records']['user_meta'] as $key => $values ) {
 				$items[] = array(
-					'group_id'    => 'holvek_user_meta',
-					'group_label' => 'Holvek User Metadata',
+					'group_id'    => 'quinrel_user_meta',
+					'group_label' => 'Quinrel User Metadata',
 					'item_id'     => 'user-meta-' . $key,
 					'data'        => array(
 						array(
@@ -484,14 +484,14 @@ class CcpaPrivacyTools {
 		}
 
 		global $wpdb;
-		$usageTable  = $wpdb->prefix . 'holvek_ai_usage';
+		$usageTable  = $wpdb->prefix . 'quinrel_ai_usage';
 		$tableExists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $usageTable ) ) );
 		$limit       = 100;
 		$offset      = max( 0, $page - 1 ) * $limit;
 
 		if ( $tableExists ) {
 			$rows                        = $wpdb->get_results(
-				$wpdb->prepare( "SELECT id, user_id, provider, feature, tokens_used, created_at FROM {$wpdb->prefix}holvek_ai_usage WHERE user_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d", $user->ID, $limit + 1, $offset )
+				$wpdb->prepare( "SELECT id, user_id, provider, feature, tokens_used, created_at FROM {$wpdb->prefix}quinrel_ai_usage WHERE user_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d", $user->ID, $limit + 1, $offset )
 			);
 			$data['has_more']            = count( $rows ) > $limit;
 			$data['records']['ai_usage'] = array_slice( $rows, 0, $limit );
@@ -501,7 +501,7 @@ class CcpaPrivacyTools {
 			$allMeta                      = get_user_meta( $user->ID );
 			$data['records']['user_meta'] = array_filter(
 				$allMeta,
-				static fn( $key ) => str_starts_with( (string) $key, 'holvek' ),
+				static fn( $key ) => str_starts_with( (string) $key, 'quinrel' ),
 				ARRAY_FILTER_USE_KEY
 			);
 		}
@@ -535,7 +535,7 @@ class CcpaPrivacyTools {
 			return $empty;
 		}
 
-		$table = $wpdb->prefix . 'holvek_404_logs';
+		$table = $wpdb->prefix . 'quinrel_404_logs';
 		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 		if ( $found !== $table ) {
 			return $empty;
@@ -551,7 +551,7 @@ class CcpaPrivacyTools {
 		if ( count( $likes ) === 1 ) {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT id, uri, referer, user_agent, last_hit FROM {$wpdb->prefix}holvek_404_logs WHERE uri LIKE %s OR referer LIKE %s ORDER BY last_hit DESC LIMIT %d OFFSET %d",
+					"SELECT id, uri, referer, user_agent, last_hit FROM {$wpdb->prefix}quinrel_404_logs WHERE uri LIKE %s OR referer LIKE %s ORDER BY last_hit DESC LIMIT %d OFFSET %d",
 					$likes[0],
 					$likes[0],
 					$limit + 1,
@@ -561,7 +561,7 @@ class CcpaPrivacyTools {
 		} else {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT id, uri, referer, user_agent, last_hit FROM {$wpdb->prefix}holvek_404_logs WHERE uri LIKE %s OR referer LIKE %s OR uri LIKE %s OR referer LIKE %s ORDER BY last_hit DESC LIMIT %d OFFSET %d",
+					"SELECT id, uri, referer, user_agent, last_hit FROM {$wpdb->prefix}quinrel_404_logs WHERE uri LIKE %s OR referer LIKE %s OR uri LIKE %s OR referer LIKE %s ORDER BY last_hit DESC LIMIT %d OFFSET %d",
 					$likes[0],
 					$likes[0],
 					$likes[1],
@@ -611,7 +611,7 @@ class CcpaPrivacyTools {
 
 		global $wpdb;
 		$deleted     = 0;
-		$usageTable  = $wpdb->prefix . 'holvek_ai_usage';
+		$usageTable  = $wpdb->prefix . 'quinrel_ai_usage';
 		$tableExists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $usageTable ) ) );
 		if ( $tableExists ) {
 			$deleted += (int) $wpdb->delete( $usageTable, array( 'user_id' => $user->ID ), array( '%d' ) );
@@ -621,7 +621,7 @@ class CcpaPrivacyTools {
 		$deleted += $this->eraseAuditLogs( $user );
 
 		foreach ( array_keys( get_user_meta( $user->ID ) ) as $key ) {
-			if ( str_starts_with( (string) $key, 'holvek' ) && delete_user_meta( $user->ID, $key ) ) {
+			if ( str_starts_with( (string) $key, 'quinrel' ) && delete_user_meta( $user->ID, $key ) ) {
 				++$deleted;
 			}
 		}
@@ -642,7 +642,7 @@ class CcpaPrivacyTools {
 			return 0;
 		}
 
-		$table = $wpdb->prefix . 'holvek_404_logs';
+		$table = $wpdb->prefix . 'quinrel_404_logs';
 		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 		if ( $found !== $table ) {
 			return 0;
@@ -656,7 +656,7 @@ class CcpaPrivacyTools {
 		if ( count( $likes ) === 1 ) {
 			$count = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$wpdb->prefix}holvek_404_logs WHERE uri LIKE %s OR referer LIKE %s",
+					"SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_404_logs WHERE uri LIKE %s OR referer LIKE %s",
 					$likes[0],
 					$likes[0]
 				)
@@ -666,7 +666,7 @@ class CcpaPrivacyTools {
 			}
 			$wpdb->query(
 				$wpdb->prepare(
-					"DELETE FROM {$wpdb->prefix}holvek_404_logs WHERE uri LIKE %s OR referer LIKE %s",
+					"DELETE FROM {$wpdb->prefix}quinrel_404_logs WHERE uri LIKE %s OR referer LIKE %s",
 					$likes[0],
 					$likes[0]
 				)
@@ -676,7 +676,7 @@ class CcpaPrivacyTools {
 
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}holvek_404_logs WHERE uri LIKE %s OR referer LIKE %s OR uri LIKE %s OR referer LIKE %s",
+				"SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_404_logs WHERE uri LIKE %s OR referer LIKE %s OR uri LIKE %s OR referer LIKE %s",
 				$likes[0],
 				$likes[0],
 				$likes[1],
@@ -688,7 +688,7 @@ class CcpaPrivacyTools {
 		}
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$wpdb->prefix}holvek_404_logs WHERE uri LIKE %s OR referer LIKE %s OR uri LIKE %s OR referer LIKE %s",
+				"DELETE FROM {$wpdb->prefix}quinrel_404_logs WHERE uri LIKE %s OR referer LIKE %s OR uri LIKE %s OR referer LIKE %s",
 				$likes[0],
 				$likes[0],
 				$likes[1],
@@ -716,7 +716,7 @@ class CcpaPrivacyTools {
 			return $empty;
 		}
 
-		$table = $wpdb->prefix . 'holvek_audit_log';
+		$table = $wpdb->prefix . 'quinrel_audit_log';
 		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 		if ( $found !== $table ) {
 			return $empty;
@@ -726,7 +726,7 @@ class CcpaPrivacyTools {
 		$offset = max( 0, $page - 1 ) * $limit;
 		$rows   = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, user_id, post_id, action, field, created_at FROM {$wpdb->prefix}holvek_audit_log WHERE user_id = %d ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d",
+				"SELECT id, user_id, post_id, action, field, created_at FROM {$wpdb->prefix}quinrel_audit_log WHERE user_id = %d ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d",
 				$userId,
 				$limit + 1,
 				$offset
@@ -755,7 +755,7 @@ class CcpaPrivacyTools {
 			return 0;
 		}
 
-		$table = $wpdb->prefix . 'holvek_audit_log';
+		$table = $wpdb->prefix . 'quinrel_audit_log';
 		$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 		if ( $found !== $table ) {
 			return 0;
@@ -763,7 +763,7 @@ class CcpaPrivacyTools {
 
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}holvek_audit_log WHERE user_id = %d",
+				"SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_audit_log WHERE user_id = %d",
 				$userId
 			)
 		);
@@ -773,7 +773,7 @@ class CcpaPrivacyTools {
 
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$wpdb->prefix}holvek_audit_log WHERE user_id = %d",
+				"DELETE FROM {$wpdb->prefix}quinrel_audit_log WHERE user_id = %d",
 				$userId
 			)
 		);

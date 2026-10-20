@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,9 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ErrorMonitor {
 
-	private const OPTION_KEY          = 'holvek_404_logs';
-	private const BUFFER_TRANSIENT    = 'holvek_404_buffer';
-	private const TABLE_EXISTS_OPTION = 'holvek_404_table_exists';
+	private const OPTION_KEY          = 'quinrel_404_logs';
+	private const BUFFER_TRANSIENT    = 'quinrel_404_buffer';
+	private const TABLE_EXISTS_OPTION = 'quinrel_404_table_exists';
 	private const MAX_LOGS            = 100;
 	private const MAX_BUFFER          = 50; // Cap buffer size to prevent transient bloat
 	private const PAGE_SIZE           = 50;
@@ -27,8 +27,8 @@ class ErrorMonitor {
 	private const MAX_STORED_REFERRER = 200;
 	private const MAX_STORED_AGENT    = 160;
 	private const RETENTION_DAYS      = 90;
-	private const FLUSH_HOOK          = 'holvek_flush_404_buffer';
-	private const CLEANUP_HOOK        = 'holvek_404_cleanup';
+	private const FLUSH_HOOK          = 'quinrel_flush_404_buffer';
+	private const CLEANUP_HOOK        = 'quinrel_404_cleanup';
 
 	/**
 	 * Boot the error monitor — register the background flush cron.
@@ -83,7 +83,7 @@ class ErrorMonitor {
 			return;
 		}
 
-		if ( strpos( $rawUri, 'wp-admin' ) !== false || strpos( $rawUri, 'wp-login' ) !== false || strpos( $rawUri, '.env' ) !== false ) {
+		if ( preg_match( '/(wp-admin|wp-login|xmlrpc\.php|\.env|\.git|wp-config|phpmyadmin)/i', $rawUri ) ) {
 			return;
 		}
 
@@ -153,7 +153,7 @@ class ErrorMonitor {
 		if ( get_option( self::TABLE_EXISTS_OPTION ) !== 'yes' ) {
 			// Re-verify once and cache the result
 			global $wpdb;
-			$table = $wpdb->prefix . 'holvek_404_logs';
+			$table = $wpdb->prefix . 'quinrel_404_logs';
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
 				update_option( self::TABLE_EXISTS_OPTION, 'yes', false );
 			} else {
@@ -162,7 +162,7 @@ class ErrorMonitor {
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'holvek_404_logs';
+		$table = $wpdb->prefix . 'quinrel_404_logs';
 
 		foreach ( $buffer as $entry ) {
 			if ( ! is_array( $entry ) ) {
@@ -172,7 +172,7 @@ class ErrorMonitor {
 			if ( $entry['uri'] === '' ) {
 				continue;
 			}
-			$existing = $wpdb->get_row( $wpdb->prepare( "SELECT id, hits, referer, user_agent, last_hit FROM {$wpdb->prefix}holvek_404_logs WHERE uri = %s", $entry['uri'] ) );
+			$existing = $wpdb->get_row( $wpdb->prepare( "SELECT id, hits, referer, user_agent, last_hit FROM {$wpdb->prefix}quinrel_404_logs WHERE uri = %s", $entry['uri'] ) );
 
 			if ( $existing ) {
 				$wpdb->update(
@@ -201,20 +201,20 @@ class ErrorMonitor {
 		}
 
 		// Trim oldest logs if total exceeds MAX_LOGS
-		$totalLogs = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_404_logs" );
+		$totalLogs = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_404_logs" );
 		if ( $totalLogs > self::MAX_LOGS ) {
-			$keepIds = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}holvek_404_logs ORDER BY last_hit DESC LIMIT %d", self::MAX_LOGS ) );
+			$keepIds = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}quinrel_404_logs ORDER BY last_hit DESC LIMIT %d", self::MAX_LOGS ) );
 			if ( ! empty( $keepIds ) ) {
 				$placeholders = implode( ',', array_fill( 0, count( $keepIds ), '%s' ) );
 				$wpdb->query(
 					$wpdb->prepare(
 						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholder list is generated %d or %s tokens. Values are passed to prepare().
-						"DELETE FROM {$wpdb->prefix}holvek_404_logs WHERE id NOT IN ($placeholders)",
+						"DELETE FROM {$wpdb->prefix}quinrel_404_logs WHERE id NOT IN ($placeholders)",
 						...$keepIds
 					)
 				);
 			} else {
-				$wpdb->query( "DELETE FROM {$wpdb->prefix}holvek_404_logs" );
+				$wpdb->query( "DELETE FROM {$wpdb->prefix}quinrel_404_logs" );
 			}
 		}
 
@@ -236,7 +236,7 @@ class ErrorMonitor {
 		self::scheduleCleanup();
 
 		$days   = self::RETENTION_DAYS;
-		$config = get_option( 'holvek_privacy_retention', array() );
+		$config = get_option( 'quinrel_privacy_retention', array() );
 		if ( is_array( $config ) && isset( $config['keep_404_logs_days'] ) ) {
 			$days = max( 1, (int) $config['keep_404_logs_days'] );
 		}
@@ -248,7 +248,7 @@ class ErrorMonitor {
 		global $wpdb;
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$wpdb->prefix}holvek_404_logs WHERE last_hit < DATE_SUB( NOW(), INTERVAL %d DAY )",
+				"DELETE FROM {$wpdb->prefix}quinrel_404_logs WHERE last_hit < DATE_SUB( NOW(), INTERVAL %d DAY )",
 				$days
 			)
 		);
@@ -323,7 +323,7 @@ class ErrorMonitor {
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/errors/404',
 			array(
 				array(
@@ -351,7 +351,7 @@ class ErrorMonitor {
 
 		// BL-001: one-click redirect creation from a 404 log entry
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/errors/404/create-redirect',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -366,7 +366,7 @@ class ErrorMonitor {
 	 *
 	 * Payload: { id: string, target: string, code?: int }
 	 */
-	public function createRedirectFromLog( \WP_REST_Request $request ): \WP_REST_Response {
+	public function createRedirectFromLog( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$params = $request->get_json_params();
 		$id     = sanitize_text_field( $params['id'] ?? '' );
 		$target = sanitize_text_field( $params['target'] ?? '' );
@@ -375,7 +375,7 @@ class ErrorMonitor {
 			: 301;
 
 		if ( empty( $id ) || empty( $target ) ) {
-			return new \WP_Error( 'missing_params', __( 'id and target are required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_params', __( 'id and target are required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$isSafe = false;
@@ -390,34 +390,34 @@ class ErrorMonitor {
 				&& strtolower( $parts['host'] ) === strtolower( (string) $siteHost );
 		}
 		if ( ! $isSafe ) {
-			return new \WP_Error( 'unsafe_target', __( 'Redirect target must be a local path or URL on this site.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'unsafe_target', __( 'Redirect target must be a local path or URL on this site.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		global $wpdb;
-		$logTable = $wpdb->prefix . 'holvek_404_logs';
+		$logTable = $wpdb->prefix . 'quinrel_404_logs';
 
 		// Fetch the log entry to get the source URI
 		$entry = $wpdb->get_row(
-			$wpdb->prepare( "SELECT uri FROM {$wpdb->prefix}holvek_404_logs WHERE id = %s", $id ),
+			$wpdb->prepare( "SELECT uri FROM {$wpdb->prefix}quinrel_404_logs WHERE id = %s", $id ),
 			ARRAY_A
 		);
 
 		if ( empty( $entry ) ) {
-			return new \WP_Error( 'not_found', __( '404 log entry not found.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'not_found', __( '404 log entry not found.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
-		$source = $entry['uri'];
+		$source = '/' . trim( (string) $entry['uri'], '/' );
 
 		// Insert into redirect table
-		$redirectTable = $wpdb->prefix . 'holvek_redirects';
+		$redirectTable = $wpdb->prefix . 'quinrel_redirects';
 		$redirectId    = function_exists( 'wp_generate_uuid4' ) ? wp_generate_uuid4() : uniqid( 'redir_', true );
 
 		// Check for duplicate
 		$exists = $wpdb->get_var(
-			$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_redirects WHERE source = %s", $source )
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_redirects WHERE source = %s", $source )
 		);
 		if ( (int) $exists > 0 ) {
-			return new \WP_Error( 'duplicate', __( 'A redirect for this source already exists.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'duplicate', __( 'A redirect for this source already exists.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$inserted = $wpdb->insert(
@@ -432,14 +432,18 @@ class ErrorMonitor {
 		);
 
 		if ( $inserted === false ) {
-			return new \WP_Error( 'db_error', __( 'Failed to create redirect.', 'holvek' ), array( 'status' => 500 ) );
+			return new \WP_Error( 'db_error', __( 'Failed to create redirect.', 'quinrel' ), array( 'status' => 500 ) );
 		}
 
 		// Mark 404 log entry as resolved
 		$wpdb->update( $logTable, array( 'resolved' => 1 ), array( 'id' => $id ) );
 
+		// Increment autoloaded redirect counts so RedirectManager::handleRedirects() evaluates exact rules
+		( new RedirectManager() )->recordNewRedirects( 1, 0 );
+
 		// Flush regex cache so new rule is live
-		wp_cache_delete( 'holvek_regex_redirects', 'holvek' );
+		wp_cache_delete( 'quinrel_regex_redirects', 'quinrel' );
+		delete_transient( 'quinrel_regex_redirects' );
 
 		return rest_ensure_response(
 			array(
@@ -485,8 +489,8 @@ class ErrorMonitor {
 		}
 
 		global $wpdb;
-		$table    = $wpdb->prefix . 'holvek_404_logs';
-		$existing = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_404_logs" );
+		$table    = $wpdb->prefix . 'quinrel_404_logs';
+		$existing = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_404_logs" );
 		if ( $existing > 0 ) {
 			delete_option( self::OPTION_KEY );
 			return;
@@ -531,10 +535,10 @@ class ErrorMonitor {
 
 		global $wpdb;
 		$offset = ( $page - 1 ) * $perPage;
-		$total  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_404_logs" );
+		$total  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_404_logs" );
 		$rows   = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, uri, hits, referer, user_agent, last_hit, resolved FROM {$wpdb->prefix}holvek_404_logs ORDER BY last_hit DESC, id DESC LIMIT %d OFFSET %d",
+				"SELECT id, uri, hits, referer, user_agent, last_hit, resolved FROM {$wpdb->prefix}quinrel_404_logs ORDER BY last_hit DESC, id DESC LIMIT %d OFFSET %d",
 				$perPage,
 				$offset
 			),
@@ -564,11 +568,11 @@ class ErrorMonitor {
 		$id     = sanitize_text_field( $params['id'] ?? '' );
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'holvek_404_logs';
+		$table = $wpdb->prefix . 'quinrel_404_logs';
 
 		if ( empty( $id ) ) {
 			// Clear all logs
-			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}holvek_404_logs WHERE 1 = %d", 1 ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}quinrel_404_logs WHERE 1 = %d", 1 ) );
 			return rest_ensure_response(
 				array(
 					'success' => true,

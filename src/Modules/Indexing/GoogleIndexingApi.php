@@ -1,18 +1,18 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Indexing;
+namespace Quinrel\WordPress\Modules\Indexing;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Security\KeyVault;
-use Holvek\WordPress\Core\Support\ValueList;
+use Quinrel\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Core\Support\ValueList;
 
 class GoogleIndexingApi {
 
 	private function getStoredCredentials(): string {
-		$raw = (string) get_option( 'holvek_google_indexing_key', '' );
+		$raw = (string) get_option( 'quinrel_google_indexing_key', '' );
 		return KeyVault::decrypt( $raw );
 	}
 
@@ -80,7 +80,7 @@ class GoogleIndexingApi {
 		}
 
 		$schemas   = array();
-		$generated = ( new \Holvek\WordPress\Modules\Schema\SchemaGenerator() )->getSchemaForPost( $post->ID );
+		$generated = ( new \Quinrel\WordPress\Modules\Schema\SchemaGenerator() )->getSchemaForPost( $post->ID );
 		if ( ! empty( $generated['@graph'] ) && is_array( $generated['@graph'] ) ) {
 			$schemas = $generated['@graph'];
 		}
@@ -183,7 +183,7 @@ class GoogleIndexingApi {
 			}
 		}
 
-		$transientKey = 'holvek_gsc_token';
+		$transientKey = 'quinrel_gsc_token';
 		$token        = get_transient( $transientKey );
 		if ( $token ) {
 			return $token;

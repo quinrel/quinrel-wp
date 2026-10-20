@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema;
+namespace Quinrel\WordPress\Modules\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Event\EventManager;
 
 /**
  * Boots the Schema module and registers REST API endpoints.
@@ -36,7 +36,7 @@ class SchemaModule {
 	public function registerRoutes(): void {
 		// Public machine-readable endpoint for LLM system ingestion
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/schemamap',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -63,7 +63,7 @@ class SchemaModule {
 
 		// Competitor URL scraper proxy (Authenticated)
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/schema/scrape',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -74,7 +74,7 @@ class SchemaModule {
 
 		// Read/Write global conditional schema display rules (Admin only)
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/schema/global-rules',
 			array(
 				array(
@@ -100,7 +100,7 @@ class SchemaModule {
 	}
 
 	/**
-	 * Handles /wp-json/holvek/v1/schemamap
+	 * Handles /wp-json/quinrel/v1/schemamap
 	 */
 	public function handleSchemaMap( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$postIdParam = $request->get_param( 'post_id' );
@@ -117,7 +117,7 @@ class SchemaModule {
 			$post = get_post( $postId );
 			// inherit would expose attachment records that are not public pages.
 			if ( ! $post || $post->post_status !== 'publish' ) {
-				return new \WP_Error( 'post_not_found', __( 'Specified post was not found or is not published.', 'holvek' ), array( 'status' => 404 ) );
+				return new \WP_Error( 'post_not_found', __( 'Specified post was not found or is not published.', 'quinrel' ), array( 'status' => 404 ) );
 			}
 
 			$schema = $this->schemaGenerator->getSchemaForPost( $postId );
@@ -131,8 +131,8 @@ class SchemaModule {
 		}
 		$perPage = min( 20, $perPage );
 
-		$version  = (int) get_option( 'holvek_schemamap_version', 1 );
-		$cacheKey = 'holvek_schemamap_' . $version . '_' . $page . '_' . $perPage;
+		$version  = (int) get_option( 'quinrel_schemamap_version', 1 );
+		$cacheKey = 'quinrel_schemamap_' . $version . '_' . $page . '_' . $perPage;
 		$cached   = get_transient( $cacheKey );
 		if ( is_array( $cached ) ) {
 			return rest_ensure_response( $cached );
@@ -161,7 +161,7 @@ class SchemaModule {
 				$id              = get_the_ID();
 				$effectiveSchema = SchemaGenerator::getEffectivePrimarySchema( $id );
 				$schemas         = array( 'BreadcrumbList' ); // Default
-				$isNews          = get_post_meta( $id, '_holvek_is_news', true );
+				$isNews          = get_post_meta( $id, '_quinrel_is_news', true );
 				$schemas[]       = ( $isNews === 'yes' ) ? 'NewsArticle' : 'Article';
 
 				if ( $effectiveSchema !== 'none' ) {
@@ -180,7 +180,7 @@ class SchemaModule {
 					'title'         => get_the_title(),
 					'url'           => get_permalink(),
 					'schemas'       => array_unique( $schemas ),
-					'schemamap_url' => rest_url( "holvek/v1/schemamap?post_id={$id}" ),
+					'schemamap_url' => rest_url( "quinrel/v1/schemamap?post_id={$id}" ),
 				);
 			}
 			wp_reset_postdata();
@@ -208,18 +208,18 @@ class SchemaModule {
 			return;
 		}
 
-		$version = (int) get_option( 'holvek_schemamap_version', 1 );
-		update_option( 'holvek_schemamap_version', $version + 1, false );
+		$version = (int) get_option( 'quinrel_schemamap_version', 1 );
+		update_option( 'quinrel_schemamap_version', $version + 1, false );
 	}
 
 	/**
-	 * Handles /wp-json/holvek/v1/schema/scrape
+	 * Handles /wp-json/quinrel/v1/schema/scrape
 	 */
 	public function handleScrapeCompetitor( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		if ( ! $this->checkScrapePermission() ) {
 			return new \WP_Error(
 				'forbidden',
-				__( 'You do not have permission to import schema from another site.', 'holvek' ),
+				__( 'You do not have permission to import schema from another site.', 'quinrel' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -228,13 +228,13 @@ class SchemaModule {
 		$url    = isset( $params['url'] ) && is_string( $params['url'] ) ? sanitize_text_field( $params['url'] ) : '';
 
 		if ( '' === $url ) {
-			return new \WP_Error( 'missing_url', __( 'URL parameter is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_url', __( 'URL parameter is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! $this->allowScrapeAttempt() ) {
 			return new \WP_Error(
 				'rate_limited',
-				__( 'Too many schema imports. Wait a few minutes and try again.', 'holvek' ),
+				__( 'Too many schema imports. Wait a few minutes and try again.', 'quinrel' ),
 				array( 'status' => 429 )
 			);
 		}
@@ -253,7 +253,7 @@ class SchemaModule {
 			return false;
 		}
 
-		$key   = 'holvek_schema_scrape_' . $userId;
+		$key   = 'quinrel_schema_scrape_' . $userId;
 		$count = (int) get_transient( $key );
 		if ( $count >= self::SCRAPE_LIMIT ) {
 			return false;
@@ -264,10 +264,10 @@ class SchemaModule {
 	}
 
 	/**
-	 * Handles GET /wp-json/holvek/v1/schema/global-rules
+	 * Handles GET /wp-json/quinrel/v1/schema/global-rules
 	 */
 	public function getGlobalRules( \WP_REST_Request $request ): \WP_REST_Response {
-		$rulesJson = get_option( 'holvek_global_schema_rules', '[]' );
+		$rulesJson = get_option( 'quinrel_global_schema_rules', '[]' );
 		$rules     = json_decode( $rulesJson, true );
 		if ( ! is_array( $rules ) ) {
 			$rules = array();
@@ -302,14 +302,14 @@ class SchemaModule {
 	}
 
 	/**
-	 * Handles POST /wp-json/holvek/v1/schema/global-rules
+	 * Handles POST /wp-json/quinrel/v1/schema/global-rules
 	 */
 	public function updateGlobalRules( \WP_REST_Request $request ): \WP_REST_Response {
 		$params = $request->get_json_params();
 		$rules  = isset( $params['rules'] ) ? $params['rules'] : array();
 
 		if ( ! is_array( $rules ) ) {
-			return new \WP_Error( 'invalid_format', __( 'Rules must be a valid array.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_format', __( 'Rules must be a valid array.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		// Sanitize
@@ -325,7 +325,7 @@ class SchemaModule {
 			);
 		}
 
-		update_option( 'holvek_global_schema_rules', wp_json_encode( $sanitized ) );
+		update_option( 'quinrel_global_schema_rules', wp_json_encode( $sanitized ) );
 
 		return rest_ensure_response(
 			array(

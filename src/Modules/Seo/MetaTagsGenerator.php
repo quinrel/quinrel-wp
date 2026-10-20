@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Seo;
+namespace Quinrel\WordPress\Modules\Seo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,7 +13,7 @@ class MetaTagsGenerator {
 			return;
 		}
 
-		echo "\n<!-- Holvek SEO Meta Tags -->\n";
+		echo "\n<!-- Quinrel SEO Meta Tags -->\n";
 
 		$description = $this->getDescription();
 		if ( $description ) {
@@ -31,36 +31,40 @@ class MetaTagsGenerator {
 		}
 
 		// Webmaster Tools Verification Meta Tags
-		$googleVerify = get_option( 'holvek_google_verify', '' );
+		$googleVerify = get_option( 'quinrel_google_verify', '' );
 		if ( ! empty( $googleVerify ) ) {
 			printf( '<meta name="google-site-verification" content="%s" />' . "\n", esc_attr( $googleVerify ) );
 		}
 
-		$bingVerify = get_option( 'holvek_bing_verify', '' );
+		$bingVerify = get_option( 'quinrel_bing_verify', '' );
 		if ( ! empty( $bingVerify ) ) {
 			printf( '<meta name="msvalidate.01" content="%s" />' . "\n", esc_attr( $bingVerify ) );
 		}
 
-		$yandexVerify = get_option( 'holvek_yandex_verify', '' );
+		$yandexVerify = get_option( 'quinrel_yandex_verify', '' );
 		if ( ! empty( $yandexVerify ) ) {
 			printf( '<meta name="yandex-verification" content="%s" />' . "\n", esc_attr( $yandexVerify ) );
 		}
 
-		$pinterestVerify = get_option( 'holvek_pinterest_verify', '' );
+		$pinterestVerify = get_option( 'quinrel_pinterest_verify', '' );
 		if ( ! empty( $pinterestVerify ) ) {
 			printf( '<meta name="pdomain" content="%s" />' . "\n", esc_attr( $pinterestVerify ) );
 		}
 
-		echo "<!-- /Holvek SEO Meta Tags -->\n\n";
+		$this->enqueueGa4Tag();
+
+		echo "<!-- /Quinrel SEO Meta Tags -->\n\n";
 	}
 
 	public function getDocumentTitle(): string {
-		// MVP: Returns a standard or custom title depending on the current post/page
-		// We can hook into get_post_meta here later for custom titles.
 		if ( is_singular() ) {
-			$customTitle = get_post_meta( get_the_ID(), '_holvek_meta_title', true );
-			if ( ! empty( $customTitle ) ) {
-				return $customTitle;
+			$postId      = (int) get_the_ID();
+			$customTitle = (string) get_post_meta( $postId, '_quinrel_meta_title', true );
+			if ( '' !== trim( $customTitle ) ) {
+				$resolved = SmartTagResolver::resolve( $customTitle, $postId );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
 			}
 			return get_the_title() . ' - ' . get_bloginfo( 'name' );
 		}
@@ -70,16 +74,20 @@ class MetaTagsGenerator {
 
 	private function getDescription(): string {
 		if ( is_singular() ) {
-			$customDesc = get_post_meta( get_the_ID(), '_holvek_meta_description', true );
-			if ( ! empty( $customDesc ) ) {
-				return $customDesc;
+			$postId     = (int) get_the_ID();
+			$customDesc = (string) get_post_meta( $postId, '_quinrel_meta_description', true );
+			if ( '' !== trim( $customDesc ) ) {
+				$resolved = SmartTagResolver::resolve( $customDesc, $postId );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
 			}
-			// Fallback to excerpt, then post content snippet
-			$excerpt = get_post_field( 'post_excerpt', get_the_ID() );
-			if ( ! empty( $excerpt ) ) {
-				return wp_trim_words( $excerpt, 25 );
+			// Fallback to excerpt, then post content snippet (stripped of blocks and shortcodes)
+			$excerpt = (string) get_post_field( 'post_excerpt', $postId );
+			if ( '' !== trim( $excerpt ) ) {
+				return SmartTagResolver::cleanContentSnippet( $excerpt, 25 );
 			}
-			return wp_trim_words( get_post_field( 'post_content', get_the_ID() ), 25 );
+			return SmartTagResolver::cleanContentSnippet( (string) get_post_field( 'post_content', $postId ), 25 );
 		}
 
 		if ( is_front_page() || is_home() ) {
@@ -98,7 +106,7 @@ class MetaTagsGenerator {
 				// Fallback: generate from term name
 				return sprintf(
 					/* translators: 1: Term name, 2: Taxonomy name, 3: Site name */
-					__( 'Browse all posts in the "%1$s" %2$s on %3$s.', 'holvek' ),
+					__( 'Browse all posts in the "%1$s" %2$s on %3$s.', 'quinrel' ),
 					$term->name,
 					$term->taxonomy,
 					get_bloginfo( 'name' )
@@ -116,7 +124,7 @@ class MetaTagsGenerator {
 				}
 				return sprintf(
 					/* translators: 1: Author name, 2: Site name */
-					__( 'Posts by %1$s on %2$s.', 'holvek' ),
+					__( 'Posts by %1$s on %2$s.', 'quinrel' ),
 					$author->display_name,
 					get_bloginfo( 'name' )
 				);
@@ -132,7 +140,7 @@ class MetaTagsGenerator {
 				}
 				return sprintf(
 					/* translators: 1: Post type plural name, 2: Site name */
-					__( 'Browse all %1$s on %2$s.', 'holvek' ),
+					__( 'Browse all %1$s on %2$s.', 'quinrel' ),
 					strtolower( $postType->labels->name ?? $postType->name ),
 					get_bloginfo( 'name' )
 				);
@@ -145,7 +153,7 @@ class MetaTagsGenerator {
 			if ( ! empty( $query ) ) {
 				return sprintf(
 					/* translators: 1: Search query, 2: Site name */
-					__( 'Search results for "%1$s" on %2$s.', 'holvek' ),
+					__( 'Search results for "%1$s" on %2$s.', 'quinrel' ),
 					esc_html( $query ),
 					get_bloginfo( 'name' )
 				);
@@ -163,7 +171,7 @@ class MetaTagsGenerator {
 			}
 			return sprintf(
 				/* translators: 1: Date label, 2: Site name */
-				__( 'Archive for %1$s on %2$s.', 'holvek' ),
+				__( 'Archive for %1$s on %2$s.', 'quinrel' ),
 				$label,
 				get_bloginfo( 'name' )
 			);
@@ -172,14 +180,40 @@ class MetaTagsGenerator {
 		return '';
 	}
 
+	public function filterWpRobots( array $robots ): array {
+		$directives = array_map( 'trim', explode( ',', $this->getRobotsMeta() ) );
+		if ( in_array( 'noindex', $directives, true ) ) {
+			unset( $robots['index'] );
+			$robots['noindex'] = true;
+		} else {
+			unset( $robots['noindex'] );
+			$robots['index'] = true;
+		}
+
+		if ( in_array( 'nofollow', $directives, true ) ) {
+			unset( $robots['follow'] );
+			$robots['nofollow'] = true;
+		} else {
+			unset( $robots['nofollow'] );
+			$robots['follow'] = true;
+		}
+
+		return $robots;
+	}
+
 	private function getCanonicalUrl(): string {
+		// Suppress canonical when site-wide search engine indexing is discouraged
+		if ( '0' === (string) get_option( 'blog_public', '1' ) ) {
+			return '';
+		}
+
 		// ── Singular: honour per-post override, then use the clean permalink ──
 		if ( is_singular() ) {
 			// Suppress canonical on noindexed posts — contradictory signals confuse crawlers
-			if ( get_post_meta( get_the_ID(), '_holvek_noindex', true ) === 'yes' ) {
+			if ( get_post_meta( get_the_ID(), '_quinrel_noindex', true ) === 'yes' ) {
 				return '';
 			}
-			$customCanonical = get_post_meta( get_the_ID(), '_holvek_canonical_url', true );
+			$customCanonical = get_post_meta( get_the_ID(), '_quinrel_canonical_url', true );
 			if ( ! empty( $customCanonical ) ) {
 				return $customCanonical;
 			}
@@ -232,10 +266,15 @@ class MetaTagsGenerator {
 	}
 
 	private function getRobotsMeta(): string {
+		// ── Site-wide search engine visibility ("Discourage search engines from indexing this site") ──
+		if ( '0' === (string) get_option( 'blog_public', '1' ) ) {
+			return 'noindex, nofollow';
+		}
+
 		// ── Singular posts/pages: respect per-post noindex/nofollow flags ──
 		if ( is_singular() ) {
-			$noindex  = get_post_meta( get_the_ID(), '_holvek_noindex', true );
-			$nofollow = get_post_meta( get_the_ID(), '_holvek_nofollow', true );
+			$noindex  = get_post_meta( get_the_ID(), '_quinrel_noindex', true );
+			$nofollow = get_post_meta( get_the_ID(), '_quinrel_nofollow', true );
 
 			$index  = ( $noindex === 'yes' ) ? 'noindex' : 'index';
 			$follow = ( $nofollow === 'yes' ) ? 'nofollow' : 'follow';
@@ -266,5 +305,53 @@ class MetaTagsGenerator {
 
 		// ── All other contexts (category, tag, author, CPT archives, home) ──
 		return 'index, follow';
+	}
+
+	/**
+	 * Return a validated GA4 Measurement ID (G-XXXXXXXXXX) when configured, or empty string.
+	 */
+	public function getValidGa4MeasurementId(): string {
+		$raw = strtoupper( trim( (string) get_option( 'quinrel_ga4_measurement_id', '' ) ) );
+		if ( $raw === '' || preg_match( '/^G-[A-Z0-9]{4,20}$/', $raw ) !== 1 ) {
+			return '';
+		}
+		return $raw;
+	}
+
+	/**
+	 * Check whether a valid GA4 Measurement ID is configured.
+	 */
+	public function hasValidGa4MeasurementId(): bool {
+		return $this->getValidGa4MeasurementId() !== '';
+	}
+
+	/**
+	 * Enqueue the Google Analytics 4 gtag.js snippet on public front-end pages
+	 * when a valid Measurement ID is configured and the visitor is not an administrator.
+	 */
+	public function enqueueGa4Tag(): void {
+		if ( is_admin() || current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$measurementId = $this->getValidGa4MeasurementId();
+		if ( $measurementId === '' ) {
+			return;
+		}
+
+		$src = 'https://www.googletagmanager.com/gtag/js?id=' . rawurlencode( $measurementId );
+		wp_enqueue_script(
+			'quinrel-ga4-gtag',
+			$src,
+			array(),
+			defined( 'QUINREL_VERSION' ) ? QUINREL_VERSION : '1.0.0',
+			false
+		);
+
+		$inline = sprintf(
+			'window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag("js", new Date()); gtag("config", %s);',
+			wp_json_encode( $measurementId )
+		);
+		wp_add_inline_script( 'quinrel-ga4-gtag', $inline, 'after' );
 	}
 }

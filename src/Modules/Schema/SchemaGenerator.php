@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema;
+namespace Quinrel\WordPress\Modules\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -43,7 +43,7 @@ class SchemaGenerator {
 			return;
 		}
 
-		echo "<!-- Holvek AI-Ready Schema -->\n";
+		echo "<!-- Quinrel AI-Ready Schema -->\n";
 		// JSON_HEX_TAG, JSON_HEX_AMP, and JSON_HEX_APOS already encode the payload. esc_html() would break the JSON.
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo wp_get_inline_script_tag(
@@ -52,7 +52,7 @@ class SchemaGenerator {
 				'type' => 'application/ld+json',
 			)
 		);
-		echo "<!-- /Holvek Schema -->\n";
+		echo "<!-- /Quinrel Schema -->\n";
 	}
 
 	/**
@@ -97,13 +97,13 @@ class SchemaGenerator {
 	 * Resolves effective primary schema based on local or global templates.
 	 */
 	public static function getEffectivePrimarySchema( int $postId ): string {
-		$primarySchema = get_post_meta( $postId, '_holvek_primary_schema', true );
+		$primarySchema = get_post_meta( $postId, '_quinrel_primary_schema', true );
 		if ( ! empty( $primarySchema ) && $primarySchema !== 'none' ) {
 			return $primarySchema;
 		}
 
 		// Apply global conditional display rules
-		$globalRulesJson = get_option( 'holvek_global_schema_rules' );
+		$globalRulesJson = get_option( 'quinrel_global_schema_rules' );
 		if ( ! empty( $globalRulesJson ) ) {
 			$rules = json_decode( $globalRulesJson, true );
 			if ( is_array( $rules ) ) {

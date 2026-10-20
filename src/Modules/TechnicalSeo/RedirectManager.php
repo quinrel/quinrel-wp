@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -11,20 +11,20 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Exposes a production-grade REST API for Redirect CRUD.
  *
  * Performance Architecture:
- *   - Counts live in the autoloaded option holvek_redirect_counts. A page with
+ *   - Counts live in the autoloaded option quinrel_redirect_counts. A page with
  *     no rules returns before any redirect query.
  *   - Exact matches: Direct SQL lookup by source URL (indexed column).
  *   - Regex rules: Object cache, then a transient, then one bounded query.
  */
 class RedirectManager {
 
-	private const OPTION_KEY         = 'holvek_redirects';
-	private const COUNTS_OPTION      = 'holvek_redirect_counts';
-	private const REGEX_CACHE_KEY    = 'holvek_regex_redirects';
-	private const REGEX_TRANSIENT    = 'holvek_regex_redirects';
-	private const REGEX_CACHE_GROUP  = 'holvek';
+	private const OPTION_KEY         = 'quinrel_redirects';
+	private const COUNTS_OPTION      = 'quinrel_redirect_counts';
+	private const REGEX_CACHE_KEY    = 'quinrel_regex_redirects';
+	private const REGEX_TRANSIENT    = 'quinrel_regex_redirects';
+	private const REGEX_CACHE_GROUP  = 'quinrel';
 	private const ADMIN_PAGE_MAX     = 100;
-	private const IMPORT_QUEUE       = 'holvek_redirect_import_queue';
+	private const IMPORT_QUEUE       = 'quinrel_redirect_import_queue';
 	private const IMPORT_BATCH       = 50;
 	private const IMPORT_LIMIT       = 1000;
 	private const IMPORT_BODY_MAX    = 524288;
@@ -81,7 +81,7 @@ class RedirectManager {
 		// Look up both the normalized path and common path variations
 		$result = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT target, code FROM {$wpdb->prefix}holvek_redirects WHERE source = %s AND is_regex = 0 LIMIT 1",
+				"SELECT target, code FROM {$wpdb->prefix}quinrel_redirects WHERE source = %s AND is_regex = 0 LIMIT 1",
 				$normalizedPath
 			)
 		);
@@ -94,7 +94,7 @@ class RedirectManager {
 
 			$result = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT target, code FROM {$wpdb->prefix}holvek_redirects WHERE source = %s AND is_regex = 0 LIMIT 1",
+					"SELECT target, code FROM {$wpdb->prefix}quinrel_redirects WHERE source = %s AND is_regex = 0 LIMIT 1",
 					$alt
 				)
 			);
@@ -121,7 +121,7 @@ class RedirectManager {
 
 		global $wpdb;
 		$rules = $wpdb->get_results(
-			"SELECT source, target, code FROM {$wpdb->prefix}holvek_redirects WHERE is_regex = 1 LIMIT 500"
+			"SELECT source, target, code FROM {$wpdb->prefix}quinrel_redirects WHERE is_regex = 1 LIMIT 500"
 		);
 
 		if ( ! is_array( $rules ) ) {
@@ -177,14 +177,14 @@ class RedirectManager {
 	private function rebuildRedirectCounts(): array {
 		global $wpdb;
 		$counts = array(
-			'exact' => max( 0, (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_redirects WHERE is_regex = 0" ) ),
-			'regex' => max( 0, (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_redirects WHERE is_regex = 1" ) ),
+			'exact' => max( 0, (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_redirects WHERE is_regex = 0" ) ),
+			'regex' => max( 0, (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_redirects WHERE is_regex = 1" ) ),
 		);
 		update_option( self::COUNTS_OPTION, $counts, true );
 		return $counts;
 	}
 
-	private function recordNewRedirects( int $exactAdded, int $regexAdded ): void {
+	public function recordNewRedirects( int $exactAdded, int $regexAdded ): void {
 		if ( $exactAdded === 0 && $regexAdded === 0 ) {
 			return;
 		}
@@ -334,7 +334,7 @@ class RedirectManager {
 		}
 
 		global $wpdb;
-		$existing = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_redirects" );
+		$existing = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_redirects" );
 		if ( $existing > 0 ) {
 			delete_option( self::OPTION_KEY );
 			return;
@@ -345,7 +345,7 @@ class RedirectManager {
 				continue;
 			}
 			$wpdb->insert(
-				$wpdb->prefix . 'holvek_redirects',
+				$wpdb->prefix . 'quinrel_redirects',
 				array(
 					'id'       => $rule['id'] ?? ( function_exists( 'wp_generate_uuid4' ) ? wp_generate_uuid4() : uniqid( 'redir_', true ) ),
 					'source'   => $rule['source'] ?? '',
@@ -372,7 +372,7 @@ class RedirectManager {
 		$offset  = ( $page - 1 ) * $perPage;
 		$rows    = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, source, target, code, is_regex FROM {$wpdb->prefix}holvek_redirects ORDER BY id ASC LIMIT %d OFFSET %d",
+				"SELECT id, source, target, code, is_regex FROM {$wpdb->prefix}quinrel_redirects ORDER BY id ASC LIMIT %d OFFSET %d",
 				$perPage,
 				$offset
 			),
@@ -397,7 +397,7 @@ class RedirectManager {
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/redirects',
 			array(
 				array(
@@ -424,7 +424,7 @@ class RedirectManager {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/redirects/delete',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -435,7 +435,7 @@ class RedirectManager {
 
 		// BL-005: CSV import/export
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/redirects/import-csv',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -445,7 +445,7 @@ class RedirectManager {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/redirects/export-csv',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -469,13 +469,13 @@ class RedirectManager {
 		if ( strlen( $rawCsv ) > self::IMPORT_BODY_MAX ) {
 			return new \WP_Error(
 				'csv_too_large',
-				__( 'The CSV is too large. Import at most 1000 rows.', 'holvek' ),
+				__( 'The CSV is too large. Import at most 1000 rows.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
 
 		if ( $rawCsv === '' ) {
-			return new \WP_Error( 'empty_body', __( 'CSV body is empty.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'empty_body', __( 'CSV body is empty.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$rows = $this->parseCsvBody( $rawCsv );
@@ -483,7 +483,7 @@ class RedirectManager {
 		if ( array() === $rows ) {
 			return new \WP_Error(
 				'parse_error',
-				__( 'Could not parse CSV. Ensure headers: source,target,code,is_regex', 'holvek' ),
+				__( 'Could not parse CSV. Ensure headers: source,target,code,is_regex', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -511,12 +511,12 @@ class RedirectManager {
 		if ( count( $accepted ) > $room ) {
 			$skipped += count( $accepted ) - $room;
 			$accepted = array_slice( $accepted, 0, $room );
-			$errors[] = __( 'The import queue is full. Try again after the current import finishes.', 'holvek' );
+			$errors[] = __( 'The import queue is full. Try again after the current import finishes.', 'quinrel' );
 		}
 
 		if ( array() !== $accepted ) {
 			update_option( self::IMPORT_QUEUE, array_merge( $pending, $accepted ), false );
-			( new \Holvek\WordPress\Core\Queue\QueueManager() )->push( RedirectImportJob::class, array(), 0 );
+			( new \Quinrel\WordPress\Core\Queue\QueueManager() )->push( RedirectImportJob::class, array(), 0 );
 		}
 
 		return rest_ensure_response(
@@ -569,7 +569,7 @@ class RedirectManager {
 
 			$exists = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$wpdb->prefix}holvek_redirects WHERE source = %s",
+					"SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_redirects WHERE source = %s",
 					$source
 				)
 			);
@@ -578,7 +578,7 @@ class RedirectManager {
 			}
 
 			$inserted = $wpdb->insert(
-				$wpdb->prefix . 'holvek_redirects',
+				$wpdb->prefix . 'quinrel_redirects',
 				array(
 					'id'       => function_exists( 'wp_generate_uuid4' ) ? wp_generate_uuid4() : uniqid( 'redir_', true ),
 					'source'   => $source,
@@ -603,7 +603,7 @@ class RedirectManager {
 			delete_option( self::IMPORT_QUEUE );
 		} else {
 			update_option( self::IMPORT_QUEUE, $pending, false );
-			( new \Holvek\WordPress\Core\Queue\QueueManager() )->push( RedirectImportJob::class, array(), 1 );
+			( new \Quinrel\WordPress\Core\Queue\QueueManager() )->push( RedirectImportJob::class, array(), 1 );
 		}
 
 		$this->recordNewRedirects( $exact, $regex );
@@ -625,7 +625,7 @@ class RedirectManager {
 		if ( $source === '' || $target === '' ) {
 			return sprintf(
 				/* translators: %d: CSV line number. */
-				__( 'Row %d: source and target are required.', 'holvek' ),
+				__( 'Row %d: source and target are required.', 'quinrel' ),
 				$line
 			);
 		}
@@ -633,7 +633,7 @@ class RedirectManager {
 		if ( ! $this->isSafeTarget( $target, (bool) $isRegex ) ) {
 			return sprintf(
 				/* translators: %d: CSV line number. */
-				__( 'Row %d: target must be a site-relative path or an absolute URL on this site.', 'holvek' ),
+				__( 'Row %d: target must be a site-relative path or an absolute URL on this site.', 'quinrel' ),
 				$line
 			);
 		}
@@ -641,7 +641,7 @@ class RedirectManager {
 		if ( ! in_array( $code, array( 301, 302, 307, 410, 451 ), true ) ) {
 			return sprintf(
 				/* translators: 1: CSV line number, 2: rejected status code. */
-				__( 'Row %1$d: invalid code %2$d. Use 301, 302, 307, 410, or 451.', 'holvek' ),
+				__( 'Row %1$d: invalid code %2$d. Use 301, 302, 307, 410, or 451.', 'quinrel' ),
 				$line,
 				$code
 			);
@@ -650,7 +650,7 @@ class RedirectManager {
 		if ( $isRegex && null === $this->compiledPattern( $source ) ) {
 			return sprintf(
 				/* translators: %d: CSV line number. */
-				__( 'Row %d: regex pattern is invalid.', 'holvek' ),
+				__( 'Row %d: regex pattern is invalid.', 'quinrel' ),
 				$line
 			);
 		}
@@ -695,7 +695,7 @@ class RedirectManager {
 
 		$response = rest_ensure_response( $csv );
 		$response->header( 'Content-Type', 'text/csv; charset=utf-8' );
-		$response->header( 'Content-Disposition', 'attachment; filename=holvek-redirects.csv' );
+		$response->header( 'Content-Disposition', 'attachment; filename=quinrel-redirects.csv' );
 
 		return $response;
 	}
@@ -750,7 +750,7 @@ class RedirectManager {
 		}
 		$perPage = min( self::ADMIN_PAGE_MAX, $perPage );
 
-		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_redirects" );
+		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_redirects" );
 		$rows  = $this->queryRedirectPage( $page, $perPage );
 
 		return rest_ensure_response(
@@ -764,21 +764,41 @@ class RedirectManager {
 	}
 
 	public function addRedirectEndpoint( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$params = $request->get_json_params();
-
-		$source  = sanitize_text_field( $params['source'] ?? '' );
-		$target  = sanitize_text_field( $params['target'] ?? '' );
+		$params  = $request->get_json_params();
+		$source  = $params['source'] ?? '';
+		$target  = $params['target'] ?? '';
 		$code    = intval( $params['code'] ?? 301 );
 		$isRegex = ! empty( $params['is_regex'] );
 
+		$result = $this->createRedirect( $source, $target, $code, $isRegex );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Programmatically create an exact or regex redirect.
+	 *
+	 * @param string $source  Source relative path or URL.
+	 * @param string $target  Target relative path or URL.
+	 * @param int    $code    HTTP redirect status code (301, 302, 307, 410, 451).
+	 * @param bool   $isRegex Whether the source is a regular expression pattern.
+	 * @return array<string, mixed>|\WP_Error Result array on success, WP_Error on failure.
+	 */
+	public function createRedirect( string $source, string $target, int $code = 301, bool $isRegex = false ) {
+		$source = sanitize_text_field( $source );
+		$target = sanitize_text_field( $target );
+
 		if ( empty( $source ) || empty( $target ) ) {
-			return new \WP_Error( 'invalid_fields', __( 'Source and Target URLs are required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_fields', __( 'Source and Target URLs are required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! $this->isSafeTarget( $target, $isRegex ) ) {
 			return new \WP_Error(
 				'unsafe_target',
-				__( 'Redirect targets must be site-relative paths or absolute URLs on this site.', 'holvek' ),
+				__( 'Redirect targets must be site-relative paths or absolute URLs on this site.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -787,25 +807,42 @@ class RedirectManager {
 			$code = 301;
 		}
 
-		if ( $isRegex && $this->compiledPattern( $source ) === null ) {
-			return new \WP_Error( 'invalid_regex', __( 'The provided regex pattern is invalid.', 'holvek' ), array( 'status' => 400 ) );
+		if ( $isRegex ) {
+			if ( $this->compiledPattern( $source ) === null ) {
+				return new \WP_Error( 'invalid_regex', __( 'The provided regex pattern is invalid.', 'quinrel' ), array( 'status' => 400 ) );
+			}
+		} else {
+			$source = $this->normalizePath( $source );
 		}
 
 		global $wpdb;
 
 		// Check for duplicate source
-		$existing = $wpdb->get_var(
+		$existingId = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}holvek_redirects WHERE source = %s",
+				"SELECT id FROM {$wpdb->prefix}quinrel_redirects WHERE source = %s LIMIT 1",
 				$source
 			)
 		);
-		if ( $existing > 0 ) {
-			return new \WP_Error( 'duplicate', __( 'A redirect with this source already exists.', 'holvek' ), array( 'status' => 400 ) );
+		if ( $existingId ) {
+			$wpdb->update(
+				$wpdb->prefix . 'quinrel_redirects',
+				array(
+					'target'   => $target,
+					'code'     => $code,
+					'is_regex' => $isRegex ? 1 : 0,
+				),
+				array( 'id' => $existingId )
+			);
+			$this->flushRegexCache();
+			return array(
+				'success' => true,
+				'id'      => $existingId,
+				'updated' => true,
+			);
 		}
 
-		// Walk the chain: target → target's target → … up to 10 hops.
-		// If the new source appears anywhere in that chain it would create a loop.
+		// Loop detection
 		$loopError = $this->detectRedirectLoop( $source, $target );
 		if ( $loopError !== null ) {
 			return new \WP_Error( 'redirect_loop', $loopError, array( 'status' => 400 ) );
@@ -814,7 +851,7 @@ class RedirectManager {
 		$id = function_exists( 'wp_generate_uuid4' ) ? wp_generate_uuid4() : uniqid( 'redir_', true );
 
 		$inserted = $wpdb->insert(
-			$wpdb->prefix . 'holvek_redirects',
+			$wpdb->prefix . 'quinrel_redirects',
 			array(
 				'id'       => $id,
 				'source'   => $source,
@@ -825,18 +862,70 @@ class RedirectManager {
 		);
 
 		if ( $inserted === false ) {
-			return new \WP_Error( 'db_error', __( 'Failed to save redirect inside the database.', 'holvek' ), array( 'status' => 500 ) );
+			return new \WP_Error( 'db_error', __( 'Failed to save redirect inside the database.', 'quinrel' ), array( 'status' => 500 ) );
 		}
 
 		$this->recordNewRedirects( $isRegex ? 0 : 1, $isRegex ? 1 : 0 );
 		$this->flushRegexCache();
 
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'id'      => $id,
-			)
+		return array(
+			'success' => true,
+			'id'      => $id,
 		);
+	}
+
+	/**
+	 * Automatically create a 301 redirect when a published post's slug changes.
+	 *
+	 * @param int      $postId     Post ID.
+	 * @param \WP_Post $postAfter  Post object after update.
+	 * @param \WP_Post $postBefore Post object before update.
+	 */
+	public function onPostUpdated( int $postId, $postAfter, $postBefore ): void {
+		if ( ! is_object( $postAfter ) || ! is_object( $postBefore ) ) {
+			return;
+		}
+
+		// Only monitor published public content
+		if ( 'publish' !== $postBefore->post_status || 'publish' !== $postAfter->post_status ) {
+			return;
+		}
+
+		if ( ( function_exists( 'wp_is_post_revision' ) && wp_is_post_revision( $postId ) ) ||
+			( function_exists( 'wp_is_post_autosave' ) && wp_is_post_autosave( $postId ) ) ) {
+			return;
+		}
+
+		// Check if slug actually changed
+		if ( empty( $postBefore->post_name ) || empty( $postAfter->post_name ) || $postBefore->post_name === $postAfter->post_name ) {
+			return;
+		}
+
+		// Ensure post type is public/viewable
+		if ( function_exists( 'is_post_type_viewable' ) && ! is_post_type_viewable( $postAfter->post_type ) ) {
+			return;
+		}
+
+		// Check setting (defaults to enabled)
+		if ( 'no' === get_option( 'quinrel_auto_slug_redirects', 'yes' ) ) {
+			return;
+		}
+
+		$oldUrl = get_permalink( $postBefore );
+		$newUrl = get_permalink( $postAfter );
+
+		if ( ! is_string( $oldUrl ) || ! is_string( $newUrl ) || $oldUrl === $newUrl ) {
+			return;
+		}
+
+		$oldPath = wp_parse_url( $oldUrl, PHP_URL_PATH );
+		$newPath = wp_parse_url( $newUrl, PHP_URL_PATH );
+
+		if ( ! $oldPath || ! $newPath || $oldPath === $newPath ) {
+			return;
+		}
+
+		$this->createRedirect( $oldPath, $newPath, 301, false );
 	}
 
 	/**
@@ -876,7 +965,7 @@ class RedirectManager {
 			// Look up whether this URL is itself a redirect source
 			$nextTarget = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT target FROM {$wpdb->prefix}holvek_redirects WHERE source = %s AND is_regex = 0 LIMIT 1",
+					"SELECT target FROM {$wpdb->prefix}quinrel_redirects WHERE source = %s AND is_regex = 0 LIMIT 1",
 					$current
 				)
 			);
@@ -896,20 +985,20 @@ class RedirectManager {
 		$id     = sanitize_text_field( $params['id'] ?? '' );
 
 		if ( empty( $id ) ) {
-			return new \WP_Error( 'missing_id', __( 'Redirect ID is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_id', __( 'Redirect ID is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		global $wpdb;
 		$row     = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT is_regex FROM {$wpdb->prefix}holvek_redirects WHERE id = %s",
+				"SELECT is_regex FROM {$wpdb->prefix}quinrel_redirects WHERE id = %s",
 				$id
 			)
 		);
-		$deleted = $wpdb->delete( $wpdb->prefix . 'holvek_redirects', array( 'id' => $id ) );
+		$deleted = $wpdb->delete( $wpdb->prefix . 'quinrel_redirects', array( 'id' => $id ) );
 
 		if ( $deleted === false ) {
-			return new \WP_Error( 'db_error', __( 'Failed to delete redirect from the database.', 'holvek' ), array( 'status' => 500 ) );
+			return new \WP_Error( 'db_error', __( 'Failed to delete redirect from the database.', 'quinrel' ), array( 'status' => 500 ) );
 		}
 
 		if ( $deleted > 0 ) {

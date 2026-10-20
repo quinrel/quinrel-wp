@@ -1,9 +1,9 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use Holvek\WordPress\Modules\TechnicalSeo\RedirectManager;
+use Quinrel\WordPress\Modules\TechnicalSeo\RedirectManager;
 
 class RedirectManagerTest extends TestCase
 {
@@ -21,8 +21,8 @@ class RedirectManagerTest extends TestCase
         $GLOBALS['wpdb'] = $this->db;
         $this->manager = new RedirectManager();
         unset(
-            $GLOBALS['mock_wp_options']['holvek_redirect_counts'],
-            $GLOBALS['mock_wp_options']['holvek_redirects'],
+            $GLOBALS['mock_wp_options']['quinrel_redirect_counts'],
+            $GLOBALS['mock_wp_options']['quinrel_redirects'],
             $GLOBALS['mock_wpdb_var'],
             $GLOBALS['mock_wpdb_row'],
             $GLOBALS['mock_wpdb_insert'],
@@ -86,7 +86,7 @@ class RedirectManagerTest extends TestCase
 
     public function testZeroCountsReturnBeforeAnyRedirectQuery(): void
     {
-        update_option('holvek_redirect_counts', array('exact' => 0, 'regex' => 0));
+        update_option('quinrel_redirect_counts', array('exact' => 0, 'regex' => 0));
         unset($_SERVER['REQUEST_URI']);
         $before = ini_get('pcre.backtrack_limit');
 
@@ -116,7 +116,7 @@ class RedirectManagerTest extends TestCase
 
         $this->assertSame(
             array('exact' => 4, 'regex' => 2),
-            get_option('holvek_redirect_counts')
+            get_option('quinrel_redirect_counts')
         );
         $this->assertNotSame(array(), array_filter(
             $this->db->queries,
@@ -141,7 +141,7 @@ class RedirectManagerTest extends TestCase
         $this->manager->handleRedirects();
         $this->assertSame(
             array('exact' => 0, 'regex' => 0),
-            get_option('holvek_redirect_counts')
+            get_option('quinrel_redirect_counts')
         );
 
         $this->db->queries = array();
@@ -151,7 +151,7 @@ class RedirectManagerTest extends TestCase
 
     public function testExactMatchRedirectsAndDoesNotTouchTheBacktrackLimit(): void
     {
-        update_option('holvek_redirect_counts', array('exact' => 1, 'regex' => 0));
+        update_option('quinrel_redirect_counts', array('exact' => 1, 'regex' => 0));
         $_SERVER['REQUEST_URI'] = '/old-page?utm=1';
         $GLOBALS['mock_wpdb_row'] = static function () {
             return (object) array(
@@ -181,7 +181,7 @@ class RedirectManagerTest extends TestCase
 
     public function testRegexRulesAreCachedInTheTransientAndObjectCache(): void
     {
-        update_option('holvek_redirect_counts', array('exact' => 0, 'regex' => 1));
+        update_option('quinrel_redirect_counts', array('exact' => 0, 'regex' => 1));
         $_SERVER['REQUEST_URI'] = '/hello';
         $GLOBALS['mock_wpdb_results'] = static function ($query) {
             if (is_string($query) && str_contains($query, 'is_regex = 1')) {
@@ -201,19 +201,19 @@ class RedirectManagerTest extends TestCase
 
         $this->assertSame($before, ini_get('pcre.backtrack_limit'));
         $this->assertSame(array(), $GLOBALS['mock_redirects']);
-        $this->assertCount(1, get_transient('holvek_regex_redirects'));
-        $this->assertArrayHasKey('holvek_regex_redirects', $GLOBALS['mock_object_cache']['holvek']);
+        $this->assertCount(1, get_transient('quinrel_regex_redirects'));
+        $this->assertArrayHasKey('quinrel_regex_redirects', $GLOBALS['mock_object_cache']['quinrel']);
 
         $this->db->queries = array();
-        unset($GLOBALS['mock_object_cache']['holvek']['holvek_regex_redirects']);
+        unset($GLOBALS['mock_object_cache']['quinrel']['quinrel_regex_redirects']);
         $this->manager->handleRedirects();
         $this->assertSame(array(), $this->db->queries);
     }
 
     public function testCreateImportAndDeleteMaintainCounts(): void
     {
-        update_option('holvek_redirect_counts', array('exact' => 0, 'regex' => 0));
-        set_transient('holvek_regex_redirects', array('stale'), HOUR_IN_SECONDS);
+        update_option('quinrel_redirect_counts', array('exact' => 0, 'regex' => 0));
+        set_transient('quinrel_regex_redirects', array('stale'), HOUR_IN_SECONDS);
 
         $created = $this->manager->addRedirectEndpoint($this->jsonRequest(array(
             'source' => '/old',
@@ -221,8 +221,8 @@ class RedirectManagerTest extends TestCase
             'code' => 301,
         )));
         $this->assertInstanceOf(\WP_REST_Response::class, $created);
-        $this->assertSame(array('exact' => 1, 'regex' => 0), get_option('holvek_redirect_counts'));
-        $this->assertFalse(get_transient('holvek_regex_redirects'));
+        $this->assertSame(array('exact' => 1, 'regex' => 0), get_option('quinrel_redirect_counts'));
+        $this->assertFalse(get_transient('quinrel_regex_redirects'));
 
         $rejected = $this->manager->addRedirectEndpoint($this->jsonRequest(array(
             'source' => '(',
@@ -231,7 +231,7 @@ class RedirectManagerTest extends TestCase
         )));
         $this->assertInstanceOf(\WP_Error::class, $rejected);
         $this->assertSame('invalid_regex', $rejected->get_error_code());
-        $this->assertSame(array('exact' => 1, 'regex' => 0), get_option('holvek_redirect_counts'));
+        $this->assertSame(array('exact' => 1, 'regex' => 0), get_option('quinrel_redirect_counts'));
 
         $import = new \WP_REST_Request('POST', '/redirects/import-csv');
         $import->set_body("source,target,code,is_regex\n/from,/to,301,0\n^/news/(.*)$,/stories/$1,301,1\n(, /broken,301,1\n");
@@ -242,15 +242,15 @@ class RedirectManagerTest extends TestCase
         $this->assertSame(2, $imported->data['queued']);
         $this->assertSame(0, $imported->data['imported']);
         $this->assertSame(1, $imported->data['skipped']);
-        $this->assertFalse($GLOBALS['mock_option_autoload']['holvek_redirect_import_queue']);
-        $this->assertSame(array('exact' => 1, 'regex' => 0), get_option('holvek_redirect_counts'));
+        $this->assertFalse($GLOBALS['mock_option_autoload']['quinrel_redirect_import_queue']);
+        $this->assertSame(array('exact' => 1, 'regex' => 0), get_option('quinrel_redirect_counts'));
         $this->assertSame(array(), array_values(array_filter($importQueries, static function ($query) {
             return is_string($query) && str_starts_with($query, 'INSERT');
         })));
 
-        (new \Holvek\WordPress\Modules\TechnicalSeo\RedirectImportJob(array()))->handle();
-        $this->assertSame(array('exact' => 2, 'regex' => 1), get_option('holvek_redirect_counts'));
-        $this->assertFalse(get_option('holvek_redirect_import_queue', false));
+        (new \Quinrel\WordPress\Modules\TechnicalSeo\RedirectImportJob(array()))->handle();
+        $this->assertSame(array('exact' => 2, 'regex' => 1), get_option('quinrel_redirect_counts'));
+        $this->assertFalse(get_option('quinrel_redirect_import_queue', false));
 
         $GLOBALS['mock_wpdb_row'] = static function () {
             return (object) array('is_regex' => 1);
@@ -260,12 +260,12 @@ class RedirectManagerTest extends TestCase
         };
         $deleted = $this->manager->deleteRedirectEndpoint($this->jsonRequest(array('id' => 'rule-1')));
         $this->assertInstanceOf(\WP_REST_Response::class, $deleted);
-        $this->assertSame(array('exact' => 2, 'regex' => 0), get_option('holvek_redirect_counts'));
+        $this->assertSame(array('exact' => 2, 'regex' => 0), get_option('quinrel_redirect_counts'));
     }
 
     public function testRegexPatternsAreCappedBeforeTheyAreSaved(): void
     {
-        update_option('holvek_redirect_counts', array('exact' => 0, 'regex' => 0));
+        update_option('quinrel_redirect_counts', array('exact' => 0, 'regex' => 0));
         $before = ini_get('pcre.backtrack_limit');
 
         $long = $this->manager->addRedirectEndpoint($this->jsonRequest(array(
@@ -275,7 +275,7 @@ class RedirectManagerTest extends TestCase
         )));
         $this->assertSame('invalid_regex', $long->get_error_code());
         $this->assertSame($before, ini_get('pcre.backtrack_limit'));
-        $this->assertSame(array('exact' => 0, 'regex' => 0), get_option('holvek_redirect_counts'));
+        $this->assertSame(array('exact' => 0, 'regex' => 0), get_option('quinrel_redirect_counts'));
 
         $accepted = $this->manager->addRedirectEndpoint($this->jsonRequest(array(
             'source' => '^/news/(.*)$',
@@ -283,13 +283,13 @@ class RedirectManagerTest extends TestCase
             'is_regex' => true,
         )));
         $this->assertInstanceOf(\WP_REST_Response::class, $accepted);
-        $this->assertSame(array('exact' => 0, 'regex' => 1), get_option('holvek_redirect_counts'));
+        $this->assertSame(array('exact' => 0, 'regex' => 1), get_option('quinrel_redirect_counts'));
         $this->assertSame($before, ini_get('pcre.backtrack_limit'));
     }
 
     public function testCsvImportWritesFiftyRowsAndQueuesTheRest(): void
     {
-        update_option('holvek_redirect_counts', array('exact' => 0, 'regex' => 0));
+        update_option('quinrel_redirect_counts', array('exact' => 0, 'regex' => 0));
         $rows = array();
         for ($i = 0; $i < 51; ++$i) {
             $rows[] = array(
@@ -299,20 +299,20 @@ class RedirectManagerTest extends TestCase
                 'is_regex' => 0,
             );
         }
-        update_option('holvek_redirect_import_queue', $rows, false);
+        update_option('quinrel_redirect_import_queue', $rows, false);
         $GLOBALS['mock_cron_events'] = array();
 
         $this->manager->importQueuedBatch();
 
-        $this->assertSame(array('exact' => 50, 'regex' => 0), get_option('holvek_redirect_counts'));
-        $this->assertCount(1, get_option('holvek_redirect_import_queue'));
-        $this->assertFalse($GLOBALS['mock_option_autoload']['holvek_redirect_import_queue']);
+        $this->assertSame(array('exact' => 50, 'regex' => 0), get_option('quinrel_redirect_counts'));
+        $this->assertCount(1, get_option('quinrel_redirect_import_queue'));
+        $this->assertFalse($GLOBALS['mock_option_autoload']['quinrel_redirect_import_queue']);
         $this->assertNotEmpty($GLOBALS['mock_cron_events']);
     }
 
     public function testDeletingAMissingRedirectDoesNotChangeCounts(): void
     {
-        update_option('holvek_redirect_counts', array('exact' => 2, 'regex' => 1));
+        update_option('quinrel_redirect_counts', array('exact' => 2, 'regex' => 1));
         $GLOBALS['mock_wpdb_delete'] = static function () {
             return 0;
         };
@@ -320,12 +320,12 @@ class RedirectManagerTest extends TestCase
         $deleted = $this->manager->deleteRedirectEndpoint($this->jsonRequest(array('id' => 'missing')));
 
         $this->assertInstanceOf(\WP_REST_Response::class, $deleted);
-        $this->assertSame(array('exact' => 2, 'regex' => 1), get_option('holvek_redirect_counts'));
+        $this->assertSame(array('exact' => 2, 'regex' => 1), get_option('quinrel_redirect_counts'));
     }
 
     public function testAdminRequestDoesNotReadRedirects(): void
     {
-        update_option('holvek_redirect_counts', array('exact' => 3, 'regex' => 3));
+        update_option('quinrel_redirect_counts', array('exact' => 3, 'regex' => 3));
         $GLOBALS['mock_is_admin'] = true;
 
         $this->manager->handleRedirects();
@@ -354,7 +354,7 @@ class RedirectManagerTest extends TestCase
             $this->assertInstanceOf(\WP_Error::class, $result, $case[0]);
             $this->assertSame('unsafe_target', $result->get_error_code(), $case[0]);
             $this->assertSame(400, $result->get_error_data()['status'], $case[0]);
-            $this->assertNotContains('INSERT wp_holvek_redirects', $this->db->queries, $case[0]);
+            $this->assertNotContains('INSERT wp_quinrel_redirects', $this->db->queries, $case[0]);
         }
 
         foreach (array('/local-page', 'https://example.com/about') as $target) {
@@ -366,6 +366,67 @@ class RedirectManagerTest extends TestCase
             $this->assertInstanceOf(\WP_REST_Response::class, $saved, $target);
             $this->assertTrue($saved->get_data()['success'], $target);
         }
+    }
+
+    public function testCreateRedirectServiceMethod(): void
+    {
+        $result = $this->manager->createRedirect('/old-seo-url', '/new-seo-url', 301, false);
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertNotEmpty($result['id']);
+
+        // Calling it again with same source updates target
+        $GLOBALS['mock_wpdb_var'] = function ($q) {
+            return str_contains($q, 'SELECT id FROM') ? 'existing-id-123' : null;
+        };
+        $updated = $this->manager->createRedirect('/old-seo-url', '/another-target', 301, false);
+        $this->assertIsArray($updated);
+        $this->assertTrue($updated['success']);
+        $this->assertTrue($updated['updated'] ?? false);
+    }
+
+    public function testOnPostUpdatedCreatesRedirectOnSlugChange(): void
+    {
+        $postBefore = (object) array(
+            'ID' => 42,
+            'post_status' => 'publish',
+            'post_type' => 'post',
+            'post_name' => 'original-post-slug',
+        );
+        $postAfter = (object) array(
+            'ID' => 42,
+            'post_status' => 'publish',
+            'post_type' => 'post',
+            'post_name' => 'updated-post-slug',
+        );
+
+        $this->manager->onPostUpdated(42, $postAfter, $postBefore);
+
+        // Verify that INSERT query was executed for wp_quinrel_redirects
+        $redirectQueries = array_filter($this->db->queries, function ($q) {
+            return str_contains($q, 'INSERT') && str_contains($q, 'quinrel_redirects');
+        });
+        $this->assertNotEmpty($redirectQueries, 'Expected auto-created 301 redirect query');
+    }
+
+    public function testOnPostUpdatedIgnoresDraftOrUnchangedSlug(): void
+    {
+        $postBefore = (object) array(
+            'ID' => 43,
+            'post_status' => 'draft',
+            'post_type' => 'post',
+            'post_name' => 'draft-post-slug',
+        );
+        $postAfter = (object) array(
+            'ID' => 43,
+            'post_status' => 'draft',
+            'post_type' => 'post',
+            'post_name' => 'new-draft-post-slug',
+        );
+
+        $queryCountBefore = count($this->db->queries);
+        $this->manager->onPostUpdated(43, $postAfter, $postBefore);
+        $this->assertSame($queryCountBefore, count($this->db->queries), 'Draft updates must not create redirects');
     }
 
     private function jsonRequest(array $params): \WP_REST_Request

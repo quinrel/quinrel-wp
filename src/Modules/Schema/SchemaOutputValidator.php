@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema;
+namespace Quinrel\WordPress\Modules\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -46,7 +46,7 @@ class SchemaOutputValidator {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/schema/validate',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -66,14 +66,14 @@ class SchemaOutputValidator {
 		}
 
 		if ( empty( $url ) ) {
-			return new \WP_Error( 'missing_target', __( 'Provide post_id or url.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_target', __( 'Provide post_id or url.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! $this->isLocalUrl( $url ) ) {
-			return new \WP_Error( 'invalid_target', __( 'Schema validation accepts only URLs on this WordPress site.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_target', __( 'Schema validation accepts only URLs on this WordPress site.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
-		$cacheKey = 'holvek_schema_validation_' . md5( $url );
+		$cacheKey = 'quinrel_schema_validation_' . md5( $url );
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return rest_ensure_response( array_merge( $cached, array( 'cached' => true ) ) );
@@ -95,7 +95,7 @@ class SchemaOutputValidator {
 				'timeout'             => 20,
 				'redirection'         => 3,
 				'limit_response_size' => 2 * MB_IN_BYTES,
-				'user-agent'          => 'Holvek Schema Validator/1.0',
+				'user-agent'          => 'Quinrel Schema Validator/1.0',
 			)
 		);
 
@@ -122,7 +122,7 @@ class SchemaOutputValidator {
 					'errors'      => array(
 						sprintf(
 							/* translators: %s: JSON parser error. */
-							__( 'Invalid JSON: %s', 'holvek' ),
+							__( 'Invalid JSON: %s', 'quinrel' ),
 							json_last_error_msg()
 						),
 					),

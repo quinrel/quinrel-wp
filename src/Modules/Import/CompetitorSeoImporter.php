@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Import;
+namespace Quinrel\WordPress\Modules\Import;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * CompetitorSeoImporter
  *
  * BL-044: Imports SEO settings from Yoast SEO and All-in-One SEO Pack
- * into Holvek meta keys. One-time migration with dry-run support.
+ * into Quinrel meta keys. One-time migration with dry-run support.
  */
 class CompetitorSeoImporter {
 
@@ -38,7 +38,7 @@ class CompetitorSeoImporter {
 		$adminCap = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/import/detect',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -48,7 +48,7 @@ class CompetitorSeoImporter {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/import/preview',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -58,7 +58,7 @@ class CompetitorSeoImporter {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/import/run',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -165,10 +165,10 @@ class CompetitorSeoImporter {
 				);
 
 				$map = array(
-					self::YOAST_TITLE     => '_holvek_meta_title',
-					self::YOAST_DESC      => '_holvek_meta_description',
-					self::YOAST_KW        => '_holvek_focus_keyword',
-					self::YOAST_CANONICAL => '_holvek_canonical_url',
+					self::YOAST_TITLE     => '_quinrel_meta_title',
+					self::YOAST_DESC      => '_quinrel_meta_description',
+					self::YOAST_KW        => '_quinrel_focus_keyword',
+					self::YOAST_CANONICAL => '_quinrel_canonical_url',
 				);
 
 				foreach ( $map as $fromKey => $toKey ) {
@@ -180,8 +180,12 @@ class CompetitorSeoImporter {
 						++$skipped;
 						continue;
 					}
+					$sanitized = $this->sanitizeImportedValue( $toKey, (string) $meta[ $fromKey ], (int) $postId );
+					if ( '' === $sanitized ) {
+						continue;
+					}
 					if ( ! $dryRun ) {
-						update_post_meta( $postId, $toKey, $meta[ $fromKey ] );
+						update_post_meta( $postId, $toKey, $sanitized );
 					}
 					$detail['fields'][] = $toKey;
 					++$imported;
@@ -190,9 +194,9 @@ class CompetitorSeoImporter {
 				// noindex
 				if ( isset( $meta[ self::YOAST_NOINDEX ] ) && $meta[ self::YOAST_NOINDEX ] === '1' ) {
 					if ( ! $dryRun ) {
-						update_post_meta( $postId, '_holvek_noindex', 'yes' );
+						update_post_meta( $postId, '_quinrel_noindex', 'yes' );
 					}
-					$detail['fields'][] = '_holvek_noindex';
+					$detail['fields'][] = '_quinrel_noindex';
 				}
 
 				$details[] = $detail;
@@ -216,9 +220,9 @@ class CompetitorSeoImporter {
 			}
 
 			$map = array(
-				self::AIOSEO_TITLE => '_holvek_meta_title',
-				self::AIOSEO_DESC  => '_holvek_meta_description',
-				self::AIOSEO_KW    => '_holvek_focus_keyword',
+				self::AIOSEO_TITLE => '_quinrel_meta_title',
+				self::AIOSEO_DESC  => '_quinrel_meta_description',
+				self::AIOSEO_KW    => '_quinrel_focus_keyword',
 			);
 
 			foreach ( array_slice( $byPost, 0, $limit, true ) as $postId => $meta ) {
@@ -236,8 +240,12 @@ class CompetitorSeoImporter {
 						++$skipped;
 						continue;
 					}
+					$sanitized = $this->sanitizeImportedValue( $toKey, (string) $meta[ $fromKey ], (int) $postId );
+					if ( '' === $sanitized ) {
+						continue;
+					}
 					if ( ! $dryRun ) {
-						update_post_meta( $postId, $toKey, $meta[ $fromKey ] );
+						update_post_meta( $postId, $toKey, $sanitized );
 					}
 					$detail['fields'][] = $toKey;
 					++$imported;
@@ -265,10 +273,10 @@ class CompetitorSeoImporter {
 			}
 
 			$map = array(
-				self::RANKMATH_TITLE     => '_holvek_meta_title',
-				self::RANKMATH_DESC      => '_holvek_meta_description',
-				self::RANKMATH_KW        => '_holvek_focus_keyword',
-				self::RANKMATH_CANONICAL => '_holvek_canonical_url',
+				self::RANKMATH_TITLE     => '_quinrel_meta_title',
+				self::RANKMATH_DESC      => '_quinrel_meta_description',
+				self::RANKMATH_KW        => '_quinrel_focus_keyword',
+				self::RANKMATH_CANONICAL => '_quinrel_canonical_url',
 			);
 
 			foreach ( array_slice( $byPost, 0, $limit, true ) as $postId => $meta ) {
@@ -286,8 +294,12 @@ class CompetitorSeoImporter {
 						++$skipped;
 						continue;
 					}
+					$sanitized = $this->sanitizeImportedValue( $toKey, (string) $meta[ $fromKey ], (int) $postId );
+					if ( '' === $sanitized ) {
+						continue;
+					}
 					if ( ! $dryRun ) {
-						update_post_meta( $postId, $toKey, $meta[ $fromKey ] );
+						update_post_meta( $postId, $toKey, $sanitized );
 					}
 					$detail['fields'][] = $toKey;
 					++$imported;
@@ -298,5 +310,19 @@ class CompetitorSeoImporter {
 		}
 
 		return compact( 'imported', 'skipped', 'details' );
+	}
+
+	private function sanitizeImportedValue( string $targetKey, string $rawValue, int $postId ): string {
+		if ( '_quinrel_canonical_url' === $targetKey ) {
+			return esc_url_raw( trim( $rawValue ) );
+		}
+
+		if ( '_quinrel_focus_keyword' === $targetKey ) {
+			$parts = preg_split( '/\s*,\s*/', $rawValue );
+			return sanitize_text_field( (string) ( $parts[0] ?? '' ) );
+		}
+
+		$resolved = \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $rawValue, $postId );
+		return sanitize_text_field( $resolved );
 	}
 }

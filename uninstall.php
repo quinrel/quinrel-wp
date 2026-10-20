@@ -1,11 +1,11 @@
 <?php
 /**
- * Holvek uninstall routine.
+ * Quinrel uninstall routine.
  *
  * Plugin data is retained by default. An administrator must explicitly enable
- * `holvek_delete_data_on_uninstall` before deletion to be permitted.
+ * `quinrel_delete_data_on_uninstall` before deletion to be permitted.
  *
- * @package Holvek
+ * @package Quinrel
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
@@ -18,13 +18,13 @@ global $wpdb;
  * Remove the legacy public backup directory. It lives under wp-content, so one
  * successful delete covers every site. Paths outside that directory are ignored.
  */
-$holvekRemoveBackupDirectory = static function (): void {
+$quinrelRemoveBackupDirectory = static function (): void {
 	if ( ! defined( 'WP_CONTENT_DIR' ) || '' === WP_CONTENT_DIR ) {
 		return;
 	}
 
 	$content = rtrim( (string) WP_CONTENT_DIR, '/\\' );
-	$root    = $content . '/holvek-backups';
+	$root    = $content . '/quinrel-backups';
 	if ( ! is_dir( $root ) ) {
 		return;
 	}
@@ -36,7 +36,7 @@ $holvekRemoveBackupDirectory = static function (): void {
 	}
 
 	$prefix = rtrim( $realContent, DIRECTORY_SEPARATOR ) . DIRECTORY_SEPARATOR;
-	if ( ! str_starts_with( $realRoot, $prefix ) || 'holvek-backups' !== basename( $realRoot ) ) {
+	if ( ! str_starts_with( $realRoot, $prefix ) || 'quinrel-backups' !== basename( $realRoot ) ) {
 		return;
 	}
 
@@ -60,34 +60,34 @@ $holvekRemoveBackupDirectory = static function (): void {
  * data owned by this plugin. Table names are calculated after switch_to_blog().
  * Capabilities are removed even when the site owner keeps the data.
  */
-$holvekUninstallSite = static function ( bool $deleteData ) use ( $holvekRemoveBackupDirectory ): void {
+$quinrelUninstallSite = static function ( bool $deleteData ) use ( $quinrelRemoveBackupDirectory ): void {
 	global $wpdb;
 
 	$cronHooks = array(
-		'holvek_process_job',
-		'holvek_scan_orphaned',
-		'holvek_stale_cornerstone_check',
-		'holvek_weekly_audit',
-		'holvek_monthly_audit',
-		'holvek_scheduled_audit',
-		'holvek_rank_check',
-		'holvek_404_cleanup',
-		'holvek_apply_retention',
-		'holvek_run_technical_audit',
-		'holvek_blc_scan_batch',
-		'holvek_usage_metering_weekly',
-		'holvek_flush_404_buffer',
-		'holvek_cornerstone_staleness_check',
-		'holvek_weekly_usage_email',
-		'holvek_prune_audit_log',
-		'holvek_indexnow_flush',
+		'quinrel_process_job',
+		'quinrel_scan_orphaned',
+		'quinrel_stale_cornerstone_check',
+		'quinrel_weekly_audit',
+		'quinrel_monthly_audit',
+		'quinrel_scheduled_audit',
+		'quinrel_rank_check',
+		'quinrel_404_cleanup',
+		'quinrel_apply_retention',
+		'quinrel_run_technical_audit',
+		'quinrel_blc_scan_batch',
+		'quinrel_usage_metering_weekly',
+		'quinrel_flush_404_buffer',
+		'quinrel_cornerstone_staleness_check',
+		'quinrel_weekly_usage_email',
+		'quinrel_prune_audit_log',
+		'quinrel_indexnow_flush',
 	);
 
 	foreach ( $cronHooks as $hook ) {
 		wp_clear_scheduled_hook( $hook );
 		if ( function_exists( 'as_unschedule_all_actions' ) ) {
 			as_unschedule_all_actions( $hook );
-			as_unschedule_all_actions( $hook, array(), 'holvek' );
+			as_unschedule_all_actions( $hook, array(), 'quinrel' );
 		}
 	}
 
@@ -109,7 +109,7 @@ $holvekUninstallSite = static function ( bool $deleteData ) use ( $holvekRemoveB
 	$backups     = $wpdb->get_col(
 		$wpdb->prepare(
 			"SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s",
-			'_holvek_compression_original'
+			'_quinrel_compression_original'
 		)
 	);
 	foreach ( $backups as $backup ) {
@@ -119,11 +119,11 @@ $holvekUninstallSite = static function ( bool $deleteData ) use ( $holvekRemoveB
 		}
 	}
 
-	$likeOptions          = $wpdb->esc_like( 'holvek_' ) . '%';
-	$likeMeta             = $wpdb->esc_like( '_holvek_' ) . '%';
-	$likeUserMeta         = $wpdb->esc_like( 'holvek_' ) . '%';
-	$likeTransient        = $wpdb->esc_like( '_transient_holvek_' ) . '%';
-	$likeTransientTimeout = $wpdb->esc_like( '_transient_timeout_holvek_' ) . '%';
+	$likeOptions          = $wpdb->esc_like( 'quinrel_' ) . '%';
+	$likeMeta             = $wpdb->esc_like( '_quinrel_' ) . '%';
+	$likeUserMeta         = $wpdb->esc_like( 'quinrel_' ) . '%';
+	$likeTransient        = $wpdb->esc_like( '_transient_quinrel_' ) . '%';
+	$likeTransientTimeout = $wpdb->esc_like( '_transient_timeout_quinrel_' ) . '%';
 
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $likeOptions ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $likeTransient ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -132,45 +132,45 @@ $holvekUninstallSite = static function ( bool $deleteData ) use ( $holvekRemoveB
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE %s", $likeUserMeta ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 	$tables = array(
-		$wpdb->prefix . 'holvek_redirects',
-		$wpdb->prefix . 'holvek_404_logs',
-		$wpdb->prefix . 'holvek_sitemap_settings',
-		$wpdb->prefix . 'holvek_links',
-		$wpdb->prefix . 'holvek_ai_usage',
-		$wpdb->prefix . 'holvek_usage_metering',
-		$wpdb->prefix . 'holvek_audit_log',
-		$wpdb->prefix . 'holvek_rank_history',
-		$wpdb->prefix . 'holvek_broken_links',
+		$wpdb->prefix . 'quinrel_redirects',
+		$wpdb->prefix . 'quinrel_404_logs',
+		$wpdb->prefix . 'quinrel_sitemap_settings',
+		$wpdb->prefix . 'quinrel_links',
+		$wpdb->prefix . 'quinrel_ai_usage',
+		$wpdb->prefix . 'quinrel_usage_metering',
+		$wpdb->prefix . 'quinrel_audit_log',
+		$wpdb->prefix . 'quinrel_rank_history',
+		$wpdb->prefix . 'quinrel_broken_links',
 	);
 	foreach ( $tables as $table ) {
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 	}
 
-	$holvekRemoveBackupDirectory();
+	$quinrelRemoveBackupDirectory();
 };
 
-$holvek_delete_data = get_option( 'holvek_delete_data_on_uninstall', 'no' ) === 'yes';
-$holvekUninstallSite( $holvek_delete_data );
+$quinrel_delete_data = get_option( 'quinrel_delete_data_on_uninstall', 'no' ) === 'yes';
+$quinrelUninstallSite( $quinrel_delete_data );
 
 if ( is_multisite() ) {
-	$holvek_site_ids        = get_sites(
+	$quinrel_site_ids        = get_sites(
 		array(
 			'fields' => 'ids',
 			'number' => 0,
 		)
 	);
-	$holvek_current_blog_id = function_exists( 'get_current_blog_id' ) ? get_current_blog_id() : 1;
-	foreach ( $holvek_site_ids as $holvek_site_id ) {
-		if ( (int) $holvek_site_id === (int) $holvek_current_blog_id ) {
+	$quinrel_current_blog_id = function_exists( 'get_current_blog_id' ) ? get_current_blog_id() : 1;
+	foreach ( $quinrel_site_ids as $quinrel_site_id ) {
+		if ( (int) $quinrel_site_id === (int) $quinrel_current_blog_id ) {
 			continue;
 		}
-		switch_to_blog( (int) $holvek_site_id );
-		$holvekUninstallSite( $holvek_delete_data );
+		switch_to_blog( (int) $quinrel_site_id );
+		$quinrelUninstallSite( $quinrel_delete_data );
 		restore_current_blog();
 	}
 
-	if ( $holvek_delete_data ) {
-		$holvek_like_network_options = $wpdb->esc_like( 'holvek_' ) . '%';
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s", $holvek_like_network_options ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	if ( $quinrel_delete_data ) {
+		$quinrel_like_network_options = $wpdb->esc_like( 'quinrel_' ) . '%';
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s", $quinrel_like_network_options ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 }

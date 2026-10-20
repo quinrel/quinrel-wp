@@ -586,6 +586,19 @@ Use pagination for potentially large datasets.
 
 Do not load an entire table merely to display the first 20 rows.
 
+## 12.1 Bounds that still hold at 100,000 rows
+
+A query, list, or job is acceptable only when its cost stays flat as the site grows.
+
+- Give every multi-row read an explicit limit. Paginate admin lists. Process background work in a fixed batch and reschedule the remainder.
+- Select the columns the caller uses.
+- Keep an ID exclusion bounded, or replace it with a positive ID query. A `post__not_in` list must not grow with the number of posts on the site.
+- Use `meta_query` or `tax_query` only when the feature cannot be served by a bounded, indexed lookup. Set `posts_per_page`. Do not run either on an ordinary front-end request.
+- Do not set `suppress_filters` to true.
+- A direct query names its columns, is prepared, and exists only when a WordPress API cannot return the same rows. The reason belongs next to the query.
+- Do not read a custom table into memory in order to show one page of it.
+- Front-end requests do the minimum work. Scans, reports, and remote calls run in a bounded background job.
+
 ---
 
 # 13. Options and Autoloading
@@ -1411,6 +1424,8 @@ Do not declare a release production-ready if a required quality gate fails.
 
 Warnings must be investigated rather than blindly suppressed.
 
+A Plugin Check or PHPCS finding is fixed by changing the code so the finding no longer applies. Excluding the file, ignoring the sniff, or turning warnings off leaves the cost in production. An existing recorded warning may remain only while its work is bounded and the reason is written in the same change. New code does not add another warning of that kind.
+
 WordPress Plugin Check specifically checks many issues relevant to
 internationalization, accessibility, performance, security, and Plugin
 Directory requirements.
@@ -1803,7 +1818,17 @@ The following require explicit justification or replacement:
 - assuming persistent object cache;
 - assuming external APIs are available;
 - swallowing errors without justification;
-- storing secrets in source control.
+- storing secrets in source control;
+- calling a WordPress function, hook, or constant added after the plugin's minimum supported WordPress version;
+- `array_is_list()` where the minimum version is older than WordPress 6.5;
+- PHP heredoc or nowdoc in plugin code;
+- `suppress_filters` set to true;
+- an unbounded `post__not_in`, `meta_query`, or `tax_query`;
+- a direct query that does not name its columns;
+- a new ignore, exclude, or `ignore-warnings` setting whose purpose is to hide a finding;
+- treating the repository directory name as the plugin slug or text domain;
+- shipping dotfiles, shell scripts, tests, or development configuration in the release zip;
+- a test that reads generated build output a clean checkout does not contain.
 
 ---
 
@@ -2006,3 +2031,52 @@ Primary references:
 
 When current official documentation conflicts with this file, follow the
 current official WordPress requirement and update this file accordingly.
+
+---
+
+# 54. Quinrel repository rules
+
+These rules bind this repository. The general constitution still applies. This section states the limits a new change has to meet so the plugin stays correct on the supported WordPress version, stays fast as tables grow, and stays reviewable.
+
+## 54.1 Identity and compatibility
+
+- Distributed plugin slug: `quinrel`.
+- Text domain: `quinrel`. It matches the slug.
+- PHP namespace: `Quinrel\WordPress`.
+- Git repository and checkout directory: `quinrel-wp`.
+- The directory name is not the plugin slug. Plugin Check, gettext, and activation use `quinrel`.
+- Requires at least WordPress 6.0. Requires PHP 8.2. "Tested up to" is the major.minor this release actually ran on.
+- Do not call a WordPress function, hook, or constant added after WordPress 6.0. `array_is_list()` arrived in WordPress 6.5. Use `Quinrel\WordPress\Core\Support\ValueList::isList()`.
+- Quinrel is Visibility & Discovery Intelligence for WordPress. The product promise is `quinrel-wp.md`.
+- Standalone mode is the full technical SEO toolset and works with no Quinrel account. `api.quinrel.com` is optional. A local SEO feature does not refuse to work until a remote account exists. If the API is unavailable, technical SEO on the site keeps working.
+- Quinrel Cloud, through `https://api.quinrel.com`, supplies discovery intelligence, quick fixes, and the action plan inside WordPress. Those results come from the API after the site is connected. The on-site audit does not invent an AI-mention score, a Google-presence score, or a competitor comparison.
+- All legacy debt and backward compatibility have been removed in readiness for the Quinrel release. KeyVault uses the `quinrel_enc::` prefix and Installer sets up clean tables without legacy shims.
+
+## 54.2 Implementation
+
+- Print an inline script with `wp_get_inline_script_tag()` or enqueue a file. Plugin PHP does not use heredoc or nowdoc.
+- Prefix options, hooks, globals, and REST routes with `quinrel`. Document a dynamic hook name.
+- Validate request values, including the request address, referrer, browser name, and the Global Privacy Control header, before storing or comparing them.
+- A remote writing assistant sends only the text the editor submitted, and only when an editor runs it. Disclose the service in `readme.txt`. Do not add an undisclosed provider call.
+- `package-zip.sh` is the release boundary. The zip omits dotfiles, `scripts/`, shell scripts, tests, docs, and the PHPUnit and PHPCS configuration. A new development-only file is added to that exclude list in the same change.
+
+## 54.3 Checks that stay honest
+
+- `build/` is generated and gitignored. A test that reads a built bundle, including `build/cookie-banner.js`, runs after `npm run build` on a clean checkout.
+- The PHPCS checkstyle command in CI is quiet, because `phpcs.xml.dist` prints progress. Quiet mode does not disable a sniff.
+- The end-to-end WordPress version is a real ref on `WordPress/WordPress`. The current ref is `master`.
+- `wp-env` installs a local zip from an absolute path. A relative `dist/*.zip` path is parsed as a GitHub repository.
+- Plugin Check uses slug `quinrel`.
+
+## 54.4 Bar for a new change
+
+A change that touches queries, hooks, output, or release files is complete when:
+
+- the work is still bounded at 100,000 rows;
+- WordPress 6.0 and PHP 8.2 can run it;
+- input is validated and output is escaped for its context;
+- the text domain is `quinrel`;
+- the change adds no Plugin Check error;
+- a new warning was designed out of the code, or the bound and the reason are recorded beside the existing warning record.
+
+Hiding the warning is not completing the change.

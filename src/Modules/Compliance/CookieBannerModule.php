@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Compliance;
+namespace Quinrel\WordPress\Modules\Compliance;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,12 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This module records a visitor's notice choice. It does not discover, block,
  * categorize, or manage third-party scripts and is therefore not presented as
  * a GDPR/CCPA consent-management solution.
- * Stores consent in a first-party cookie (holvek_consent).
+ * Stores consent in a first-party cookie (quinrel_consent).
  */
 class CookieBannerModule {
 
-	private const OPTION_KEY     = 'holvek_cookie_banner';
-	private const CONSENT_COOKIE = 'holvek_consent';
+	private const OPTION_KEY     = 'quinrel_cookie_banner';
+	private const CONSENT_COOKIE = 'quinrel_consent';
 
 	public function boot(): void {
 		add_action( 'wp_footer', array( $this, 'renderBanner' ), 100 );
@@ -32,26 +32,26 @@ class CookieBannerModule {
 			return;
 		}
 
-		$pluginUrl = HOLVEK_PLUGIN_URL;
+		$pluginUrl = QUINREL_PLUGIN_URL;
 
 		wp_enqueue_style(
-			'holvek-cookie-banner',
+			'quinrel-cookie-banner',
 			$pluginUrl . 'build/cookie-banner.css',
 			array(),
-			HOLVEK_VERSION ?? '1.0.1'
+			QUINREL_VERSION ?? '1.0.1'
 		);
 
 		wp_enqueue_script(
-			'holvek-cookie-banner',
+			'quinrel-cookie-banner',
 			$pluginUrl . 'build/cookie-banner.js',
 			array(),
-			HOLVEK_VERSION ?? '1.0.1',
+			QUINREL_VERSION ?? '1.0.1',
 			true
 		);
 
 		wp_localize_script(
-			'holvek-cookie-banner',
-			'holvekCookieConfig',
+			'quinrel-cookie-banner',
+			'quinrelCookieConfig',
 			array(
 				'cookieName' => self::CONSENT_COOKIE,
 				'cookieDays' => 365,
@@ -65,16 +65,16 @@ class CookieBannerModule {
 			return;
 		}
 		?>
-		<div id="holvek-cookie-banner" class="holvek-cookie-banner" role="dialog" aria-live="polite" aria-label="<?php echo esc_attr__( 'Cookie consent', 'holvek' ); ?>" style="display:none;">
-			<div class="holvek-cookie-banner__inner">
-				<p class="holvek-cookie-banner__text"><?php echo wp_kses_post( $config['message'] ); ?>
+		<div id="quinrel-cookie-banner" class="quinrel-cookie-banner" role="dialog" aria-live="polite" aria-label="<?php echo esc_attr__( 'Cookie consent', 'quinrel' ); ?>" style="display:none;">
+			<div class="quinrel-cookie-banner__inner">
+				<p class="quinrel-cookie-banner__text"><?php echo wp_kses_post( $config['message'] ); ?>
 					<?php if ( ! empty( $config['policy_url'] ) ) : ?>
-						<a href="<?php echo esc_url( $config['policy_url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html__( 'Privacy Policy', 'holvek' ); ?></a>.
+						<a href="<?php echo esc_url( $config['policy_url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html__( 'Privacy Policy', 'quinrel' ); ?></a>.
 					<?php endif; ?>
 				</p>
-				<div class="holvek-cookie-banner__actions">
-					<button id="holvek-cookie-accept" class="holvek-cookie-btn holvek-cookie-btn--accept"><?php echo esc_html( $config['accept_label'] ); ?></button>
-					<button id="holvek-cookie-decline" class="holvek-cookie-btn holvek-cookie-btn--decline"><?php echo esc_html( $config['decline_label'] ); ?></button>
+				<div class="quinrel-cookie-banner__actions">
+					<button id="quinrel-cookie-accept" class="quinrel-cookie-btn quinrel-cookie-btn--accept"><?php echo esc_html( $config['accept_label'] ); ?></button>
+					<button id="quinrel-cookie-decline" class="quinrel-cookie-btn quinrel-cookie-btn--decline"><?php echo esc_html( $config['decline_label'] ); ?></button>
 				</div>
 			</div>
 		</div>
@@ -85,7 +85,7 @@ class CookieBannerModule {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/cookie-banner',
 			array(
 				array(

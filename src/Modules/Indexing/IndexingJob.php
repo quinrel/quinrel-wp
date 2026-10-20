@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Indexing;
+namespace Quinrel\WordPress\Modules\Indexing;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -27,7 +27,7 @@ class IndexingJob {
 
 		if (
 			! empty( $this->data['submit_google'] ) &&
-			get_option( 'holvek_enable_google_indexing_api', 'no' ) === 'yes' &&
+			get_option( 'quinrel_enable_google_indexing_api', 'no' ) === 'yes' &&
 			$quotaManager->canPingGoogle()
 		) {
 			$googleApi     = new GoogleIndexingApi();

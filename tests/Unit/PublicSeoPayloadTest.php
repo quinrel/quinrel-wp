@@ -1,11 +1,11 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Modules\Api\HeadlessSeoEndpoints;
-use Holvek\WordPress\Modules\Schema\SchemaGenerator;
-use Holvek\WordPress\Modules\Schema\SchemaModule;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Modules\Api\HeadlessSeoEndpoints;
+use Quinrel\WordPress\Modules\Schema\SchemaGenerator;
+use Quinrel\WordPress\Modules\Schema\SchemaModule;
 use PHPUnit\Framework\TestCase;
 
 class PublicSeoPayloadTest extends TestCase {
@@ -34,14 +34,14 @@ class PublicSeoPayloadTest extends TestCase {
 			)
 		);
 		$mock_post_meta[42] = array(
-			'_holvek_meta_title'       => 'Search title',
-			'_holvek_meta_description' => 'Search description',
-			'_holvek_focus_keyword'    => 'secret keyword',
-			'_holvek_search_intent'    => 'transactional',
-			'_holvek_is_cornerstone'   => 'yes',
-			'_holvek_ai_generated'     => 'yes',
-			'_holvek_schema_type'      => 'faq',
-			'_holvek_canonical_url'    => 'https://example.com/public/',
+			'_quinrel_meta_title'       => 'Search title',
+			'_quinrel_meta_description' => 'Search description',
+			'_quinrel_focus_keyword'    => 'secret keyword',
+			'_quinrel_search_intent'    => 'transactional',
+			'_quinrel_is_cornerstone'   => 'yes',
+			'_quinrel_ai_generated'     => 'yes',
+			'_quinrel_schema_type'      => 'faq',
+			'_quinrel_canonical_url'    => 'https://example.com/public/',
 		);
 
 		$request = new \WP_REST_Request();
@@ -129,10 +129,78 @@ class PublicSeoPayloadTest extends TestCase {
 
 	public function testSchemaMapCacheVersionBumpsAfterARealSave(): void {
 		$module = new SchemaModule( new EventManager(), new SchemaGenerator() );
-		update_option( 'holvek_schemamap_version', 3 );
+		update_option( 'quinrel_schemamap_version', 3 );
 
 		$module->bumpSchemaMapCache( 15 );
 
-		$this->assertSame( 4, get_option( 'holvek_schemamap_version' ) );
+		$this->assertSame( 4, get_option( 'quinrel_schemamap_version' ) );
+	}
+
+	public function testBulkMetaEditorAndHeadlessEndpointsUseCanonicalMetaKeys(): void {
+		global $mock_posts;
+
+		$mock_posts[51] = new \WP_Post(
+			array(
+				'ID'          => 51,
+				'post_status' => 'publish',
+				'post_title'  => 'Canonical Meta Test',
+			)
+		);
+
+		$bulkEditor  = new \Quinrel\WordPress\Modules\Admin\BulkMetaEditor();
+		$saveRequest = new \WP_REST_Request();
+		$saveRequest->set_json_params(
+			array(
+				'updates' => array(
+					array(
+						'id'        => 51,
+						'seo_title' => 'Bulk Edited Title',
+						'seo_desc'  => 'Bulk Edited Description',
+						'noindex'   => true,
+					),
+				),
+			)
+		);
+
+		$saveResp = $bulkEditor->saveMeta( $saveRequest );
+		$this->assertInstanceOf( \WP_REST_Response::class, $saveResp );
+		$this->assertSame( 'Bulk Edited Title', get_post_meta( 51, '_quinrel_meta_title', true ) );
+		$this->assertSame( 'Bulk Edited Description', get_post_meta( 51, '_quinrel_meta_description', true ) );
+		$this->assertSame( 'yes', get_post_meta( 51, '_quinrel_noindex', true ) );
+
+		$headlessRequest = new \WP_REST_Request();
+		$headlessRequest->set_param( 'post_id', 51 );
+		$headlessRequest->set_json_params( array( 'schema_type' => 'faq' ) );
+
+		$headlessResp = ( new HeadlessSeoEndpoints() )->updatePostSeo( $headlessRequest );
+		$this->assertInstanceOf( \WP_REST_Response::class, $headlessResp );
+		$this->assertSame( 'faq', get_post_meta( 51, '_quinrel_primary_schema', true ) );
+	}
+
+	public function testUnifiedSeoScoreCalculatorMatchesAcrossColumnInspectorAndBulkEditor(): void {
+		global $mock_posts;
+
+		$mock_posts[52] = new \WP_Post(
+			array(
+				'ID'           => 52,
+				'post_status'  => 'publish',
+				'post_title'   => 'Quinrel Performance Guide',
+				'post_content' => '<h2>Quinrel Performance</h2><p>Quinrel performance optimization keeps queries fast. <img src="https://example.com/a.jpg" alt="Quinrel performance chart" /></p>',
+			)
+		);
+		update_post_meta( 52, '_quinrel_focus_keyword', 'quinrel performance' );
+		update_post_meta( 52, '_quinrel_meta_title', '%%title%% - %%sitename%%' );
+		update_post_meta( 52, '_quinrel_meta_description', str_repeat( 'Quinrel performance guide for fast WordPress SEO. ', 3 ) );
+
+		$calculated = \Quinrel\WordPress\Modules\Seo\SeoScoreCalculator::calculateForPost( 52, false );
+		$this->assertGreaterThan( 70, $calculated );
+
+		$audit = ( new \Quinrel\WordPress\Modules\Admin\FrontendSeoInspector() )->auditPost( 52 );
+		$this->assertSame( $calculated, $audit['summary']['score'] );
+
+		ob_start();
+		( new \Quinrel\WordPress\Modules\Admin\SeoScoreColumn() )->renderColumn( 'quinrel_seo', 52 );
+		$columnHtml = (string) ob_get_clean();
+		$this->assertStringContainsString( (string) $calculated . '/100', $columnHtml );
 	}
 }

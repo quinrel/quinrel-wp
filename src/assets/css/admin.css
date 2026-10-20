@@ -2,35 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-.holvek-wrapper {
+.quinrel-wrapper {
 	/* Namespace our tailwind utilities to prevent conflicts with WP Admin */
 	box-sizing: border-box;
 }
 
-.holvek-wrapper * {
+.quinrel-wrapper * {
 	box-sizing: border-box;
 }
 
 /* Form validation error state */
-.holvek-field-error input,
-.holvek-field-error textarea,
-.holvek-field-error select,
-.components-text-control__input.holvek-field-error {
+.quinrel-field-error input,
+.quinrel-field-error textarea,
+.quinrel-field-error select,
+.components-text-control__input.quinrel-field-error {
 	border-color: #dc2626 !important;
 	box-shadow: 0 0 0 1px #dc2626 !important;
 }
 
-.holvek-wrapper button:focus-visible,
-.holvek-wrapper a:focus-visible,
-.holvek-wrapper input:focus-visible,
-.holvek-wrapper select:focus-visible,
-.holvek-wrapper textarea:focus-visible,
-.holvek-wrapper summary:focus-visible {
+.quinrel-wrapper button:focus-visible,
+.quinrel-wrapper a:focus-visible,
+.quinrel-wrapper input:focus-visible,
+.quinrel-wrapper select:focus-visible,
+.quinrel-wrapper textarea:focus-visible,
+.quinrel-wrapper summary:focus-visible {
 	outline: 2px solid #1e293b;
 	outline-offset: 2px;
 }
 
-.holvek-sr {
+.quinrel-wrapper dd {
+	margin-left: 0;
+	margin-inline-start: 0;
+}
+
+.quinrel-sr {
 	position: absolute;
 	width: 1px;
 	height: 1px;

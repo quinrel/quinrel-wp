@@ -33,23 +33,23 @@ jobs:
       - name: Test ZIP installation in temporary WordPress
         run: |
           npm -g install @wordpress/env
-          ZIP_FILE="$(pwd)/$(ls dist/holvek-*.zip | head -n 1)"
+          ZIP_FILE="$(pwd)/$(ls dist/quinrel-*.zip | head -n 1)"
           # wp-env supports installing from a local ZIP file
           echo "{\"core\": \"WordPress/WordPress#master\", \"plugins\": [\"${ZIP_FILE}\"]}" > .wp-env.json
           wp-env start
           
           # Verify activation and check for fatal errors
-          wp-env run cli wp plugin is-active holvek || wp-env run cli wp plugin activate holvek
+          wp-env run cli wp plugin is-active quinrel || wp-env run cli wp plugin activate quinrel
           
           # Verify the tables were created successfully
-          wp-env run cli wp db query "SHOW TABLES LIKE '%holvek%';" | grep holvek
+          wp-env run cli wp db query "SHOW TABLES LIKE '%quinrel%';" | grep quinrel
           
           wp-env stop
 
       - name: Upload package and manifest
         uses: actions/upload-artifact@v4
         with:
-          name: holvek-${{ github.ref_name }}
+          name: quinrel-${{ github.ref_name }}
           path: |
             dist/*.zip
             dist/*.manifest.sha256

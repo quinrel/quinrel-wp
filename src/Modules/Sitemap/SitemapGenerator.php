@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Sitemap;
+namespace Quinrel\WordPress\Modules\Sitemap;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,8 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class SitemapGenerator {
 
-	private const INDEX_TRANSIENT        = 'holvek_sitemap_index_cache';
-	private const CHUNK_TRANSIENT_PREFIX = 'holvek_sitemap_chunk_';
+	private const INDEX_TRANSIENT        = 'quinrel_sitemap_index_cache';
+	private const CHUNK_TRANSIENT_PREFIX = 'quinrel_sitemap_chunk_';
 	private const CACHE_EXPIRATION       = 4 * HOUR_IN_SECONDS;
 	private const MAX_URLS_PER_CHUNK     = 1000;
 
@@ -80,11 +80,11 @@ class SitemapGenerator {
 	/**
 	 * URLs stored in one sitemap file.
 	 *
-	 * The default is 1,000. The holvek_sitemap_urls_per_file filter may set
+	 * The default is 1,000. The quinrel_sitemap_urls_per_file filter may set
 	 * another limit from 1 to 50,000, which is the sitemap protocol maximum.
 	 */
 	public static function urlLimit(): int {
-		$filtered = apply_filters( 'holvek_sitemap_urls_per_file', self::MAX_URLS_PER_CHUNK );
+		$filtered = apply_filters( 'quinrel_sitemap_urls_per_file', self::MAX_URLS_PER_CHUNK );
 		$limit    = is_numeric( $filtered ) ? (int) $filtered : self::MAX_URLS_PER_CHUNK;
 		if ( $limit < 1 ) {
 			$limit = self::MAX_URLS_PER_CHUNK;
@@ -182,7 +182,7 @@ class SitemapGenerator {
 			"SELECT DATE_FORMAT(p.post_date, '%%Y-%%m') AS period, COUNT(DISTINCT p.ID) AS url_count
 			 FROM {$wpdb->posts} p
 			 LEFT JOIN {$wpdb->postmeta} pm
-			   ON p.ID = pm.post_id AND pm.meta_key = '_holvek_noindex'
+			   ON p.ID = pm.post_id AND pm.meta_key = '_quinrel_noindex'
 			 WHERE p.post_status = 'publish'
 			   AND p.post_type IN ($inList)
 			   AND (pm.meta_value IS NULL OR pm.meta_value != 'yes')
@@ -208,12 +208,12 @@ class SitemapGenerator {
 			return $this->emptyUrlset();
 		}
 
-		$yearMonth  = $period . '-01';
-		$args       = array_merge( $postTypes, array( $yearMonth, $yearMonth ) );
-		$excludeSql = esc_sql( $this->excludedIdFragment( $args ) );
-		$args[]     = self::urlLimit();
-		$args[]     = ( $page - 1 ) * self::urlLimit();
-		$inList     = implode( ',', array_fill( 0, count( $postTypes ), '%s' ) );
+		list( $periodStart, $periodEnd ) = $this->periodBounds( $period );
+		$args                            = array_merge( $postTypes, array( $periodStart, $periodEnd ) );
+		$excludeSql                      = esc_sql( $this->excludedIdFragment( $args ) );
+		$args[]                          = self::urlLimit();
+		$args[]                          = ( $page - 1 ) * self::urlLimit();
+		$inList                          = implode( ',', array_fill( 0, count( $postTypes ), '%s' ) );
 
 		// The IN list and the optional ID exclusion are placeholder strings. Values go through prepare().
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQL.NotPrepared
@@ -222,14 +222,14 @@ class SitemapGenerator {
 			        thumb.meta_value AS thumbnail_id
 			 FROM {$wpdb->posts} p
 			 LEFT JOIN {$wpdb->postmeta} pm
-			   ON p.ID = pm.post_id AND pm.meta_key = '_holvek_noindex'
+			   ON p.ID = pm.post_id AND pm.meta_key = '_quinrel_noindex'
 			 LEFT JOIN {$wpdb->postmeta} thumb
 			   ON p.ID = thumb.post_id AND thumb.meta_key = '_thumbnail_id'
 			 WHERE p.post_status = 'publish'
 			   AND p.post_type IN ($inList)
 			   AND (pm.meta_value IS NULL OR pm.meta_value != 'yes')
-			   AND YEAR(p.post_date) = YEAR(%s)
-			   AND MONTH(p.post_date) = MONTH(%s)
+			   AND p.post_date >= %s
+			   AND p.post_date < %s
 			   {$excludeSql}
 			 ORDER BY p.post_modified_gmt DESC
 			 LIMIT %d OFFSET %d",
@@ -242,21 +242,43 @@ class SitemapGenerator {
 			$rows = array();
 		}
 
+		if ( array() !== $rows && function_exists( '_prime_post_caches' ) ) {
+			$primeIds = array();
+			foreach ( $rows as $row ) {
+				if ( ! is_object( $row ) ) {
+					continue;
+				}
+				if ( ! empty( $row->ID ) ) {
+					$primeIds[] = (int) $row->ID;
+				}
+				if ( ! empty( $row->thumbnail_id ) ) {
+					$primeIds[] = (int) $row->thumbnail_id;
+				}
+			}
+			$primeIds = array_values( array_unique( array_filter( $primeIds ) ) );
+			if ( array() !== $primeIds ) {
+				_prime_post_caches( $primeIds, false, true );
+			}
+		}
+
 		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"' . "\n";
 		$xml .= '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n";
+
+		$frontPageId = (int) get_option( 'page_on_front', 0 );
 
 		foreach ( $rows as $row ) {
 			if ( ! is_object( $row ) || ! $this->rowIsPublic( $row ) ) {
 				continue;
 			}
 
-			$postId     = (int) $row->ID;
-			$postType   = (string) ( $row->post_type ?? 'post' );
-			$url        = get_permalink( $postId );
-			$modified   = mysql2date( 'c', (string) ( $row->post_modified_gmt ?? '' ) );
-			$priority   = SitemapPriorityManager::getPriority( $postId, $postType );
-			$changefreq = SitemapPriorityManager::getChangefreq( $postId, $postType );
+			$postId      = (int) $row->ID;
+			$postType    = (string) ( $row->post_type ?? 'post' );
+			$isFrontPage = ( $frontPageId > 0 && $frontPageId === $postId );
+			$url         = $isFrontPage ? home_url( '/' ) : get_permalink( $postId );
+			$modified    = mysql2date( 'c', (string) ( $row->post_modified_gmt ?? '' ) );
+			$priority    = $isFrontPage ? '1.0' : SitemapPriorityManager::getPriority( $postId, $postType );
+			$changefreq  = $isFrontPage ? 'daily' : SitemapPriorityManager::getChangefreq( $postId, $postType );
 
 			$xml .= "  <url>\n";
 			$xml .= '    <loc>' . esc_url( $url ) . "</loc>\n";
@@ -280,6 +302,30 @@ class SitemapGenerator {
 
 		$xml .= '</urlset>';
 		return $xml;
+	}
+
+	/**
+	 * Compute the half-open [start, nextMonthStart) bounds for a YYYY-MM period
+	 * so MySQL can use the type_status_date index without YEAR()/MONTH() functions.
+	 *
+	 * @return array{0:string,1:string}
+	 */
+	private function periodBounds( string $period ): array {
+		if ( 1 === preg_match( '/^(\d{4})-(\d{2})$/', $period, $matches ) ) {
+			$year  = (int) $matches[1];
+			$month = max( 1, min( 12, (int) $matches[2] ) );
+		} else {
+			$year  = (int) gmdate( 'Y' );
+			$month = (int) gmdate( 'm' );
+		}
+
+		$nextYear  = 12 === $month ? $year + 1 : $year;
+		$nextMonth = 12 === $month ? 1 : $month + 1;
+
+		return array(
+			sprintf( '%04d-%02d-01 00:00:00', $year, $month ),
+			sprintf( '%04d-%02d-01 00:00:00', $nextYear, $nextMonth ),
+		);
 	}
 
 	/**
@@ -354,10 +400,7 @@ class SitemapGenerator {
 		if ( $postId < 1 ) {
 			return false;
 		}
-		if ( (int) get_option( 'page_on_front' ) === $postId ) {
-			return false;
-		}
-		if ( get_post_meta( $postId, '_holvek_noindex', true ) === 'yes' ) {
+		if ( get_post_meta( $postId, '_quinrel_noindex', true ) === 'yes' ) {
 			return false;
 		}
 		if ( in_array( $postId, $this->getExcludedPostIds(), true ) ) {

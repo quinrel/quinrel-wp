@@ -1,4 +1,4 @@
-const holvekEditorConfig = (typeof window !== 'undefined' && window.holvekEditorConfig) || {};
+const quinrelEditorConfig = (typeof window !== 'undefined' && window.quinrelEditorConfig) || {};
 import { registerPlugin } from '@wordpress/plugins';
 import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/edit-post';
 import { PanelBody, TextControl, TextareaControl, ToggleControl, SelectControl, Button, Notice, Spinner } from '@wordpress/components';
@@ -42,19 +42,19 @@ const FaqEditor = ({ value, onChange }) => {
                         type="button"
                         onClick={() => removeItem(idx)}
                         style={{ position: 'absolute', top: '4px', right: '4px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
-                        title={__('Remove question', 'holvek')}
+                        title={__('Remove question', 'quinrel')}
                     >
                         ×
                     </button>
                     <div style={{ marginBottom: '6px', marginRight: '16px' }}>
                         <TextControl
-                            label={sprintf(__('Question %d', 'holvek'), idx + 1)}
+                            label={sprintf(__('Question %d', 'quinrel'), idx + 1)}
                             value={item.question}
                             onChange={(val) => updateItem(idx, 'question', val)}
                         />
                     </div>
                     <TextareaControl
-                        label={__('Answer', 'holvek')}
+                        label={__('Answer', 'quinrel')}
                         value={item.answer}
                         onChange={(val) => updateItem(idx, 'answer', val)}
                         rows={2}
@@ -62,7 +62,7 @@ const FaqEditor = ({ value, onChange }) => {
                 </div>
             ))}
             <Button isSecondary onClick={addItem} style={{ alignSelf: 'start' }}>
-                {__('+ Add FAQ Question', 'holvek')}
+                {__('+ Add FAQ Question', 'quinrel')}
             </Button>
         </div>
     );
@@ -96,27 +96,27 @@ const HowToStepsEditor = ({ value, onChange }) => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
-            <strong>{__('HowTo Steps', 'holvek')}</strong>
+            <strong>{__('HowTo Steps', 'quinrel')}</strong>
             {list.map((item, idx) => (
                 <div key={idx} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', position: 'relative' }}>
                     <button
                         type="button"
                         onClick={() => removeItem(idx)}
                         style={{ position: 'absolute', top: '4px', right: '4px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
-                        title={__('Remove step', 'holvek')}
+                        title={__('Remove step', 'quinrel')}
                     >
                         ×
                     </button>
                     <div style={{ marginBottom: '6px', marginRight: '16px' }}>
                         <TextControl
-                            label={sprintf(__('Step %d Name', 'holvek'), idx + 1)}
+                            label={sprintf(__('Step %d Name', 'quinrel'), idx + 1)}
                             value={item.name}
-                            placeholder={__('e.g. Prep the soil', 'holvek')}
+                            placeholder={__('e.g. Prep the soil', 'quinrel')}
                             onChange={(val) => updateItem(idx, 'name', val)}
                         />
                     </div>
                     <TextareaControl
-                        label={__('Step Instructions', 'holvek')}
+                        label={__('Step Instructions', 'quinrel')}
                         value={item.text}
                         onChange={(val) => updateItem(idx, 'text', val)}
                         rows={2}
@@ -124,7 +124,7 @@ const HowToStepsEditor = ({ value, onChange }) => {
                 </div>
             ))}
             <Button isSecondary onClick={addItem} style={{ alignSelf: 'start' }}>
-                {__('+ Add HowTo Step', 'holvek')}
+                {__('+ Add HowTo Step', 'quinrel')}
             </Button>
         </div>
     );
@@ -159,7 +159,7 @@ const CustomPropertyTreeBuilder = ({ value, onChange }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                {__('Add custom key-value pairs to extend your schema output. Key names should follow schema.org vocabulary (e.g., "brand", "color", "isbn").', 'holvek')}
+                {__('Add custom key-value pairs to extend your schema output. Key names should follow schema.org vocabulary (e.g., "brand", "color", "isbn").', 'quinrel')}
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -168,7 +168,7 @@ const CustomPropertyTreeBuilder = ({ value, onChange }) => {
                         <div style={{ flex: 1 }}>
                             <input
                                 type="text"
-                                placeholder={__('Key (e.g. brand)', 'holvek')}
+                                placeholder={__('Key (e.g. brand)', 'quinrel')}
                                 value={item.key}
                                 onChange={(e) => updateItem(idx, 'key', e.target.value)}
                                 style={{ width: '100%', fontSize: '12px', padding: '4px 6px', border: '1px solid #e2e8f0', borderRadius: '3px' }}
@@ -177,7 +177,7 @@ const CustomPropertyTreeBuilder = ({ value, onChange }) => {
                         <div style={{ flex: 1 }}>
                             <input
                                 type="text"
-                                placeholder={__('Value (e.g. Nike)', 'holvek')}
+                                placeholder={__('Value (e.g. Nike)', 'quinrel')}
                                 value={item.value}
                                 onChange={(e) => updateItem(idx, 'value', e.target.value)}
                                 style={{ width: '100%', fontSize: '12px', padding: '4px 6px', border: '1px solid #e2e8f0', borderRadius: '3px' }}
@@ -187,7 +187,7 @@ const CustomPropertyTreeBuilder = ({ value, onChange }) => {
                             type="button"
                             onClick={() => removeItem(idx)}
                             style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', padding: '0 4px' }}
-                            title={__('Remove property', 'holvek')}
+                            title={__('Remove property', 'quinrel')}
                         >
                             ×
                         </button>
@@ -196,13 +196,13 @@ const CustomPropertyTreeBuilder = ({ value, onChange }) => {
             </div>
 
             <Button isSecondary onClick={addItem} style={{ alignSelf: 'start', fontSize: '12px' }}>
-                {__('+ Add Custom Property', 'holvek')}
+                {__('+ Add Custom Property', 'quinrel')}
             </Button>
 
             {/* Visual Custom Property Tree Graph Preview */}
             <div style={{ marginTop: '12px', background: '#0f172a', borderRadius: '6px', padding: '12px', color: '#38bdf8', fontFamily: 'monospace', fontSize: '11px', border: '1px solid #1e293b' }}>
                 <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px', borderBottom: '1px solid #334155', paddingBottom: '4px' }}>
-                    {__('Visual Schema Property Graph', 'holvek')}
+                    {__('Visual Schema Property Graph', 'quinrel')}
                 </div>
                 <div>
                     <span style={{ color: '#f43f5e' }}>{"{"}</span>
@@ -262,27 +262,27 @@ const RecipeInstructionsEditor = ({ value, onChange }) => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
-            <strong>{__('Recipe Instructions', 'holvek')}</strong>
+            <strong>{__('Recipe Instructions', 'quinrel')}</strong>
             {list.map((item, idx) => (
                 <div key={idx} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', position: 'relative' }}>
                     <button
                         type="button"
                         onClick={() => removeItem(idx)}
                         style={{ position: 'absolute', top: '4px', right: '4px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
-                        title={__('Remove step', 'holvek')}
+                        title={__('Remove step', 'quinrel')}
                     >
                         ×
                     </button>
                     <div style={{ marginBottom: '6px', marginRight: '16px' }}>
                         <TextControl
-                            label={sprintf(__('Step %d Name', 'holvek'), idx + 1)}
+                            label={sprintf(__('Step %d Name', 'quinrel'), idx + 1)}
                             value={item.name}
-                            placeholder={__('e.g. Mix the ingredients', 'holvek')}
+                            placeholder={__('e.g. Mix the ingredients', 'quinrel')}
                             onChange={(val) => updateItem(idx, 'name', val)}
                         />
                     </div>
                     <TextareaControl
-                        label={__('Step Instructions', 'holvek')}
+                        label={__('Step Instructions', 'quinrel')}
                         value={item.text}
                         onChange={(val) => updateItem(idx, 'text', val)}
                         rows={2}
@@ -290,7 +290,7 @@ const RecipeInstructionsEditor = ({ value, onChange }) => {
                 </div>
             ))}
             <Button isSecondary onClick={addItem} style={{ alignSelf: 'start' }}>
-                {__('+ Add Recipe Step', 'holvek')}
+                {__('+ Add Recipe Step', 'quinrel')}
             </Button>
         </div>
     );
@@ -328,7 +328,7 @@ const RecipeSerpPreview = ({ name, url, image, calories, prepTime, cookTime, ing
                         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                         cursor: 'pointer', marginBottom: '8px'
                     }}>
-                        {name || __('Your Delicious Recipe Name', 'holvek')}
+                        {name || __('Your Delicious Recipe Name', 'quinrel')}
                     </div>
                     
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '12px' }}>
@@ -390,7 +390,7 @@ const EventSerpPreview = ({ name, url, startDate, venue, address, performer, pri
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         cursor: 'pointer', marginBottom: '4px'
                     }}>
-                        {name || __('Amazing Live Event', 'holvek')}
+                        {name || __('Amazing Live Event', 'quinrel')}
                     </div>
                     
                     <div style={{ fontSize: '13px', color: '#4d5156', lineHeight: '1.4' }}>
@@ -430,7 +430,7 @@ const ScoreRing = ({ score, color, label, size = 72 }) => {
                 </text>
             </svg>
             <div>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{__('SEO Score', 'holvek')}</div>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{__('SEO Score', 'quinrel')}</div>
                 <div style={{ fontSize: '12px', color: color, fontWeight: '500' }}>{label}</div>
             </div>
         </div>
@@ -451,11 +451,11 @@ const SerpPreview = ({ title, url, description }) => (
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             cursor: 'pointer', marginBottom: '4px'
         }}>
-            {title || __('Your Page Title', 'holvek')}
+            {title || __('Your Page Title', 'quinrel')}
         </div>
         <div style={{ fontSize: '13px', color: '#4d5156', lineHeight: '1.4', 
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {description || __('Add a meta description to control how this page appears in search results...', 'holvek')}
+            {description || __('Add a meta description to control how this page appears in search results...', 'quinrel')}
         </div>
     </div>
 );
@@ -492,7 +492,7 @@ const SocialCardPreview = ({ title, description, image, domain }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
             {/* Facebook Card */}
             <div>
-                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px' }}>{__('Facebook Preview', 'holvek')}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px' }}>{__('Facebook Preview', 'quinrel')}</div>
                 <div style={{
                     border: '1px solid #ced0d4',
                     borderRadius: '8px',
@@ -515,7 +515,7 @@ const SocialCardPreview = ({ title, description, image, domain }) => {
                     <div style={{ position: 'relative', width: '100%', paddingTop: '52.35%' /* 1.91:1 */, background: '#e9ebee' }}>
                         <img 
                             src={displayImage} 
-                            alt={__('Facebook Preview', 'holvek')} 
+                            alt={__('Facebook Preview', 'quinrel')} 
                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
                         />
                     </div>
@@ -524,10 +524,10 @@ const SocialCardPreview = ({ title, description, image, domain }) => {
                             {domain || 'example.com'}
                         </div>
                         <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1d2129', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '20px', height: '40px' }}>
-                            {title || __('Your Sharing Title', 'holvek')}
+                            {title || __('Your Sharing Title', 'quinrel')}
                         </div>
                         <div style={{ fontSize: '13px', color: '#606770', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '18px', height: '36px' }}>
-                            {description || __('This is the description that will display when you share your link.', 'holvek')}
+                            {description || __('This is the description that will display when you share your link.', 'quinrel')}
                         </div>
                     </div>
                 </div>
@@ -535,7 +535,7 @@ const SocialCardPreview = ({ title, description, image, domain }) => {
 
             {/* Twitter/X Card */}
             <div>
-                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px' }}>{__('Twitter / X Preview', 'holvek')}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px' }}>{__('Twitter / X Preview', 'quinrel')}</div>
                 <div style={{
                     border: '1px solid #e1e8ed',
                     borderRadius: '16px',
@@ -557,10 +557,10 @@ const SocialCardPreview = ({ title, description, image, domain }) => {
                             <span style={{ fontSize: '10px' }}>↗</span>
                         </div>
                         <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f1419', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {title || __('Your Sharing Title', 'holvek')}
+                            {title || __('Your Sharing Title', 'quinrel')}
                         </div>
                         <div style={{ fontSize: '14px', color: '#536471', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '18px', height: '36px' }}>
-                            {description || __('This is the description that will display when you share your link.', 'holvek')}
+                            {description || __('This is the description that will display when you share your link.', 'quinrel')}
                         </div>
                     </div>
                 </div>
@@ -569,7 +569,7 @@ const SocialCardPreview = ({ title, description, image, domain }) => {
     );
 };
 
-// ── Holvek AI Assistant Component ──────────────────────────────────
+// ── Quinrel AI Assistant Component ──────────────────────────────────
 const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) => {
     const [action, setAction] = useState('generate_titles_metas');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -586,11 +586,11 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
         setIsDebouncingSuggestion(true);
         const delayDebounceFn = setTimeout(async () => {
             try {
-                const response = await fetch(`${holvekEditorConfig.apiUrl}/ai/generate`, {
+                const response = await fetch(`${quinrelEditorConfig.apiUrl}/ai/generate`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-WP-Nonce': holvekEditorConfig.nonce,
+                        'X-WP-Nonce': quinrelEditorConfig.nonce,
                     },
                     body: JSON.stringify({
                         action: 'writing_assistant',
@@ -618,11 +618,11 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
         setErrorMsg('');
         setAiResult('');
         try {
-            const response = await fetch(`${holvekEditorConfig.apiUrl}/ai/generate`, {
+            const response = await fetch(`${quinrelEditorConfig.apiUrl}/ai/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-WP-Nonce': holvekEditorConfig.nonce,
+                    'X-WP-Nonce': quinrelEditorConfig.nonce,
                 },
                 body: JSON.stringify({
                     action,
@@ -635,10 +635,10 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
             if (response.ok && data.success) {
                 setAiResult(data.result);
             } else {
-                setErrorMsg(data.message || __('AI Generation failed. Make sure your API Key is verified under Holvek Settings.', 'holvek'));
+                setErrorMsg(data.message || __('AI Generation failed. Make sure your API Key is verified under Quinrel Settings.', 'quinrel'));
             }
         } catch (error) {
-            setErrorMsg(__('Network error occurred during generation.', 'holvek'));
+            setErrorMsg(__('Network error occurred during generation.', 'quinrel'));
         } finally {
             setIsGenerating(false);
         }
@@ -654,16 +654,16 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
     }, [aiResult]);
 
     return (
-        <PanelBody title={__('Holvek AI Assistant', 'holvek')} initialOpen={false}>
+        <PanelBody title={__('Quinrel AI Assistant', 'quinrel')} initialOpen={false}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <SelectControl
-                    label={__('AI Optimization Goal', 'holvek')}
+                    label={__('AI Optimization Goal', 'quinrel')}
                     value={action}
                     options={[
-                        { label: __('Generate CTR Titles & Metas', 'holvek'), value: 'generate_titles_metas' },
-                        { label: __('Generate Structured FAQs', 'holvek'), value: 'generate_faqs' },
-                        { label: __('Generate SEO Outline & Summary', 'holvek'), value: 'generate_outline_summary' },
-                        { label: __('SEO Writing Recommendations', 'holvek'), value: 'writing_assistant' },
+                        { label: __('Generate CTR Titles & Metas', 'quinrel'), value: 'generate_titles_metas' },
+                        { label: __('Generate Structured FAQs', 'quinrel'), value: 'generate_faqs' },
+                        { label: __('Generate SEO Outline & Summary', 'quinrel'), value: 'generate_outline_summary' },
+                        { label: __('SEO Writing Recommendations', 'quinrel'), value: 'writing_assistant' },
                     ]}
                     onChange={(val) => { setAction(val); setAiResult(''); setErrorMsg(''); }}
                 />
@@ -675,7 +675,7 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
                     className="w-full justify-center"
                     style={{ background: '#4f46e5', borderColor: '#4f46e5' }}
                 >
-                    {isGenerating ? __('Querying Agent Gateway...', 'holvek') : __('Get AI SEO Insights', 'holvek')}
+                    {isGenerating ? __('Querying Agent Gateway...', 'quinrel') : __('Get AI SEO Insights', 'quinrel')}
                 </Button>
 
                 {errorMsg && (
@@ -687,31 +687,31 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
                 {isGenerating && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '24px 0', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                         <Spinner />
-                        <span style={{ fontSize: '12px', color: '#475569', fontWeight: '500' }}>{__('Structuring targeted queries...', 'holvek')}</span>
+                        <span style={{ fontSize: '12px', color: '#475569', fontWeight: '500' }}>{__('Structuring targeted queries...', 'quinrel')}</span>
                     </div>
                 )}
 
                 {aiResult && !isGenerating && (
                     <div style={{ marginTop: '12px', padding: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                        <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{__('AI Gateway Response:', 'holvek')}</h4>
+                        <h4 style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>{__('AI Gateway Response:', 'quinrel')}</h4>
                         
                         {action === 'generate_titles_metas' && parsedResult && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-                                    <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b' }}>{__('Suggested Titles', 'holvek')}</strong>
+                                    <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b' }}>{__('Suggested Titles', 'quinrel')}</strong>
                                     {parsedResult.titles?.map((t, i) => (
                                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', marginTop: '4px' }}>
                                             <span style={{ fontWeight: '500', color: '#1e293b' }}>{t}</span>
-                                            <Button isLink isSmall onClick={() => updateMeta('_holvek_meta_title', t)}>{__('Apply', 'holvek')}</Button>
+                                            <Button isLink isSmall onClick={() => updateMeta('_quinrel_meta_title', t)}>{__('Apply', 'quinrel')}</Button>
                                         </div>
                                     ))}
                                 </div>
                                 <div>
-                                    <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b' }}>{__('Suggested Descriptions', 'holvek')}</strong>
+                                    <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748b' }}>{__('Suggested Descriptions', 'quinrel')}</strong>
                                     {parsedResult.descriptions?.map((d, i) => (
                                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', background: '#fff', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', marginTop: '4px', gap: '8px' }}>
                                             <span style={{ color: '#334155' }}>{d}</span>
-                                            <Button isLink isSmall onClick={() => updateMeta('_holvek_meta_description', d)}>{__('Apply', 'holvek')}</Button>
+                                            <Button isLink isSmall onClick={() => updateMeta('_quinrel_meta_description', d)}>{__('Apply', 'quinrel')}</Button>
                                         </div>
                                     ))}
                                 </div>
@@ -730,12 +730,12 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
                                     isSecondary 
                                     isSmall 
                                     onClick={() => {
-                                        updateMeta('_holvek_primary_schema', 'faq');
-                                        updateMeta('_holvek_schema_faq_questions', JSON.stringify(parsedResult));
+                                        updateMeta('_quinrel_primary_schema', 'faq');
+                                        updateMeta('_quinrel_schema_faq_questions', JSON.stringify(parsedResult));
                                     }}
                                     style={{ marginTop: '4px' }}
                                 >
-                                    {__('Apply as FAQ Schema', 'holvek')}
+                                    {__('Apply as FAQ Schema', 'quinrel')}
                                 </Button>
                             </div>
                         )}
@@ -751,11 +751,11 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
                 {focusKeyword && (
                     <div style={{ marginTop: '12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '10px' }}>
                         <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#16a34a', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>{__('Real-time SEO Copilot', 'holvek')}</span>
-                            {isDebouncingSuggestion && <span style={{ fontSize: '10px', color: '#65a30d', fontStyle: 'italic' }}>{__('(Analyzing...)', 'holvek')}</span>}
+                            <span>{__('Real-time SEO Copilot', 'quinrel')}</span>
+                            {isDebouncingSuggestion && <span style={{ fontSize: '10px', color: '#65a30d', fontStyle: 'italic' }}>{__('(Analyzing...)', 'quinrel')}</span>}
                         </div>
                         <div style={{ fontSize: '12px', color: '#166534', marginTop: '6px', lineHeight: '1.5' }}>
-                            {realtimeSuggestion || __('Start writing to receive real-time keyword placement and density tips.', 'holvek')}
+                            {realtimeSuggestion || __('Start writing to receive real-time keyword placement and density tips.', 'quinrel')}
                         </div>
                     </div>
                 )}
@@ -772,11 +772,11 @@ const InternalLinkPanel = ({ postId, content }) => {
     const scanInternalLinks = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`${holvekEditorConfig.apiUrl}/content/internal-links`, {
+            const response = await fetch(`${quinrelEditorConfig.apiUrl}/content/internal-links`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-WP-Nonce': holvekEditorConfig.nonce,
+                    'X-WP-Nonce': quinrelEditorConfig.nonce,
                 },
                 body: JSON.stringify({
                     post_id: postId,
@@ -802,7 +802,7 @@ const InternalLinkPanel = ({ postId, content }) => {
     const recommendations = linksData?.recommendations || [];
 
     return (
-        <PanelBody title={__('Internal Links & Orphan Finder', 'holvek')} initialOpen={false}>
+        <PanelBody title={__('Internal Links & Orphan Finder', 'quinrel')} initialOpen={false}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {/* Orphan finder badge */}
                 {orphanStatus && (
@@ -818,7 +818,7 @@ const InternalLinkPanel = ({ postId, content }) => {
                     }}>
                         <div>
                             <div style={{ fontSize: '13px', fontWeight: 'bold', color: orphanStatus.is_orphan ? '#991b1b' : '#166534' }}>
-                                {orphanStatus.is_orphan ? __('Orphan Post Alert', 'holvek') : __('Incoming Links OK', 'holvek')}
+                                {orphanStatus.is_orphan ? __('Orphan Post Alert', 'quinrel') : __('Incoming Links OK', 'quinrel')}
                             </div>
                             <div style={{ fontSize: '11px', color: orphanStatus.is_orphan ? '#b91c1c' : '#15803d', marginTop: '2px' }}>
                                 {orphanStatus.is_orphan 
@@ -833,9 +833,9 @@ const InternalLinkPanel = ({ postId, content }) => {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>{__('Suggestions (Max 5)', 'holvek')}</span>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>{__('Suggestions (Max 5)', 'quinrel')}</span>
                     <Button isSmall isSecondary isBusy={isLoading} onClick={scanInternalLinks}>
-                        {__('Re-Scan', 'holvek')}
+                        {__('Re-Scan', 'quinrel')}
                     </Button>
                 </div>
 
@@ -843,7 +843,7 @@ const InternalLinkPanel = ({ postId, content }) => {
 
                 {!isLoading && recommendations.length === 0 && (
                     <p style={{ fontSize: '12px', color: '#64748b', fontStyle: 'italic', margin: 0 }}>
-                        {__('No link suggestions available. Try adding some relevant categories/tags or writing more content.', 'holvek')}
+                        {__('No link suggestions available. Try adding some relevant categories/tags or writing more content.', 'quinrel')}
                     </p>
                 )}
 
@@ -860,7 +860,7 @@ const InternalLinkPanel = ({ postId, content }) => {
                                 {rec.title}
                             </strong>
                             <a href={rec.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '10px', color: '#4f46e5', fontWeight: '600', textDecoration: 'none' }}>
-                                {__('View ↗', 'holvek')}
+                                {__('View ↗', 'quinrel')}
                             </a>
                         </div>
                         
@@ -914,7 +914,7 @@ const convertToIsoDuration = (time) => {
 
 const mergeCustomProperties = (meta, schemaObj) => {
     if (!schemaObj) return schemaObj;
-    const customPropsJson = meta._holvek_custom_schema_properties;
+    const customPropsJson = meta._quinrel_custom_schema_properties;
     if (customPropsJson) {
         try {
             const customProps = JSON.parse(customPropsJson);
@@ -939,7 +939,7 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
     const graphs = [];
 
     // 1. Article / NewsArticle Schema
-    const isNews = meta._holvek_is_news === 'yes';
+    const isNews = meta._quinrel_is_news === 'yes';
     const article = {
         "@type": isNews ? "NewsArticle" : "Article",
         "@id": `${baseId}#article`,
@@ -973,12 +973,12 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
 
     // 3. Custom point-and-click schemas
     if (schemaType === 'product') {
-        const name = meta._holvek_schema_product_name || title || __('Product Name', 'holvek');
-        const description = meta._holvek_schema_product_description || '';
-        const price = meta._holvek_schema_product_price || '';
-        const currency = meta._holvek_schema_product_currency || 'USD';
-        const rating = meta._holvek_schema_product_rating || '';
-        const availability = meta._holvek_schema_product_availability || 'InStock';
+        const name = meta._quinrel_schema_product_name || title || __('Product Name', 'quinrel');
+        const description = meta._quinrel_schema_product_description || '';
+        const price = meta._quinrel_schema_product_price || '';
+        const currency = meta._quinrel_schema_product_currency || 'USD';
+        const rating = meta._quinrel_schema_product_rating || '';
+        const availability = meta._quinrel_schema_product_availability || 'InStock';
 
         const product = {
             "@type": "Product",
@@ -1011,7 +1011,7 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
     } else if (schemaType === 'faq') {
         let faqs = [];
         try {
-            faqs = JSON.parse(meta._holvek_schema_faq_questions || '[]');
+            faqs = JSON.parse(meta._quinrel_schema_faq_questions || '[]');
         } catch (e) {
             faqs = [];
         }
@@ -1034,16 +1034,16 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
             }));
         }
     } else if (schemaType === 'howto') {
-        const name = meta._holvek_schema_howto_name || title || __('How-to Name', 'holvek');
-        const description = meta._holvek_schema_howto_description || '';
+        const name = meta._quinrel_schema_howto_name || title || __('How-to Name', 'quinrel');
+        const description = meta._quinrel_schema_howto_description || '';
         let steps = [];
         try {
-            steps = JSON.parse(meta._holvek_schema_howto_steps || '[]');
+            steps = JSON.parse(meta._quinrel_schema_howto_steps || '[]');
         } catch (e) {
             steps = [];
         }
-        const suppliesText = meta._holvek_schema_howto_supplies || '';
-        const toolsText = meta._holvek_schema_howto_tools || '';
+        const suppliesText = meta._quinrel_schema_howto_supplies || '';
+        const toolsText = meta._quinrel_schema_howto_tools || '';
 
         const howto = {
             "@type": "HowTo",
@@ -1080,12 +1080,12 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
 
         graphs.push(mergeCustomProperties(meta, howto));
     } else if (schemaType === 'localbusiness') {
-        const name = meta._holvek_schema_localbusiness_name || domain || __('Local Business', 'holvek');
-        const telephone = meta._holvek_schema_localbusiness_telephone || '';
-        const street = meta._holvek_schema_localbusiness_street || '';
-        const city = meta._holvek_schema_localbusiness_city || '';
-        const postal = meta._holvek_schema_localbusiness_postal || '';
-        const country = meta._holvek_schema_localbusiness_country || 'US';
+        const name = meta._quinrel_schema_localbusiness_name || domain || __('Local Business', 'quinrel');
+        const telephone = meta._quinrel_schema_localbusiness_telephone || '';
+        const street = meta._quinrel_schema_localbusiness_street || '';
+        const city = meta._quinrel_schema_localbusiness_city || '';
+        const postal = meta._quinrel_schema_localbusiness_postal || '';
+        const country = meta._quinrel_schema_localbusiness_country || 'US';
 
         const localbusiness = {
             "@type": "LocalBusiness",
@@ -1108,9 +1108,9 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
         }
         graphs.push(mergeCustomProperties(meta, localbusiness));
     } else if (schemaType === 'recipe') {
-        const name = meta._holvek_schema_recipe_name || title || __('Recipe Name', 'holvek');
-        const description = meta._holvek_schema_recipe_description || '';
-        const ingredientsText = meta._holvek_schema_recipe_ingredients || '';
+        const name = meta._quinrel_schema_recipe_name || title || __('Recipe Name', 'quinrel');
+        const description = meta._quinrel_schema_recipe_description || '';
+        const ingredientsText = meta._quinrel_schema_recipe_ingredients || '';
         let ingredients = [];
         if (ingredientsText) {
             try {
@@ -1127,14 +1127,14 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
 
         let instructions = [];
         try {
-            instructions = JSON.parse(meta._holvek_schema_recipe_instructions || '[]');
+            instructions = JSON.parse(meta._quinrel_schema_recipe_instructions || '[]');
         } catch (e) {
             instructions = [];
         }
 
-        const prepTimeRaw = meta._holvek_schema_recipe_prep_time || '';
-        const cookTimeRaw = meta._holvek_schema_recipe_cook_time || '';
-        const calories = meta._holvek_schema_recipe_calories || '';
+        const prepTimeRaw = meta._quinrel_schema_recipe_prep_time || '';
+        const cookTimeRaw = meta._quinrel_schema_recipe_cook_time || '';
+        const calories = meta._quinrel_schema_recipe_calories || '';
 
         const recipe = {
             "@type": "Recipe",
@@ -1182,14 +1182,14 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
 
         graphs.push(mergeCustomProperties(meta, recipe));
     } else if (schemaType === 'event') {
-        const name = meta._holvek_schema_event_name || title || __('Event Name', 'holvek');
-        const startDate = meta._holvek_schema_event_start_date || '';
-        const endDate = meta._holvek_schema_event_end_date || '';
-        const venue = meta._holvek_schema_event_venue || 'Online';
-        const address = meta._holvek_schema_event_address || '';
-        const performerName = meta._holvek_schema_event_performer || '';
-        const price = meta._holvek_schema_event_price || '';
-        const currency = meta._holvek_schema_event_currency || 'USD';
+        const name = meta._quinrel_schema_event_name || title || __('Event Name', 'quinrel');
+        const startDate = meta._quinrel_schema_event_start_date || '';
+        const endDate = meta._quinrel_schema_event_end_date || '';
+        const venue = meta._quinrel_schema_event_venue || 'Online';
+        const address = meta._quinrel_schema_event_address || '';
+        const performerName = meta._quinrel_schema_event_performer || '';
+        const price = meta._quinrel_schema_event_price || '';
+        const currency = meta._quinrel_schema_event_currency || 'USD';
 
         const event = {
             "@type": "Event",
@@ -1256,7 +1256,7 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
         graphs.push(mergeCustomProperties(meta, event));
     } else if (schemaType === 'custom') {
         const custom = {
-            "@type": meta._holvek_schema_custom_type || 'Thing',
+            "@type": meta._quinrel_schema_custom_type || 'Thing',
             "@id": `${baseId}#custom`
         };
         graphs.push(mergeCustomProperties(meta, custom));
@@ -1277,160 +1277,160 @@ const auditSchema = (schemaType, meta, title, featuredMediaUrl) => {
     }
 
     if (schemaType === 'product') {
-        const hasName = !!meta._holvek_schema_product_name || !!title;
-        checks.push({ label: __('Product Name', 'holvek'), pass: hasName, required: true });
+        const hasName = !!meta._quinrel_schema_product_name || !!title;
+        checks.push({ label: __('Product Name', 'quinrel'), pass: hasName, required: true });
         if (!hasName) score -= 30;
 
-        const hasPrice = !!meta._holvek_schema_product_price;
-        checks.push({ label: __('Offer Price', 'holvek'), pass: hasPrice, required: true });
+        const hasPrice = !!meta._quinrel_schema_product_price;
+        checks.push({ label: __('Offer Price', 'quinrel'), pass: hasPrice, required: true });
         if (!hasPrice) score -= 30;
 
-        const hasCurrency = !!meta._holvek_schema_product_currency;
-        checks.push({ label: __('Currency', 'holvek'), pass: hasCurrency, required: true });
+        const hasCurrency = !!meta._quinrel_schema_product_currency;
+        checks.push({ label: __('Currency', 'quinrel'), pass: hasCurrency, required: true });
         if (!hasCurrency) score -= 10;
 
-        const hasRating = !!meta._holvek_schema_product_rating;
-        checks.push({ label: __('Aggregate Rating', 'holvek'), pass: hasRating, required: false });
+        const hasRating = !!meta._quinrel_schema_product_rating;
+        checks.push({ label: __('Aggregate Rating', 'quinrel'), pass: hasRating, required: false });
         if (!hasRating) score -= 15;
 
         const hasImage = !!featuredMediaUrl;
-        checks.push({ label: __('Product Image', 'holvek'), pass: hasImage, required: false });
+        checks.push({ label: __('Product Image', 'quinrel'), pass: hasImage, required: false });
         if (!hasImage) score -= 15;
     } else if (schemaType === 'faq') {
         let faqs = [];
         try {
-            faqs = JSON.parse(meta._holvek_schema_faq_questions || '[]');
+            faqs = JSON.parse(meta._quinrel_schema_faq_questions || '[]');
         } catch (e) {
             faqs = [];
         }
         const hasEntries = faqs.length > 0;
-        checks.push({ label: __('FAQ Entries added', 'holvek'), pass: hasEntries, required: true });
+        checks.push({ label: __('FAQ Entries added', 'quinrel'), pass: hasEntries, required: true });
         if (!hasEntries) {
             score -= 50;
         } else {
             const hasCompleteFaqs = faqs.every(f => f.question && f.answer);
-            checks.push({ label: __('All FAQ entries fully filled', 'holvek'), pass: hasCompleteFaqs, required: true });
+            checks.push({ label: __('All FAQ entries fully filled', 'quinrel'), pass: hasCompleteFaqs, required: true });
             if (!hasCompleteFaqs) score -= 50;
         }
     } else if (schemaType === 'howto') {
-        const hasName = !!meta._holvek_schema_howto_name || !!title;
-        checks.push({ label: __('HowTo Name', 'holvek'), pass: hasName, required: true });
+        const hasName = !!meta._quinrel_schema_howto_name || !!title;
+        checks.push({ label: __('HowTo Name', 'quinrel'), pass: hasName, required: true });
         if (!hasName) score -= 25;
 
-        const hasDesc = !!meta._holvek_schema_howto_description;
-        checks.push({ label: __('HowTo Description', 'holvek'), pass: hasDesc, required: false });
+        const hasDesc = !!meta._quinrel_schema_howto_description;
+        checks.push({ label: __('HowTo Description', 'quinrel'), pass: hasDesc, required: false });
         if (!hasDesc) score -= 20;
 
         let steps = [];
         try {
-            steps = JSON.parse(meta._holvek_schema_howto_steps || '[]');
+            steps = JSON.parse(meta._quinrel_schema_howto_steps || '[]');
         } catch (e) {
             steps = [];
         }
         const hasSteps = steps.length > 0;
-        checks.push({ label: __('At least one HowTo step added', 'holvek'), pass: hasSteps, required: true });
+        checks.push({ label: __('At least one HowTo step added', 'quinrel'), pass: hasSteps, required: true });
         if (!hasSteps) {
             score -= 25;
         } else {
             const hasCompleteSteps = steps.every(s => s.text);
-            checks.push({ label: __('All HowTo steps have instructions', 'holvek'), pass: hasCompleteSteps, required: true });
+            checks.push({ label: __('All HowTo steps have instructions', 'quinrel'), pass: hasCompleteSteps, required: true });
             if (!hasCompleteSteps) score -= 25;
         }
 
-        const hasTools = !!meta._holvek_schema_howto_tools;
-        checks.push({ label: __('Recommended Tools configured', 'holvek'), pass: hasTools, required: false });
+        const hasTools = !!meta._quinrel_schema_howto_tools;
+        checks.push({ label: __('Recommended Tools configured', 'quinrel'), pass: hasTools, required: false });
         if (!hasTools) score -= 15;
 
-        const hasSupplies = !!meta._holvek_schema_howto_supplies;
-        checks.push({ label: __('Recommended Supplies configured', 'holvek'), pass: hasSupplies, required: false });
+        const hasSupplies = !!meta._quinrel_schema_howto_supplies;
+        checks.push({ label: __('Recommended Supplies configured', 'quinrel'), pass: hasSupplies, required: false });
         if (!hasSupplies) score -= 15;
     } else if (schemaType === 'localbusiness') {
-        const hasName = !!meta._holvek_schema_localbusiness_name;
-        checks.push({ label: __('Business Name', 'holvek'), pass: hasName, required: true });
+        const hasName = !!meta._quinrel_schema_localbusiness_name;
+        checks.push({ label: __('Business Name', 'quinrel'), pass: hasName, required: true });
         if (!hasName) score -= 30;
 
-        const hasPhone = !!meta._holvek_schema_localbusiness_telephone;
-        checks.push({ label: __('Telephone Contact', 'holvek'), pass: hasPhone, required: false });
+        const hasPhone = !!meta._quinrel_schema_localbusiness_telephone;
+        checks.push({ label: __('Telephone Contact', 'quinrel'), pass: hasPhone, required: false });
         if (!hasPhone) score -= 20;
 
-        const hasStreet = !!meta._holvek_schema_localbusiness_street;
-        checks.push({ label: __('Street Address', 'holvek'), pass: hasStreet, required: true });
+        const hasStreet = !!meta._quinrel_schema_localbusiness_street;
+        checks.push({ label: __('Street Address', 'quinrel'), pass: hasStreet, required: true });
         if (!hasStreet) score -= 20;
 
-        const hasCity = !!meta._holvek_schema_localbusiness_city;
-        checks.push({ label: __('Address City', 'holvek'), pass: hasCity, required: true });
+        const hasCity = !!meta._quinrel_schema_localbusiness_city;
+        checks.push({ label: __('Address City', 'quinrel'), pass: hasCity, required: true });
         if (!hasCity) score -= 15;
 
-        const hasZip = !!meta._holvek_schema_localbusiness_postal;
-        checks.push({ label: __('Postal/Zip Code', 'holvek'), pass: hasZip, required: true });
+        const hasZip = !!meta._quinrel_schema_localbusiness_postal;
+        checks.push({ label: __('Postal/Zip Code', 'quinrel'), pass: hasZip, required: true });
         if (!hasZip) score -= 15;
     } else if (schemaType === 'recipe') {
-        const hasName = !!meta._holvek_schema_recipe_name || !!title;
-        checks.push({ label: __('Recipe Name', 'holvek'), pass: hasName, required: true });
+        const hasName = !!meta._quinrel_schema_recipe_name || !!title;
+        checks.push({ label: __('Recipe Name', 'quinrel'), pass: hasName, required: true });
         if (!hasName) score -= 25;
 
-        const hasIngredients = !!meta._holvek_schema_recipe_ingredients;
-        checks.push({ label: __('Ingredients', 'holvek'), pass: hasIngredients, required: true });
+        const hasIngredients = !!meta._quinrel_schema_recipe_ingredients;
+        checks.push({ label: __('Ingredients', 'quinrel'), pass: hasIngredients, required: true });
         if (!hasIngredients) score -= 25;
 
         let instructions = [];
         try {
-            instructions = JSON.parse(meta._holvek_schema_recipe_instructions || '[]');
+            instructions = JSON.parse(meta._quinrel_schema_recipe_instructions || '[]');
         } catch (e) {}
         const hasInstructions = instructions.length > 0;
-        checks.push({ label: __('Instructions', 'holvek'), pass: hasInstructions, required: true });
+        checks.push({ label: __('Instructions', 'quinrel'), pass: hasInstructions, required: true });
         if (!hasInstructions) score -= 25;
 
-        const hasPrepTime = !!meta._holvek_schema_recipe_prep_time;
-        checks.push({ label: __('Prep Time', 'holvek'), pass: hasPrepTime, required: false });
+        const hasPrepTime = !!meta._quinrel_schema_recipe_prep_time;
+        checks.push({ label: __('Prep Time', 'quinrel'), pass: hasPrepTime, required: false });
         if (!hasPrepTime) score -= 10;
         
-        const hasCookTime = !!meta._holvek_schema_recipe_cook_time;
-        checks.push({ label: __('Cook Time', 'holvek'), pass: hasCookTime, required: false });
+        const hasCookTime = !!meta._quinrel_schema_recipe_cook_time;
+        checks.push({ label: __('Cook Time', 'quinrel'), pass: hasCookTime, required: false });
         if (!hasCookTime) score -= 10;
 
         const hasImage = !!featuredMediaUrl;
-        checks.push({ label: __('Cover Image', 'holvek'), pass: hasImage, required: true });
+        checks.push({ label: __('Cover Image', 'quinrel'), pass: hasImage, required: true });
         if (!hasImage) score -= 15;
     } else if (schemaType === 'event') {
-        const hasName = !!meta._holvek_schema_event_name || !!title;
-        checks.push({ label: __('Event Name', 'holvek'), pass: hasName, required: true });
+        const hasName = !!meta._quinrel_schema_event_name || !!title;
+        checks.push({ label: __('Event Name', 'quinrel'), pass: hasName, required: true });
         if (!hasName) score -= 20;
 
-        const hasStartDate = !!meta._holvek_schema_event_start_date;
-        checks.push({ label: __('Start Date', 'holvek'), pass: hasStartDate, required: true });
+        const hasStartDate = !!meta._quinrel_schema_event_start_date;
+        checks.push({ label: __('Start Date', 'quinrel'), pass: hasStartDate, required: true });
         if (!hasStartDate) score -= 30;
 
-        const hasVenue = !!meta._holvek_schema_event_venue;
-        checks.push({ label: __('Venue Name', 'holvek'), pass: hasVenue, required: true });
+        const hasVenue = !!meta._quinrel_schema_event_venue;
+        checks.push({ label: __('Venue Name', 'quinrel'), pass: hasVenue, required: true });
         if (!hasVenue) score -= 20;
 
-        const hasAddress = !!meta._holvek_schema_event_address;
-        checks.push({ label: __('Location Address', 'holvek'), pass: hasAddress, required: true });
+        const hasAddress = !!meta._quinrel_schema_event_address;
+        checks.push({ label: __('Location Address', 'quinrel'), pass: hasAddress, required: true });
         if (!hasAddress) score -= 15;
 
-        const hasPrice = !!meta._holvek_schema_event_price;
-        checks.push({ label: __('Ticket Price', 'holvek'), pass: hasPrice, required: false });
+        const hasPrice = !!meta._quinrel_schema_event_price;
+        checks.push({ label: __('Ticket Price', 'quinrel'), pass: hasPrice, required: false });
         if (!hasPrice) score -= 15;
     } else if (schemaType === 'custom') {
-        const hasType = !!meta._holvek_schema_custom_type;
-        checks.push({ label: __('Schema Type', 'holvek'), pass: hasType, required: true });
+        const hasType = !!meta._quinrel_schema_custom_type;
+        checks.push({ label: __('Schema Type', 'quinrel'), pass: hasType, required: true });
         if (!hasType) score -= 40;
 
         let props = [];
         try {
-            props = JSON.parse(meta._holvek_custom_schema_properties || '[]');
+            props = JSON.parse(meta._quinrel_custom_schema_properties || '[]');
         } catch(e){}
         const hasProps = props.length > 0 && props.some(p => p.key && p.value);
-        checks.push({ label: __('Custom Properties', 'holvek'), pass: hasProps, required: true });
+        checks.push({ label: __('Custom Properties', 'quinrel'), pass: hasProps, required: true });
         if (!hasProps) score -= 60;
     }
 
     score = Math.max(0, score);
     const warnings = checks.filter(c => !c.pass).map(c => sprintf(
         c.required
-            ? __('Required field "%s" is missing.', 'holvek')
-            : __('Recommended field "%s" is missing.', 'holvek'),
+            ? __('Required field "%s" is missing.', 'quinrel')
+            : __('Recommended field "%s" is missing.', 'quinrel'),
         c.label
     ));
 
@@ -1468,7 +1468,7 @@ const SchemaValidator = ({ schemaType, meta, title, content, featuredMediaUrl, p
 
     const handleTest = () => {
         navigator.clipboard.writeText(jsonString);
-        alert(__('Schema JSON-LD code copied to clipboard! Opening Google Rich Results Test in a new tab. Paste your code in the "Code" tab to validate.', 'holvek'));
+        alert(__('Schema JSON-LD code copied to clipboard! Opening Google Rich Results Test in a new tab. Paste your code in the "Code" tab to validate.', 'quinrel'));
         window.open('https://search.google.com/test/rich-results', '_blank');
     };
 
@@ -1480,7 +1480,7 @@ const SchemaValidator = ({ schemaType, meta, title, content, featuredMediaUrl, p
         <div style={{ marginTop: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                    {__('Schema Validator & Health', 'holvek')}
+                    {__('Schema Validator & Health', 'quinrel')}
                 </div>
                 <div style={{ fontSize: '12px', fontWeight: '600', color: healthColor }}>
                     Health: {audit.score}%
@@ -1489,7 +1489,7 @@ const SchemaValidator = ({ schemaType, meta, title, content, featuredMediaUrl, p
 
             {audit.warnings.length > 0 ? (
                 <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '6px', padding: '8px 10px', fontSize: '12px', color: '#991b1b', marginBottom: '10px' }}>
-                    <div style={{ fontWeight: '600', marginBottom: '4px' }}>{__('Schema Recommendations:', 'holvek')}</div>
+                    <div style={{ fontWeight: '600', marginBottom: '4px' }}>{__('Schema Recommendations:', 'quinrel')}</div>
                     <ul style={{ margin: 0, paddingLeft: '14px', listStyleType: 'disc' }}>
                         {audit.warnings.map((w, idx) => (
                             <li key={idx} style={{ marginBottom: '2px' }}>{w}</li>
@@ -1507,7 +1507,7 @@ const SchemaValidator = ({ schemaType, meta, title, content, featuredMediaUrl, p
                     {copied ? '✓ Copied!' : 'Copy Schema'}
                 </Button>
                 <Button isPrimary onClick={handleTest} style={{ fontSize: '12px', padding: '6px 8px', justifyContent: 'center' }}>
-                    {__('Test on Google', 'holvek')}
+                    {__('Test on Google', 'quinrel')}
                 </Button>
             </div>
 
@@ -1550,17 +1550,17 @@ const UnlimitedKeywordsEditor = ({ primaryKeyword, additionalKeywordsJson, conte
     }, [additionalKeywordsJson]);
 
     const addKeyword = () => {
-        updateMeta('_holvek_additional_keywords', JSON.stringify([...additional, '']));
+        updateMeta('_quinrel_additional_keywords', JSON.stringify([...additional, '']));
     };
 
     const updateKeyword = (index, value) => {
         const next = [...additional];
         next[index] = value;
-        updateMeta('_holvek_additional_keywords', JSON.stringify(next));
+        updateMeta('_quinrel_additional_keywords', JSON.stringify(next));
     };
 
     const removeKeyword = (index) => {
-        updateMeta('_holvek_additional_keywords', JSON.stringify(additional.filter((_, i) => i !== index)));
+        updateMeta('_quinrel_additional_keywords', JSON.stringify(additional.filter((_, i) => i !== index)));
     };
 
     // Mini-analysis for each additional keyword
@@ -1583,7 +1583,7 @@ const UnlimitedKeywordsEditor = ({ primaryKeyword, additionalKeywordsJson, conte
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
             <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {__('Additional Focus Keywords', 'holvek')}
+                {__('Additional Focus Keywords', 'quinrel')}
             </div>
 
             {additional.map((kw, idx) => {
@@ -1602,7 +1602,7 @@ const UnlimitedKeywordsEditor = ({ primaryKeyword, additionalKeywordsJson, conte
                                 type="button"
                                 onClick={() => removeKeyword(idx)}
                                 style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '0 4px' }}
-                                title={__('Remove', 'holvek')}
+                                title={__('Remove', 'quinrel')}
                             >×</button>
                         </div>
                         {kw && analysis && (
@@ -1633,7 +1633,7 @@ const UnlimitedKeywordsEditor = ({ primaryKeyword, additionalKeywordsJson, conte
                 onClick={addKeyword}
                 style={{ alignSelf: 'flex-start', fontSize: '12px' }}
             >
-                {__('+ Add Keyword', 'holvek')}
+                {__('+ Add Keyword', 'quinrel')}
             </Button>
         </div>
     );
@@ -1654,17 +1654,17 @@ const PageSpeedBadge = ({ postId, cachedJson, updateMeta }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${holvekEditorConfig.apiUrl}/pagespeed?post_id=${postId}`, {
-                headers: { 'X-WP-Nonce': holvekEditorConfig.nonce }
+            const res = await fetch(`${quinrelEditorConfig.apiUrl}/pagespeed?post_id=${postId}`, {
+                headers: { 'X-WP-Nonce': quinrelEditorConfig.nonce }
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                updateMeta('_holvek_pagespeed_cache', JSON.stringify(data.scores));
+                updateMeta('_quinrel_pagespeed_cache', JSON.stringify(data.scores));
             } else {
-                setError(data.message || __('Failed to fetch PageSpeed data.', 'holvek'));
+                setError(data.message || __('Failed to fetch PageSpeed data.', 'quinrel'));
             }
         } catch (e) {
-            setError(__('Network error.', 'holvek'));
+            setError(__('Network error.', 'quinrel'));
         } finally {
             setIsLoading(false);
         }
@@ -1687,17 +1687,17 @@ const PageSpeedBadge = ({ postId, cachedJson, updateMeta }) => {
     };
 
     return (
-        <PanelBody title={__('PageSpeed Performance', 'holvek')} initialOpen={false}>
-            {holvekEditorConfig.cloudConfigured !== '1' && (
+        <PanelBody title={__('PageSpeed Performance', 'quinrel')} initialOpen={false}>
+            {quinrelEditorConfig.cloudConfigured !== '1' && (
                 <Notice status="info" isDismissible={false}>
-                    {__('This site is not connected to Holvek, so PageSpeed through Holvek is unavailable. You can keep using Holvek on this site.', 'holvek')}
+                    {__('This site is not connected to Quinrel, so PageSpeed through Quinrel is unavailable. You can keep using Quinrel on this site.', 'quinrel')}
                 </Notice>
             )}
             {cached ? (
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '12px' }}>
-                        <ScoreCircle label={__('Mobile', 'holvek')} score={cached.mobile ?? '—'} />
-                        <ScoreCircle label={__('Desktop', 'holvek')} score={cached.desktop ?? '—'} />
+                        <ScoreCircle label={__('Mobile', 'quinrel')} score={cached.mobile ?? '—'} />
+                        <ScoreCircle label={__('Desktop', 'quinrel')} score={cached.desktop ?? '—'} />
                     </div>
                     {cached.fetched_at && (
                         <div style={{ fontSize: '10px', color: '#94a3b8', textAlign: 'center', marginBottom: '10px' }}>
@@ -1707,7 +1707,7 @@ const PageSpeedBadge = ({ postId, cachedJson, updateMeta }) => {
                 </div>
             ) : (
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: 0 }}>
-                    {__('No PageSpeed data cached yet. Click below to run an analysis.', 'holvek')}
+                    {__('No PageSpeed data cached yet. Click below to run an analysis.', 'quinrel')}
                 </p>
             )}
             {error && <Notice status="error" isDismissible={false}>{error}</Notice>}
@@ -1733,18 +1733,18 @@ const RankingKeywordsPanel = ({ postId, cachedJson, cachedAt, updateMeta }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${holvekEditorConfig.apiUrl}/gsc/keywords?post_id=${postId}`, {
-                headers: { 'X-WP-Nonce': holvekEditorConfig.nonce }
+            const res = await fetch(`${quinrelEditorConfig.apiUrl}/gsc/keywords?post_id=${postId}`, {
+                headers: { 'X-WP-Nonce': quinrelEditorConfig.nonce }
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                updateMeta('_holvek_ranking_keywords', JSON.stringify(data.keywords));
-                updateMeta('_holvek_ranking_keywords_at', String(Math.floor(Date.now() / 1000)));
+                updateMeta('_quinrel_ranking_keywords', JSON.stringify(data.keywords));
+                updateMeta('_quinrel_ranking_keywords_at', String(Math.floor(Date.now() / 1000)));
             } else {
-                setError(data.message || __('Failed to fetch keyword data. Connect GSC under Holvek Settings.', 'holvek'));
+                setError(data.message || __('Failed to fetch keyword data. Connect GSC under Quinrel Settings.', 'quinrel'));
             }
         } catch (e) {
-            setError(__('Network error.', 'holvek'));
+            setError(__('Network error.', 'quinrel'));
         } finally {
             setIsLoading(false);
         }
@@ -1753,11 +1753,11 @@ const RankingKeywordsPanel = ({ postId, cachedJson, cachedAt, updateMeta }) => {
     const positionColor = (pos) => pos <= 3 ? '#22c55e' : pos <= 10 ? '#f59e0b' : '#ef4444';
 
     return (
-        <PanelBody title={__('Ranking Keywords (GSC)', 'holvek')} initialOpen={false}>
+        <PanelBody title={__('Ranking Keywords (GSC)', 'quinrel')} initialOpen={false}>
             {keywords.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 40px 60px 40px', gap: '4px', fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', paddingBottom: '4px', borderBottom: '1px solid #e2e8f0' }}>
-                        <span>{__('Query', 'holvek')}</span><span style={{textAlign:'center'}}>{__('Pos', 'holvek')}</span><span style={{textAlign:'center'}}>{__('Impr.', 'holvek')}</span><span style={{textAlign:'center'}}>{__('Clicks', 'holvek')}</span>
+                        <span>{__('Query', 'quinrel')}</span><span style={{textAlign:'center'}}>{__('Pos', 'quinrel')}</span><span style={{textAlign:'center'}}>{__('Impr.', 'quinrel')}</span><span style={{textAlign:'center'}}>{__('Clicks', 'quinrel')}</span>
                     </div>
                     {keywords.slice(0, 10).map((kw, i) => (
                         <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 40px 60px 40px', gap: '4px', alignItems: 'center', fontSize: '12px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
@@ -1775,12 +1775,12 @@ const RankingKeywordsPanel = ({ postId, cachedJson, cachedAt, updateMeta }) => {
                 </div>
             ) : (
                 <p style={{ fontSize: '12px', color: '#64748b', marginTop: 0 }}>
-                    {__('No ranking data yet. Connect Google Search Console under Holvek → Settings.', 'holvek')}
+                    {__('No ranking data yet. Connect Google Search Console under Quinrel → Settings.', 'quinrel')}
                 </p>
             )}
             {error && <Notice status="error" isDismissible={false} style={{ marginBottom: '10px' }}>{error}</Notice>}
             <Button isSecondary isBusy={isLoading} onClick={fetchKeywords} style={{ width: '100%', justifyContent: 'center' }}>
-                {isLoading ? __('Fetching from GSC…', 'holvek') : keywords.length > 0 ? __('Refresh Keywords', 'holvek') : __('Fetch Ranking Keywords', 'holvek')}
+                {isLoading ? __('Fetching from GSC…', 'quinrel') : keywords.length > 0 ? __('Refresh Keywords', 'quinrel') : __('Fetch Ranking Keywords', 'quinrel')}
             </Button>
         </PanelBody>
     );
@@ -1795,49 +1795,49 @@ const SchemaStackEditor = ({ stackJson, updateMeta }) => {
     }, [stackJson]);
 
     const SCHEMA_OPTIONS = [
-        { value: 'faq', storedLabel: 'FAQ', label: __('FAQ', 'holvek') },
-        { value: 'howto', storedLabel: 'HowTo', label: __('HowTo', 'holvek') },
-        { value: 'product', storedLabel: 'Product', label: __('Product', 'holvek') },
-        { value: 'localbusiness', storedLabel: 'Local Business', label: __('Local Business', 'holvek') },
-        { value: 'recipe', storedLabel: 'Recipe', label: __('Recipe', 'holvek') },
-        { value: 'event', storedLabel: 'Event', label: __('Event', 'holvek') },
-        { value: 'article', storedLabel: 'Article', label: __('Article', 'holvek') },
-        { value: 'newsarticle', storedLabel: 'NewsArticle', label: __('NewsArticle', 'holvek') },
-        { value: 'breadcrumb', storedLabel: 'BreadcrumbList', label: __('BreadcrumbList', 'holvek') },
-        { value: 'video', storedLabel: 'VideoObject', label: __('VideoObject', 'holvek') },
-        { value: 'person', storedLabel: 'Person', label: __('Person', 'holvek') },
-        { value: 'organization', storedLabel: 'Organization', label: __('Organization', 'holvek') },
+        { value: 'faq', storedLabel: 'FAQ', label: __('FAQ', 'quinrel') },
+        { value: 'howto', storedLabel: 'HowTo', label: __('HowTo', 'quinrel') },
+        { value: 'product', storedLabel: 'Product', label: __('Product', 'quinrel') },
+        { value: 'localbusiness', storedLabel: 'Local Business', label: __('Local Business', 'quinrel') },
+        { value: 'recipe', storedLabel: 'Recipe', label: __('Recipe', 'quinrel') },
+        { value: 'event', storedLabel: 'Event', label: __('Event', 'quinrel') },
+        { value: 'article', storedLabel: 'Article', label: __('Article', 'quinrel') },
+        { value: 'newsarticle', storedLabel: 'NewsArticle', label: __('NewsArticle', 'quinrel') },
+        { value: 'breadcrumb', storedLabel: 'BreadcrumbList', label: __('BreadcrumbList', 'quinrel') },
+        { value: 'video', storedLabel: 'VideoObject', label: __('VideoObject', 'quinrel') },
+        { value: 'person', storedLabel: 'Person', label: __('Person', 'quinrel') },
+        { value: 'organization', storedLabel: 'Organization', label: __('Organization', 'quinrel') },
     ];
 
     const addSchema = () => {
-        updateMeta('_holvek_schema_stack', JSON.stringify([...stack, { type: 'faq', label: 'FAQ' }]));
+        updateMeta('_quinrel_schema_stack', JSON.stringify([...stack, { type: 'faq', label: 'FAQ' }]));
     };
 
     const updateType = (index, type) => {
         const next = [...stack];
         const option = SCHEMA_OPTIONS.find(o => o.value === type);
         next[index] = { type, label: option?.storedLabel || type };
-        updateMeta('_holvek_schema_stack', JSON.stringify(next));
+        updateMeta('_quinrel_schema_stack', JSON.stringify(next));
     };
 
     const removeSchema = (index) => {
-        updateMeta('_holvek_schema_stack', JSON.stringify(stack.filter((_, i) => i !== index)));
+        updateMeta('_quinrel_schema_stack', JSON.stringify(stack.filter((_, i) => i !== index)));
     };
 
     return (
         <div style={{ marginTop: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>
-                    {__('Additional Schema Layers', 'holvek')}
+                    {__('Additional Schema Layers', 'quinrel')}
                 </div>
                 <span style={{ fontSize: '10px', background: '#4f46e5', color: '#fff', padding: '2px 8px', borderRadius: '99px' }}>
-                    {sprintf(_n('%d schema', '%d schemas', stack.length + 1, 'holvek'), stack.length + 1)}
+                    {sprintf(_n('%d schema', '%d schemas', stack.length + 1, 'quinrel'), stack.length + 1)}
                 </span>
             </div>
 
             {stack.length === 0 && (
                 <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px' }}>
-                    {__('Stack additional schema types on top of the primary schema above.', 'holvek')}
+                    {__('Stack additional schema types on top of the primary schema above.', 'quinrel')}
                 </p>
             )}
 
@@ -1858,7 +1858,7 @@ const SchemaStackEditor = ({ stackJson, updateMeta }) => {
             ))}
 
             <Button isSecondary onClick={addSchema} style={{ fontSize: '12px', marginTop: '4px' }}>
-                {__('+ Add Schema Layer', 'holvek')}
+                {__('+ Add Schema Layer', 'quinrel')}
             </Button>
         </div>
     );
@@ -1869,19 +1869,19 @@ const SchemaStackEditor = ({ stackJson, updateMeta }) => {
 const PerformanceBadges = ({ seoScore, readabilityScore, hasKeyword, isPillar, isCornerstone, rankingCount, pagespeedMobile }) => {
     const badges = [];
 
-    if (seoScore >= 80) badges.push({ label: __('SEO Champion', 'holvek'), color: '#166534', bg: '#dcfce7' });
-    else if (seoScore >= 50) badges.push({ label: __('SEO Improving', 'holvek'), color: '#854d0e', bg: '#fef9c3' });
-    else if (seoScore > 0) badges.push({ label: __('Needs SEO Work', 'holvek'), color: '#991b1b', bg: '#fee2e2' });
+    if (seoScore >= 80) badges.push({ label: __('SEO Champion', 'quinrel'), color: '#166534', bg: '#dcfce7' });
+    else if (seoScore >= 50) badges.push({ label: __('SEO Improving', 'quinrel'), color: '#854d0e', bg: '#fef9c3' });
+    else if (seoScore > 0) badges.push({ label: __('Needs SEO Work', 'quinrel'), color: '#991b1b', bg: '#fee2e2' });
 
-    if (readabilityScore >= 60) badges.push({ label: __('Easy to Read', 'holvek'), color: '#1e40af', bg: '#dbeafe' });
+    if (readabilityScore >= 60) badges.push({ label: __('Easy to Read', 'quinrel'), color: '#1e40af', bg: '#dbeafe' });
 
-    if (isPillar) badges.push({ label: __('Pillar Content', 'holvek'), color: '#6b21a8', bg: '#f3e8ff' });
-    else if (isCornerstone) badges.push({ label: __('Cornerstone', 'holvek'), color: '#0e7490', bg: '#cffafe' });
+    if (isPillar) badges.push({ label: __('Pillar Content', 'quinrel'), color: '#6b21a8', bg: '#f3e8ff' });
+    else if (isCornerstone) badges.push({ label: __('Cornerstone', 'quinrel'), color: '#0e7490', bg: '#cffafe' });
 
-    if (rankingCount > 0) badges.push({ label: sprintf(__('%d ranking keywords', 'holvek'), rankingCount), color: '#064e3b', bg: '#d1fae5' });
+    if (rankingCount > 0) badges.push({ label: sprintf(__('%d ranking keywords', 'quinrel'), rankingCount), color: '#064e3b', bg: '#d1fae5' });
 
-    if (pagespeedMobile >= 90) badges.push({ label: __('Fast Page', 'holvek'), color: '#14532d', bg: '#dcfce7' });
-    else if (pagespeedMobile > 0 && pagespeedMobile < 50) badges.push({ label: __('Slow Page', 'holvek'), color: '#7c2d12', bg: '#fee2e2' });
+    if (pagespeedMobile >= 90) badges.push({ label: __('Fast Page', 'quinrel'), color: '#14532d', bg: '#dcfce7' });
+    else if (pagespeedMobile > 0 && pagespeedMobile < 50) badges.push({ label: __('Slow Page', 'quinrel'), color: '#7c2d12', bg: '#fee2e2' });
 
     if (badges.length === 0) return null;
 
@@ -1898,7 +1898,7 @@ const PerformanceBadges = ({ seoScore, readabilityScore, hasKeyword, isPillar, i
     );
 };
 
-const HolvekSidebar = () => {
+const QuinrelSidebar = () => {
     const { meta, postType, title, content } = useSelect((select) => {
         const editor = select('core/editor');
         return {
@@ -1926,7 +1926,7 @@ const HolvekSidebar = () => {
     const featuredMediaId = useSelect((select) => select('core/editor').getEditedPostAttribute('featured_media'), []);
     const featuredMedia = useSelect((select) => featuredMediaId ? select('core').getMedia(featuredMediaId) : null, [featuredMediaId]);
     const featuredMediaUrl = featuredMedia?.source_url || '';
-    const defaultShareImage = (typeof holvekEditorConfig !== 'undefined' && holvekEditorConfig.defaultShareImage) || '';
+    const defaultShareImage = (typeof quinrelEditorConfig !== 'undefined' && quinrelEditorConfig.defaultShareImage) || '';
 
     const domain = useMemo(() => {
         if (!permalink) return 'yourdomain.com';
@@ -1942,12 +1942,12 @@ const HolvekSidebar = () => {
     };
 
     // ── Derived Analysis (memoized) ──────────────────────────
-    const focusKeyword = meta._holvek_focus_keyword || '';
-    const metaTitle = meta._holvek_meta_title || '';
-    const metaDescription = meta._holvek_meta_description || '';
+    const focusKeyword = meta._quinrel_focus_keyword || '';
+    const metaTitle = meta._quinrel_meta_title || '';
+    const metaDescription = meta._quinrel_meta_description || '';
     const effectiveTitle = metaTitle || title;
-    const isCornerstone = meta._holvek_is_cornerstone === 'yes';
-    const isPillar = meta._holvek_is_pillar === 'yes';
+    const isCornerstone = meta._quinrel_is_cornerstone === 'yes';
+    const isPillar = meta._quinrel_is_pillar === 'yes';
 
     const readability = useMemo(() => analyzeReadability(content), [content]);
 
@@ -1963,14 +1963,14 @@ const HolvekSidebar = () => {
 
     // Performance badge computed values
     const pagespeedCache = useMemo(() => {
-        try { return JSON.parse(meta._holvek_pagespeed_cache || 'null'); } catch (e) { return null; }
-    }, [meta._holvek_pagespeed_cache]);
+        try { return JSON.parse(meta._quinrel_pagespeed_cache || 'null'); } catch (e) { return null; }
+    }, [meta._quinrel_pagespeed_cache]);
     const rankingKeywords = useMemo(() => {
-        try { return JSON.parse(meta._holvek_ranking_keywords || '[]'); } catch (e) { return []; }
-    }, [meta._holvek_ranking_keywords]);
+        try { return JSON.parse(meta._quinrel_ranking_keywords || '[]'); } catch (e) { return []; }
+    }, [meta._quinrel_ranking_keywords]);
     const additionalKeywordsCount = useMemo(() => {
-        try { return JSON.parse(meta._holvek_additional_keywords || '[]').length; } catch (e) { return 0; }
-    }, [meta._holvek_additional_keywords]);
+        try { return JSON.parse(meta._quinrel_additional_keywords || '[]').length; } catch (e) { return 0; }
+    }, [meta._quinrel_additional_keywords]);
     const totalKeywords = (focusKeyword ? 1 : 0) + additionalKeywordsCount;
 
     // ── Actions ──────────────────────────────────────────────
@@ -1979,25 +1979,25 @@ const HolvekSidebar = () => {
         setIsScraping(true);
         setScrapeNotice(null);
         try {
-            const response = await fetch(`${holvekEditorConfig.apiUrl}/schema/scrape`, {
+            const response = await fetch(`${quinrelEditorConfig.apiUrl}/schema/scrape`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekEditorConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelEditorConfig.nonce },
                 body: JSON.stringify({ url: competitorUrl })
             });
             const data = await response.json();
             if (response.ok && data.success && data.schema_type) {
-                updateMeta('_holvek_primary_schema', data.schema_type);
+                updateMeta('_quinrel_primary_schema', data.schema_type);
                 if (data.mapped_fields) {
                     Object.keys(data.mapped_fields).forEach(key => {
                         updateMeta(key, data.mapped_fields[key]);
                     });
                 }
-                setScrapeNotice({ type: 'success', message: sprintf(__('Successfully imported %s schema.', 'holvek'), data.schema_type) });
+                setScrapeNotice({ type: 'success', message: sprintf(__('Successfully imported %s schema.', 'quinrel'), data.schema_type) });
             } else {
-                setScrapeNotice({ type: 'error', message: data.message || __('Scraping failed.', 'holvek') });
+                setScrapeNotice({ type: 'error', message: data.message || __('Scraping failed.', 'quinrel') });
             }
         } catch (e) {
-            setScrapeNotice({ type: 'error', message: __('Network error during scraping.', 'holvek') });
+            setScrapeNotice({ type: 'error', message: __('Network error during scraping.', 'quinrel') });
         } finally {
             setIsScraping(false);
         }
@@ -2007,18 +2007,18 @@ const HolvekSidebar = () => {
         setIsSubmitting(true);
         setSubmitStatus(null);
         try {
-            const response = await fetch(`${holvekEditorConfig.apiUrl}/index-url`, {
+            const response = await fetch(`${quinrelEditorConfig.apiUrl}/index-url`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekEditorConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelEditorConfig.nonce },
                 body: JSON.stringify({ post_id: postId })
             });
             const data = await response.json();
             setSubmitStatus(response.ok
-                ? { type: 'success', message: data.message || __('Submitted successfully!', 'holvek') }
-                : { type: 'error', message: data.message || __('Failed to submit.', 'holvek') }
+                ? { type: 'success', message: data.message || __('Submitted successfully!', 'quinrel') }
+                : { type: 'error', message: data.message || __('Failed to submit.', 'quinrel') }
             );
         } catch (error) {
-            setSubmitStatus({ type: 'error', message: __('An error occurred during submission.', 'holvek') });
+            setSubmitStatus({ type: 'error', message: __('An error occurred during submission.', 'quinrel') });
         } finally {
             setIsSubmitting(false);
         }
@@ -2027,21 +2027,21 @@ const HolvekSidebar = () => {
     // FAQ items parsed for preview
     const parsedFaqs = useMemo(() => {
         try {
-            const parsed = JSON.parse(meta._holvek_schema_faq_questions || '[]');
+            const parsed = JSON.parse(meta._quinrel_schema_faq_questions || '[]');
             return Array.isArray(parsed) ? parsed : [];
         } catch (e) {
             return [];
         }
-    }, [meta._holvek_schema_faq_questions]);
+    }, [meta._quinrel_schema_faq_questions]);
 
     // ── Render ──────────────────────────────────────────────
     return (
         <>
-            <PluginSidebarMoreMenuItem target="holvek-sidebar">
-                {__('Holvek SEO', 'holvek')}
+            <PluginSidebarMoreMenuItem target="quinrel-sidebar">
+                {__('Quinrel SEO', 'quinrel')}
             </PluginSidebarMoreMenuItem>
-            <PluginSidebar name="holvek-sidebar" title={__('Holvek AI SEO', 'holvek')}>
-                <div className="holvek-editor-wrapper" style={{ padding: '12px 16px' }}>
+            <PluginSidebar name="quinrel-sidebar" title={__('Quinrel AI SEO', 'quinrel')}>
+                <div className="quinrel-editor-wrapper" style={{ padding: '12px 16px' }}>
 
                     {/* ── SEO Score Header ── */}
                     <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '8px' }}>
@@ -2063,23 +2063,23 @@ const HolvekSidebar = () => {
                     </div>
 
                     {/* ── On-Page SEO Analysis ── */}
-                    <PanelBody title={__('SEO Analysis', 'holvek')} initialOpen={true}>
+                    <PanelBody title={__('SEO Analysis', 'quinrel')} initialOpen={true}>
                         <TextControl
-                            label={__('Primary Focus Keyword', 'holvek')}
+                            label={__('Primary Focus Keyword', 'quinrel')}
                             value={focusKeyword}
-                            onChange={(value) => updateMeta('_holvek_focus_keyword', value)}
+                            onChange={(value) => updateMeta('_quinrel_focus_keyword', value)}
                         />
                         <ToggleControl
-                            label={__('Pillar Content', 'holvek')}
-                            help={__('Marks this as a top-level pillar page in your topic cluster.', 'holvek')}
+                            label={__('Pillar Content', 'quinrel')}
+                            help={__('Marks this as a top-level pillar page in your topic cluster.', 'quinrel')}
                             checked={isPillar}
-                            onChange={(checked) => updateMeta('_holvek_is_pillar', checked ? 'yes' : 'no')}
+                            onChange={(checked) => updateMeta('_quinrel_is_pillar', checked ? 'yes' : 'no')}
                         />
                         <ToggleControl
-                            label={__('Cornerstone Content', 'holvek')}
-                            help={__('Enforces stricter length (≥1000 words) and internal link audits.', 'holvek')}
+                            label={__('Cornerstone Content', 'quinrel')}
+                            help={__('Enforces stricter length (≥1000 words) and internal link audits.', 'quinrel')}
                             checked={isCornerstone}
-                            onChange={(checked) => updateMeta('_holvek_is_cornerstone', checked ? 'yes' : 'no')}
+                            onChange={(checked) => updateMeta('_quinrel_is_cornerstone', checked ? 'yes' : 'no')}
                         />
                         <ul style={{ listStyle: 'none', margin: '12px 0 0', padding: 0 }}>
                             {seoResult.checks.map((check, i) => (
@@ -2089,10 +2089,10 @@ const HolvekSidebar = () => {
                         {seoResult.keywordGaps && seoResult.keywordGaps.length > 0 && focusKeyword && (
                             <div style={{ background: '#fffbeb', borderLeft: '4px solid #f59e0b', borderRadius: '4px', padding: '10px 12px', marginTop: '12px', marginBottom: '4px', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' }}>
                                 <div style={{ fontWeight: '600', color: '#b45309', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                                    <span>⚠️</span> {__('Keyword Optimization Gaps', 'holvek')}
+                                    <span>⚠️</span> {__('Keyword Optimization Gaps', 'quinrel')}
                                 </div>
                                 <div style={{ fontSize: '12px', color: '#78350f', lineHeight: '1.4' }}>
-                                    {__('Your focus keyword is missing in these critical locations:', 'holvek')}
+                                    {__('Your focus keyword is missing in these critical locations:', 'quinrel')}
                                 </div>
                                 <ul style={{ margin: '6px 0 0 16px', padding: 0, fontSize: '12px', color: '#78350f', listStyleType: 'disc' }}>
                                     {seoResult.keywordGaps.map((gap, i) => (
@@ -2112,13 +2112,13 @@ const HolvekSidebar = () => {
                     />
 
                     {/* ── Unlimited Keywords ── */}
-                    <PanelBody title={__('Additional Keywords', 'holvek')} initialOpen={false}>
+                    <PanelBody title={__('Additional Keywords', 'quinrel')} initialOpen={false}>
                         <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 8px' }}>
-                            {__('Add unlimited secondary keywords. Each is independently analysed against your title, description, and content.', 'holvek')}
+                            {__('Add unlimited secondary keywords. Each is independently analysed against your title, description, and content.', 'quinrel')}
                         </p>
                         <UnlimitedKeywordsEditor
                             primaryKeyword={focusKeyword}
-                            additionalKeywordsJson={meta._holvek_additional_keywords || '[]'}
+                            additionalKeywordsJson={meta._quinrel_additional_keywords || '[]'}
                             content={content}
                             title={title}
                             metaTitle={metaTitle}
@@ -2133,7 +2133,7 @@ const HolvekSidebar = () => {
                     />
 
                     {/* ── Readability Analysis ── */}
-                    <PanelBody title={__('Readability', 'holvek')} initialOpen={false}>
+                    <PanelBody title={__('Readability', 'quinrel')} initialOpen={false}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                             <ScoreRing
                                 score={readability.flesch.score}
@@ -2145,15 +2145,15 @@ const HolvekSidebar = () => {
                         <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                             <CheckItem label={`Flesch Reading Ease: ${readability.flesch.score} (${readability.flesch.label})`} pass={readability.flesch.pass} />
                             <CheckItem label={`Long sentences: ${readability.longSentences.value}% (target ≤25%)`} pass={readability.longSentences.pass} />
-                            <CheckItem label={readability.longParagraphs.pass ? __('No overly long paragraphs', 'holvek') : `${readability.longParagraphs.value} paragraph(s) exceed 150 words`} pass={readability.longParagraphs.pass} />
+                            <CheckItem label={readability.longParagraphs.pass ? __('No overly long paragraphs', 'quinrel') : `${readability.longParagraphs.value} paragraph(s) exceed 150 words`} pass={readability.longParagraphs.pass} />
                             <CheckItem label={`Passive voice: ${readability.passiveVoice.value}% (target ≤10%)`} pass={readability.passiveVoice.pass} />
                             <CheckItem label={`Transition words: ${readability.transitionWords.value}% (target ≥30%)`} pass={readability.transitionWords.pass} />
-                            <CheckItem label={readability.subheadings.pass ? __('Good subheading distribution', 'holvek') : __('Add more subheadings to break up content', 'holvek')} pass={readability.subheadings.pass} />
+                            <CheckItem label={readability.subheadings.pass ? __('Good subheading distribution', 'quinrel') : __('Add more subheadings to break up content', 'quinrel')} pass={readability.subheadings.pass} />
                         </ul>
                     </PanelBody>
 
                     {/* ── Core Meta + SERP Preview ── */}
-                    <PanelBody title={__('SERP Preview & Meta', 'holvek')} initialOpen={false}>
+                    <PanelBody title={__('SERP Preview & Meta', 'quinrel')} initialOpen={false}>
                         <SerpPreview
                             title={effectiveTitle}
                             url={permalink}
@@ -2163,61 +2163,61 @@ const HolvekSidebar = () => {
                         <div style={{ marginTop: '16px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                                 <label style={{ fontSize: '13px', fontWeight: '600', color: '#334155' }}>
-                                    {__('Meta Title', 'holvek')}
+                                    {__('Meta Title', 'quinrel')}
                                 </label>
                                 <CharCount current={effectiveTitle.length} min={30} max={60} />
                             </div>
                             <TextControl
-                                help={__('Leave blank to use the post title.', 'holvek')}
+                                help={__('Leave blank to use the post title.', 'quinrel')}
                                 value={metaTitle}
-                                onChange={(value) => updateMeta('_holvek_meta_title', value)}
+                                onChange={(value) => updateMeta('_quinrel_meta_title', value)}
                             />
                         </div>
 
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                                 <label style={{ fontSize: '13px', fontWeight: '600', color: '#334155' }}>
-                                    {__('Meta Description', 'holvek')}
+                                    {__('Meta Description', 'quinrel')}
                                 </label>
                                 <CharCount current={metaDescription.length} min={120} max={160} />
                             </div>
                             <TextareaControl
                                 value={metaDescription}
-                                onChange={(value) => updateMeta('_holvek_meta_description', value)}
+                                onChange={(value) => updateMeta('_quinrel_meta_description', value)}
                                 rows={4}
                             />
                         </div>
                     </PanelBody>
 
                     {/* ── Structured Data Schema (SD-001) ── */}
-                    <PanelBody title={__('Structured Data Schema', 'holvek')} initialOpen={false}>
+                    <PanelBody title={__('Structured Data Schema', 'quinrel')} initialOpen={false}>
                         <SelectControl
-                            label={__('Primary Schema Type', 'holvek')}
-                            value={meta._holvek_primary_schema || 'none'}
+                            label={__('Primary Schema Type', 'quinrel')}
+                            value={meta._quinrel_primary_schema || 'none'}
                             options={[
-                                { label: __('None / Use Default', 'holvek'), value: 'none' },
-                                { label: __('Product Schema', 'holvek'), value: 'product' },
-                                { label: __('FAQ Page Schema', 'holvek'), value: 'faq' },
-                                { label: __('HowTo Tutorial Schema', 'holvek'), value: 'howto' },
-                                { label: __('Local Business Schema', 'holvek'), value: 'localbusiness' },
-                                { label: __('Recipe Schema', 'holvek'), value: 'recipe' },
-                                { label: __('Event Schema', 'holvek'), value: 'event' },
-                                { label: __('Custom Schema Builder', 'holvek'), value: 'custom' },
+                                { label: __('None / Use Default', 'quinrel'), value: 'none' },
+                                { label: __('Product Schema', 'quinrel'), value: 'product' },
+                                { label: __('FAQ Page Schema', 'quinrel'), value: 'faq' },
+                                { label: __('HowTo Tutorial Schema', 'quinrel'), value: 'howto' },
+                                { label: __('Local Business Schema', 'quinrel'), value: 'localbusiness' },
+                                { label: __('Recipe Schema', 'quinrel'), value: 'recipe' },
+                                { label: __('Event Schema', 'quinrel'), value: 'event' },
+                                { label: __('Custom Schema Builder', 'quinrel'), value: 'custom' },
                             ]}
-                            onChange={(val) => updateMeta('_holvek_primary_schema', val)}
+                            onChange={(val) => updateMeta('_quinrel_primary_schema', val)}
                         />
 
                         {/* Competitor Schema Scraper */}
                         <div style={{ marginTop: '16px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px' }}>{__('Competitor Schema Scraping', 'holvek')}</div>
+                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px' }}>{__('Competitor Schema Scraping', 'quinrel')}</div>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'end' }}>
                                 <div style={{ flex: 1 }}>
                                     <TextControl
-                                        label={__('URL to Scrape', 'holvek')}
+                                        label={__('URL to Scrape', 'quinrel')}
                                         value={competitorUrl}
-                                        placeholder={__('https://example.com/competitor-post', 'holvek')}
+                                        placeholder={__('https://example.com/competitor-post', 'quinrel')}
                                         onChange={(v) => setCompetitorUrl(v)}
-                                        help={__('Imports schema fields from competitor URLs.', 'holvek')}
+                                        help={__('Imports schema fields from competitor URLs.', 'quinrel')}
                                     />
                                 </div>
                                 <Button 
@@ -2227,7 +2227,7 @@ const HolvekSidebar = () => {
                                     style={{ marginBottom: '24px' }}
                                     disabled={!competitorUrl}
                                 >
-                                    {__('Scrape & Pre-fill', 'holvek')}
+                                    {__('Scrape & Pre-fill', 'quinrel')}
                                 </Button>
                             </div>
                             {scrapeNotice && (
@@ -2237,93 +2237,93 @@ const HolvekSidebar = () => {
                             )}
                         </div>
 
-                        {meta._holvek_primary_schema === 'product' && (
+                        {meta._quinrel_primary_schema === 'product' && (
                             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <strong>{__('Product Details', 'holvek')}</strong>
+                                <strong>{__('Product Details', 'quinrel')}</strong>
                                 <TextControl
-                                    label={__('Product Name', 'holvek')}
-                                    value={meta._holvek_schema_product_name || ''}
-                                    placeholder={__('Leave blank to use post title', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_product_name', v)}
+                                    label={__('Product Name', 'quinrel')}
+                                    value={meta._quinrel_schema_product_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_product_name', v)}
                                 />
                                 <TextareaControl
-                                    label={__('Product Description', 'holvek')}
-                                    value={meta._holvek_schema_product_description || ''}
-                                    onChange={(v) => updateMeta('_holvek_schema_product_description', v)}
+                                    label={__('Product Description', 'quinrel')}
+                                    value={meta._quinrel_schema_product_description || ''}
+                                    onChange={(v) => updateMeta('_quinrel_schema_product_description', v)}
                                     rows={2}
                                 />
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                     <TextControl
-                                        label={__('Price', 'holvek')}
+                                        label={__('Price', 'quinrel')}
                                         type="number"
                                         step="0.01"
-                                        value={meta._holvek_schema_product_price || ''}
-                                        onChange={(v) => updateMeta('_holvek_schema_product_price', v)}
+                                        value={meta._quinrel_schema_product_price || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_product_price', v)}
                                     />
                                     <SelectControl
-                                        label={__('Currency', 'holvek')}
-                                        value={meta._holvek_schema_product_currency || 'USD'}
+                                        label={__('Currency', 'quinrel')}
+                                        value={meta._quinrel_schema_product_currency || 'USD'}
                                         options={[
-                                            { label: __('USD ($)', 'holvek'), value: 'USD' },
-                                            { label: __('EUR (€)', 'holvek'), value: 'EUR' },
-                                            { label: __('GBP (£)', 'holvek'), value: 'GBP' },
-                                            { label: __('NGN (₦)', 'holvek'), value: 'NGN' },
+                                            { label: __('USD ($)', 'quinrel'), value: 'USD' },
+                                            { label: __('EUR (€)', 'quinrel'), value: 'EUR' },
+                                            { label: __('GBP (£)', 'quinrel'), value: 'GBP' },
+                                            { label: __('NGN (₦)', 'quinrel'), value: 'NGN' },
                                         ]}
-                                        onChange={(v) => updateMeta('_holvek_schema_product_currency', v)}
+                                        onChange={(v) => updateMeta('_quinrel_schema_product_currency', v)}
                                     />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                     <TextControl
-                                        label={__('Rating (1-5)', 'holvek')}
+                                        label={__('Rating (1-5)', 'quinrel')}
                                         type="number"
                                         step="0.1"
                                         min="1"
                                         max="5"
-                                        value={meta._holvek_schema_product_rating || ''}
-                                        onChange={(v) => updateMeta('_holvek_schema_product_rating', v)}
+                                        value={meta._quinrel_schema_product_rating || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_product_rating', v)}
                                     />
                                     <SelectControl
-                                        label={__('Availability', 'holvek')}
-                                        value={meta._holvek_schema_product_availability || 'InStock'}
+                                        label={__('Availability', 'quinrel')}
+                                        value={meta._quinrel_schema_product_availability || 'InStock'}
                                         options={[
-                                            { label: __('In Stock', 'holvek'), value: 'InStock' },
-                                            { label: __('Out of Stock', 'holvek'), value: 'OutOfStock' },
-                                            { label: __('Pre Order', 'holvek'), value: 'PreOrder' },
+                                            { label: __('In Stock', 'quinrel'), value: 'InStock' },
+                                            { label: __('Out of Stock', 'quinrel'), value: 'OutOfStock' },
+                                            { label: __('Pre Order', 'quinrel'), value: 'PreOrder' },
                                         ]}
-                                        onChange={(v) => updateMeta('_holvek_schema_product_availability', v)}
+                                        onChange={(v) => updateMeta('_quinrel_schema_product_availability', v)}
                                     />
                                 </div>
 
                                 {/* Product Rich Snippet Preview */}
                                 <div style={{ marginTop: '8px', borderTop: '1px solid #cbd5e1', paddingTop: '8px' }}>
-                                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>{__('Google Product SERP Preview', 'holvek')}</div>
+                                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>{__('Google Product SERP Preview', 'quinrel')}</div>
                                     <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px', background: '#fff', fontSize: '13px', marginTop: '6px' }}>
-                                        <div style={{ color: '#1a0dab', fontWeight: '600' }}>{meta._holvek_schema_product_name || effectiveTitle}</div>
+                                        <div style={{ color: '#1a0dab', fontWeight: '600' }}>{meta._quinrel_schema_product_name || effectiveTitle}</div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f59e0b', fontSize: '12px', marginTop: '3px' }}>
                                             <span style={{ letterSpacing: '2px' }}>★★★★★</span>
-                                            <span style={{ color: '#475569' }}>Rating: {meta._holvek_schema_product_rating || '5.0'}</span>
+                                            <span style={{ color: '#475569' }}>Rating: {meta._quinrel_schema_product_rating || '5.0'}</span>
                                             <span style={{ color: '#cbd5e1' }}>•</span>
-                                            <span style={{ color: '#475569' }}>{meta._holvek_schema_product_price ? `${meta._holvek_schema_product_currency || 'USD'} ${meta._holvek_schema_product_price}` : '$99.99'}</span>
+                                            <span style={{ color: '#475569' }}>{meta._quinrel_schema_product_price ? `${meta._quinrel_schema_product_currency || 'USD'} ${meta._quinrel_schema_product_price}` : '$99.99'}</span>
                                             <span style={{ color: '#cbd5e1' }}>•</span>
-                                            <span style={{ color: meta._holvek_schema_product_availability === 'OutOfStock' ? '#ef4444' : '#22c55e' }}>{meta._holvek_schema_product_availability || 'InStock'}</span>
+                                            <span style={{ color: meta._quinrel_schema_product_availability === 'OutOfStock' ? '#ef4444' : '#22c55e' }}>{meta._quinrel_schema_product_availability || 'InStock'}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {meta._holvek_primary_schema === 'faq' && (
+                        {meta._quinrel_primary_schema === 'faq' && (
                             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <strong>{__('FAQ Setup', 'holvek')}</strong>
+                                <strong>{__('FAQ Setup', 'quinrel')}</strong>
                                 <FaqEditor
-                                    value={meta._holvek_schema_faq_questions || '[]'}
-                                    onChange={(newJson) => updateMeta('_holvek_schema_faq_questions', newJson)}
+                                    value={meta._quinrel_schema_faq_questions || '[]'}
+                                    onChange={(newJson) => updateMeta('_quinrel_schema_faq_questions', newJson)}
                                 />
 
                                 {/* FAQ Rich Snippet Preview */}
                                 {parsedFaqs.length > 0 && (
                                     <div style={{ marginTop: '8px', borderTop: '1px solid #cbd5e1', paddingTop: '8px' }}>
-                                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>{__('Google FAQ SERP Preview', 'holvek')}</div>
+                                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>{__('Google FAQ SERP Preview', 'quinrel')}</div>
                                         <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px', background: '#fff', fontSize: '13px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                             <div style={{ color: '#1a0dab', fontWeight: '600' }}>{effectiveTitle}</div>
                                             {parsedFaqs.map((faq, index) => (
@@ -2332,7 +2332,7 @@ const HolvekSidebar = () => {
                                                         <span>{faq.question || `Question ${index + 1}`}</span>
                                                         <span style={{ color: '#70757a' }}>▾</span>
                                                     </div>
-                                                    <div style={{ color: '#4d5156', fontSize: '12px', marginTop: '2px' }}>{faq.answer || __('Enter an answer above.', 'holvek')}</div>
+                                                    <div style={{ color: '#4d5156', fontSize: '12px', marginTop: '2px' }}>{faq.answer || __('Enter an answer above.', 'quinrel')}</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -2341,238 +2341,238 @@ const HolvekSidebar = () => {
                             </div>
                         )}
 
-                        {meta._holvek_primary_schema === 'howto' && (
+                        {meta._quinrel_primary_schema === 'howto' && (
                             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <strong>{__('HowTo Tutorial details', 'holvek')}</strong>
+                                <strong>{__('HowTo Tutorial details', 'quinrel')}</strong>
                                 <TextControl
-                                    label={__('HowTo Name', 'holvek')}
-                                    value={meta._holvek_schema_howto_name || ''}
-                                    placeholder={__('Leave blank to use post title', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_howto_name', v)}
+                                    label={__('HowTo Name', 'quinrel')}
+                                    value={meta._quinrel_schema_howto_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_howto_name', v)}
                                 />
                                 <TextareaControl
-                                    label={__('HowTo Description', 'holvek')}
-                                    value={meta._holvek_schema_howto_description || ''}
-                                    onChange={(v) => updateMeta('_holvek_schema_howto_description', v)}
+                                    label={__('HowTo Description', 'quinrel')}
+                                    value={meta._quinrel_schema_howto_description || ''}
+                                    onChange={(v) => updateMeta('_quinrel_schema_howto_description', v)}
                                     rows={2}
                                 />
                                 <TextControl
-                                    label={__('Required Supplies (comma separated)', 'holvek')}
-                                    value={meta._holvek_schema_howto_supplies || ''}
-                                    placeholder={__('e.g. Water, Soil, Plant Pot', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_howto_supplies', v)}
+                                    label={__('Required Supplies (comma separated)', 'quinrel')}
+                                    value={meta._quinrel_schema_howto_supplies || ''}
+                                    placeholder={__('e.g. Water, Soil, Plant Pot', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_howto_supplies', v)}
                                 />
                                 <TextControl
-                                    label={__('Required Tools (comma separated)', 'holvek')}
-                                    value={meta._holvek_schema_howto_tools || ''}
-                                    placeholder={__('e.g. Trowel, Watering Can', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_howto_tools', v)}
+                                    label={__('Required Tools (comma separated)', 'quinrel')}
+                                    value={meta._quinrel_schema_howto_tools || ''}
+                                    placeholder={__('e.g. Trowel, Watering Can', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_howto_tools', v)}
                                 />
                                 <HowToStepsEditor
-                                    value={meta._holvek_schema_howto_steps || '[]'}
-                                    onChange={(newJson) => updateMeta('_holvek_schema_howto_steps', newJson)}
+                                    value={meta._quinrel_schema_howto_steps || '[]'}
+                                    onChange={(newJson) => updateMeta('_quinrel_schema_howto_steps', newJson)}
                                 />
                             </div>
                         )}
 
-                        {meta._holvek_primary_schema === 'localbusiness' && (
+                        {meta._quinrel_primary_schema === 'localbusiness' && (
                             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <strong>{__('Local Business Info', 'holvek')}</strong>
+                                <strong>{__('Local Business Info', 'quinrel')}</strong>
                                 <TextControl
-                                    label={__('Business Name', 'holvek')}
-                                    value={meta._holvek_schema_localbusiness_name || ''}
-                                    placeholder={__('Leave blank to use site name', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_localbusiness_name', v)}
+                                    label={__('Business Name', 'quinrel')}
+                                    value={meta._quinrel_schema_localbusiness_name || ''}
+                                    placeholder={__('Leave blank to use site name', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_localbusiness_name', v)}
                                 />
                                 <TextControl
-                                    label={__('Telephone', 'holvek')}
-                                    value={meta._holvek_schema_localbusiness_telephone || ''}
-                                    placeholder={__('e.g. +1-555-0199', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_localbusiness_telephone', v)}
+                                    label={__('Telephone', 'quinrel')}
+                                    value={meta._quinrel_schema_localbusiness_telephone || ''}
+                                    placeholder={__('e.g. +1-555-0199', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_localbusiness_telephone', v)}
                                 />
                                 <TextControl
-                                    label={__('Street Address', 'holvek')}
-                                    value={meta._holvek_schema_localbusiness_street || ''}
-                                    placeholder={__('e.g. 100 Main St', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_localbusiness_street', v)}
+                                    label={__('Street Address', 'quinrel')}
+                                    value={meta._quinrel_schema_localbusiness_street || ''}
+                                    placeholder={__('e.g. 100 Main St', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_localbusiness_street', v)}
                                 />
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                     <TextControl
-                                        label={__('City', 'holvek')}
-                                        value={meta._holvek_schema_localbusiness_city || ''}
-                                        placeholder={__('e.g. Seattle', 'holvek')}
-                                        onChange={(v) => updateMeta('_holvek_schema_localbusiness_city', v)}
+                                        label={__('City', 'quinrel')}
+                                        value={meta._quinrel_schema_localbusiness_city || ''}
+                                        placeholder={__('e.g. Seattle', 'quinrel')}
+                                        onChange={(v) => updateMeta('_quinrel_schema_localbusiness_city', v)}
                                     />
                                     <TextControl
-                                        label={__('Postal Code', 'holvek')}
-                                        value={meta._holvek_schema_localbusiness_postal || ''}
-                                        placeholder={__('e.g. 98101', 'holvek')}
-                                        onChange={(v) => updateMeta('_holvek_schema_localbusiness_postal', v)}
+                                        label={__('Postal Code', 'quinrel')}
+                                        value={meta._quinrel_schema_localbusiness_postal || ''}
+                                        placeholder={__('e.g. 98101', 'quinrel')}
+                                        onChange={(v) => updateMeta('_quinrel_schema_localbusiness_postal', v)}
                                     />
                                 </div>
                                 <TextControl
-                                    label={__('Country Code', 'holvek')}
-                                    value={meta._holvek_schema_localbusiness_country || 'US'}
-                                    placeholder={__('e.g. US', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_localbusiness_country', v)}
+                                    label={__('Country Code', 'quinrel')}
+                                    value={meta._quinrel_schema_localbusiness_country || 'US'}
+                                    placeholder={__('e.g. US', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_localbusiness_country', v)}
                                 />
                             </div>
                         )}
 
-                        {meta._holvek_primary_schema === 'recipe' && (
+                        {meta._quinrel_primary_schema === 'recipe' && (
                             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <strong>{__('Recipe Information', 'holvek')}</strong>
+                                <strong>{__('Recipe Information', 'quinrel')}</strong>
                                 <TextControl
-                                    label={__('Recipe Name', 'holvek')}
-                                    value={meta._holvek_schema_recipe_name || ''}
-                                    placeholder={__('Leave blank to use post title', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_recipe_name', v)}
+                                    label={__('Recipe Name', 'quinrel')}
+                                    value={meta._quinrel_schema_recipe_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_recipe_name', v)}
                                 />
                                 <TextareaControl
-                                    label={__('Recipe Description', 'holvek')}
-                                    value={meta._holvek_schema_recipe_description || ''}
-                                    onChange={(v) => updateMeta('_holvek_schema_recipe_description', v)}
+                                    label={__('Recipe Description', 'quinrel')}
+                                    value={meta._quinrel_schema_recipe_description || ''}
+                                    onChange={(v) => updateMeta('_quinrel_schema_recipe_description', v)}
                                     rows={2}
                                 />
                                 <TextareaControl
-                                    label={__('Ingredients (one per line)', 'holvek')}
-                                    value={meta._holvek_schema_recipe_ingredients || ''}
-                                    onChange={(v) => updateMeta('_holvek_schema_recipe_ingredients', v)}
+                                    label={__('Ingredients (one per line)', 'quinrel')}
+                                    value={meta._quinrel_schema_recipe_ingredients || ''}
+                                    onChange={(v) => updateMeta('_quinrel_schema_recipe_ingredients', v)}
                                     rows={4}
                                 />
                                 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                     <TextControl
-                                        label={__('Prep Time (mins)', 'holvek')}
+                                        label={__('Prep Time (mins)', 'quinrel')}
                                         type="number"
-                                        value={meta._holvek_schema_recipe_prep_time || ''}
-                                        onChange={(v) => updateMeta('_holvek_schema_recipe_prep_time', v)}
+                                        value={meta._quinrel_schema_recipe_prep_time || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_recipe_prep_time', v)}
                                     />
                                     <TextControl
-                                        label={__('Cook Time (mins)', 'holvek')}
+                                        label={__('Cook Time (mins)', 'quinrel')}
                                         type="number"
-                                        value={meta._holvek_schema_recipe_cook_time || ''}
-                                        onChange={(v) => updateMeta('_holvek_schema_recipe_cook_time', v)}
+                                        value={meta._quinrel_schema_recipe_cook_time || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_recipe_cook_time', v)}
                                     />
                                 </div>
                                 <TextControl
-                                    label={__('Calories (kcal)', 'holvek')}
+                                    label={__('Calories (kcal)', 'quinrel')}
                                     type="number"
-                                    value={meta._holvek_schema_recipe_calories || ''}
-                                    onChange={(v) => updateMeta('_holvek_schema_recipe_calories', v)}
+                                    value={meta._quinrel_schema_recipe_calories || ''}
+                                    onChange={(v) => updateMeta('_quinrel_schema_recipe_calories', v)}
                                 />
 
                                 <RecipeInstructionsEditor
-                                    value={meta._holvek_schema_recipe_instructions || '[]'}
-                                    onChange={(newJson) => updateMeta('_holvek_schema_recipe_instructions', newJson)}
+                                    value={meta._quinrel_schema_recipe_instructions || '[]'}
+                                    onChange={(newJson) => updateMeta('_quinrel_schema_recipe_instructions', newJson)}
                                 />
 
                                 <RecipeSerpPreview 
-                                    name={meta._holvek_schema_recipe_name || effectiveTitle}
+                                    name={meta._quinrel_schema_recipe_name || effectiveTitle}
                                     url={permalink}
                                     image={featuredMediaUrl}
-                                    calories={meta._holvek_schema_recipe_calories}
-                                    prepTime={meta._holvek_schema_recipe_prep_time}
-                                    cookTime={meta._holvek_schema_recipe_cook_time}
-                                    ingredientsCount={meta._holvek_schema_recipe_ingredients ? meta._holvek_schema_recipe_ingredients.split('\n').filter(i => i.trim()).length : 0}
+                                    calories={meta._quinrel_schema_recipe_calories}
+                                    prepTime={meta._quinrel_schema_recipe_prep_time}
+                                    cookTime={meta._quinrel_schema_recipe_cook_time}
+                                    ingredientsCount={meta._quinrel_schema_recipe_ingredients ? meta._quinrel_schema_recipe_ingredients.split('\n').filter(i => i.trim()).length : 0}
                                     stepsCount={(() => {
-                                        try { return JSON.parse(meta._holvek_schema_recipe_instructions || '[]').length; } catch(e) { return 0; }
+                                        try { return JSON.parse(meta._quinrel_schema_recipe_instructions || '[]').length; } catch(e) { return 0; }
                                     })()}
                                 />
                             </div>
                         )}
 
-                        {meta._holvek_primary_schema === 'event' && (
+                        {meta._quinrel_primary_schema === 'event' && (
                             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <strong>{__('Event Details', 'holvek')}</strong>
+                                <strong>{__('Event Details', 'quinrel')}</strong>
                                 <TextControl
-                                    label={__('Event Name', 'holvek')}
-                                    value={meta._holvek_schema_event_name || ''}
-                                    placeholder={__('Leave blank to use post title', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_event_name', v)}
+                                    label={__('Event Name', 'quinrel')}
+                                    value={meta._quinrel_schema_event_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_event_name', v)}
                                 />
                                 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                     <TextControl
-                                        label={__('Start Date & Time', 'holvek')}
+                                        label={__('Start Date & Time', 'quinrel')}
                                         type="datetime-local"
-                                        value={meta._holvek_schema_event_start_date || ''}
-                                        onChange={(v) => updateMeta('_holvek_schema_event_start_date', v)}
+                                        value={meta._quinrel_schema_event_start_date || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_event_start_date', v)}
                                     />
                                     <TextControl
-                                        label={__('End Date & Time', 'holvek')}
+                                        label={__('End Date & Time', 'quinrel')}
                                         type="datetime-local"
-                                        value={meta._holvek_schema_event_end_date || ''}
-                                        onChange={(v) => updateMeta('_holvek_schema_event_end_date', v)}
+                                        value={meta._quinrel_schema_event_end_date || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_event_end_date', v)}
                                     />
                                 </div>
 
                                 <TextControl
-                                    label={__('Venue / Location Name', 'holvek')}
-                                    value={meta._holvek_schema_event_venue || ''}
-                                    onChange={(v) => updateMeta('_holvek_schema_event_venue', v)}
+                                    label={__('Venue / Location Name', 'quinrel')}
+                                    value={meta._quinrel_schema_event_venue || ''}
+                                    onChange={(v) => updateMeta('_quinrel_schema_event_venue', v)}
                                 />
                                 <TextControl
-                                    label={__('Physical Address', 'holvek')}
-                                    value={meta._holvek_schema_event_address || ''}
-                                    onChange={(v) => updateMeta('_holvek_schema_event_address', v)}
+                                    label={__('Physical Address', 'quinrel')}
+                                    value={meta._quinrel_schema_event_address || ''}
+                                    onChange={(v) => updateMeta('_quinrel_schema_event_address', v)}
                                 />
                                 
                                 <TextControl
-                                    label={__('Main Performer/Speaker', 'holvek')}
-                                    value={meta._holvek_schema_event_performer || ''}
-                                    onChange={(v) => updateMeta('_holvek_schema_event_performer', v)}
+                                    label={__('Main Performer/Speaker', 'quinrel')}
+                                    value={meta._quinrel_schema_event_performer || ''}
+                                    onChange={(v) => updateMeta('_quinrel_schema_event_performer', v)}
                                 />
                                 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                     <TextControl
-                                        label={__('Ticket Price', 'holvek')}
+                                        label={__('Ticket Price', 'quinrel')}
                                         type="number"
                                         step="0.01"
-                                        value={meta._holvek_schema_event_price || ''}
-                                        onChange={(v) => updateMeta('_holvek_schema_event_price', v)}
+                                        value={meta._quinrel_schema_event_price || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_event_price', v)}
                                     />
                                     <SelectControl
-                                        label={__('Currency', 'holvek')}
-                                        value={meta._holvek_schema_event_currency || 'USD'}
+                                        label={__('Currency', 'quinrel')}
+                                        value={meta._quinrel_schema_event_currency || 'USD'}
                                         options={[
-                                            { label: __('USD ($)', 'holvek'), value: 'USD' },
-                                            { label: __('EUR (€)', 'holvek'), value: 'EUR' },
-                                            { label: __('GBP (£)', 'holvek'), value: 'GBP' },
+                                            { label: __('USD ($)', 'quinrel'), value: 'USD' },
+                                            { label: __('EUR (€)', 'quinrel'), value: 'EUR' },
+                                            { label: __('GBP (£)', 'quinrel'), value: 'GBP' },
                                         ]}
-                                        onChange={(v) => updateMeta('_holvek_schema_event_currency', v)}
+                                        onChange={(v) => updateMeta('_quinrel_schema_event_currency', v)}
                                     />
                                 </div>
 
                                 <EventSerpPreview 
-                                    name={meta._holvek_schema_event_name || effectiveTitle}
+                                    name={meta._quinrel_schema_event_name || effectiveTitle}
                                     url={permalink}
-                                    startDate={meta._holvek_schema_event_start_date}
-                                    venue={meta._holvek_schema_event_venue}
-                                    address={meta._holvek_schema_event_address}
-                                    performer={meta._holvek_schema_event_performer}
-                                    price={meta._holvek_schema_event_price ? `${meta._holvek_schema_event_currency || 'USD'} ${meta._holvek_schema_event_price}` : ''}
+                                    startDate={meta._quinrel_schema_event_start_date}
+                                    venue={meta._quinrel_schema_event_venue}
+                                    address={meta._quinrel_schema_event_address}
+                                    performer={meta._quinrel_schema_event_performer}
+                                    price={meta._quinrel_schema_event_price ? `${meta._quinrel_schema_event_currency || 'USD'} ${meta._quinrel_schema_event_price}` : ''}
                                 />
                             </div>
                         )}
 
-                        {meta._holvek_primary_schema === 'custom' && (
+                        {meta._quinrel_primary_schema === 'custom' && (
                             <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <strong>{__('Custom Schema Configuration', 'holvek')}</strong>
+                                <strong>{__('Custom Schema Configuration', 'quinrel')}</strong>
                                 <TextControl
-                                    label={__('Root Schema @type', 'holvek')}
-                                    value={meta._holvek_schema_custom_type || ''}
-                                    placeholder={__('e.g. Course, SoftwareApplication', 'holvek')}
-                                    onChange={(v) => updateMeta('_holvek_schema_custom_type', v)}
+                                    label={__('Root Schema @type', 'quinrel')}
+                                    value={meta._quinrel_schema_custom_type || ''}
+                                    placeholder={__('e.g. Course, SoftwareApplication', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_custom_type', v)}
                                 />
                                 <CustomPropertyTreeBuilder 
-                                    value={meta._holvek_custom_schema_properties || '[]'}
-                                    onChange={(newJson) => updateMeta('_holvek_custom_schema_properties', newJson)}
+                                    value={meta._quinrel_custom_schema_properties || '[]'}
+                                    onChange={(newJson) => updateMeta('_quinrel_custom_schema_properties', newJson)}
                                 />
                             </div>
                         )}
                         <SchemaValidator
-                            schemaType={meta._holvek_primary_schema}
+                            schemaType={meta._quinrel_primary_schema}
                             meta={meta}
                             title={title}
                             content={content}
@@ -2581,7 +2581,7 @@ const HolvekSidebar = () => {
                             domain={domain}
                         />
                         <SchemaStackEditor
-                            stackJson={meta._holvek_schema_stack || '[]'}
+                            stackJson={meta._quinrel_schema_stack || '[]'}
                             updateMeta={updateMeta}
                         />
                     </PanelBody>
@@ -2589,79 +2589,79 @@ const HolvekSidebar = () => {
                     {/* ── Ranking Keywords (GSC) ── */}
                     <RankingKeywordsPanel
                         postId={postId}
-                        cachedJson={meta._holvek_ranking_keywords || '[]'}
-                        cachedAt={meta._holvek_ranking_keywords_at || ''}
+                        cachedJson={meta._quinrel_ranking_keywords || '[]'}
+                        cachedAt={meta._quinrel_ranking_keywords_at || ''}
                         updateMeta={updateMeta}
                     />
 
                     {/* ── PageSpeed Performance ── */}
                     <PageSpeedBadge
                         postId={postId}
-                        cachedJson={meta._holvek_pagespeed_cache || 'null'}
+                        cachedJson={meta._quinrel_pagespeed_cache || 'null'}
                         updateMeta={updateMeta}
                     />
 
                     {/* ── Social Metadata ── */}
-                    <PanelBody title={__('Social Metadata', 'holvek')} initialOpen={false}>
+                    <PanelBody title={__('Social Metadata', 'quinrel')} initialOpen={false}>
                         <TextControl
-                            label={__('Open Graph Title (Facebook/LinkedIn)', 'holvek')}
-                            value={meta._holvek_og_title || ''}
-                            onChange={(value) => updateMeta('_holvek_og_title', value)}
+                            label={__('Open Graph Title (Facebook/LinkedIn)', 'quinrel')}
+                            value={meta._quinrel_og_title || ''}
+                            onChange={(value) => updateMeta('_quinrel_og_title', value)}
                         />
                         <TextareaControl
-                            label={__('Open Graph Description', 'holvek')}
-                            value={meta._holvek_og_description || ''}
-                            onChange={(value) => updateMeta('_holvek_og_description', value)}
+                            label={__('Open Graph Description', 'quinrel')}
+                            value={meta._quinrel_og_description || ''}
+                            onChange={(value) => updateMeta('_quinrel_og_description', value)}
                             rows={3}
                         />
                         <TextControl
-                            label={__('Open Graph Image URL', 'holvek')}
-                            help={__('Provide an absolute URL to a custom social sharing image.', 'holvek')}
-                            value={meta._holvek_og_image || ''}
-                            onChange={(value) => updateMeta('_holvek_og_image', value)}
+                            label={__('Open Graph Image URL', 'quinrel')}
+                            help={__('Provide an absolute URL to a custom social sharing image.', 'quinrel')}
+                            value={meta._quinrel_og_image || ''}
+                            onChange={(value) => updateMeta('_quinrel_og_image', value)}
                         />
                         <TextControl
-                            label={__('Twitter Title', 'holvek')}
-                            value={meta._holvek_twitter_title || ''}
-                            onChange={(value) => updateMeta('_holvek_twitter_title', value)}
+                            label={__('Twitter Title', 'quinrel')}
+                            value={meta._quinrel_twitter_title || ''}
+                            onChange={(value) => updateMeta('_quinrel_twitter_title', value)}
                         />
                         
                         <SocialCardPreview
-                            title={meta._holvek_og_title || title}
-                            description={meta._holvek_og_description || (content ? stripHtml(content).substring(0, 150) + '...' : '')}
-                            image={meta._holvek_og_image || featuredMediaUrl || defaultShareImage}
+                            title={meta._quinrel_og_title || title}
+                            description={meta._quinrel_og_description || (content ? stripHtml(content).substring(0, 150) + '...' : '')}
+                            image={meta._quinrel_og_image || featuredMediaUrl || defaultShareImage}
                             domain={domain}
                         />
                     </PanelBody>
 
                     {/* ── Indexing & Technical ── */}
-                    <PanelBody title={__('Indexing & Technical', 'holvek')} initialOpen={false}>
+                    <PanelBody title={__('Indexing & Technical', 'quinrel')} initialOpen={false}>
                         <TextControl
-                            label={__('Canonical URL', 'holvek')}
-                            help={__('Prevent duplicate content issues by overriding canonical output.', 'holvek')}
-                            value={meta._holvek_canonical_url || ''}
-                            onChange={(value) => updateMeta('_holvek_canonical_url', value)}
+                            label={__('Canonical URL', 'quinrel')}
+                            help={__('Prevent duplicate content issues by overriding canonical output.', 'quinrel')}
+                            value={meta._quinrel_canonical_url || ''}
+                            onChange={(value) => updateMeta('_quinrel_canonical_url', value)}
                         />
 
                         <ToggleControl
-                            label={__('No Index (Hide from Search Engines)', 'holvek')}
-                            checked={meta._holvek_noindex === 'yes'}
-                            onChange={(checked) => updateMeta('_holvek_noindex', checked ? 'yes' : 'no')}
+                            label={__('No Index (Hide from Search Engines)', 'quinrel')}
+                            checked={meta._quinrel_noindex === 'yes'}
+                            onChange={(checked) => updateMeta('_quinrel_noindex', checked ? 'yes' : 'no')}
                         />
                         <ToggleControl
-                            label={__('No Follow (Prevent following outbound links)', 'holvek')}
-                            checked={meta._holvek_nofollow === 'yes'}
-                            onChange={(checked) => updateMeta('_holvek_nofollow', checked ? 'yes' : 'no')}
+                            label={__('No Follow (Prevent following outbound links)', 'quinrel')}
+                            checked={meta._quinrel_nofollow === 'yes'}
+                            onChange={(checked) => updateMeta('_quinrel_nofollow', checked ? 'yes' : 'no')}
                         />
                         <ToggleControl
-                            label={__('Optimize for Google News', 'holvek')}
-                            checked={meta._holvek_is_news === 'yes'}
-                            onChange={(checked) => updateMeta('_holvek_is_news', checked ? 'yes' : 'no')}
+                            label={__('Optimize for Google News', 'quinrel')}
+                            checked={meta._quinrel_is_news === 'yes'}
+                            onChange={(checked) => updateMeta('_quinrel_is_news', checked ? 'yes' : 'no')}
                         />
 
                         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
-                            <strong>{__('Manual Indexing', 'holvek')}</strong>
-                            <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 8px' }}>{__('Queue an IndexNow notification. Google Indexing API submission is only available for eligible JobPosting and livestream pages.', 'holvek')}</p>
+                            <strong>{__('Manual Indexing', 'quinrel')}</strong>
+                            <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 8px' }}>{__('Queue an IndexNow notification. Google Indexing API submission is only available for eligible JobPosting and livestream pages.', 'quinrel')}</p>
 
                             {submitStatus && (
                                 <Notice status={submitStatus.type} isDismissible={true} onRemove={() => setSubmitStatus(null)} className="mb-2">
@@ -2670,7 +2670,7 @@ const HolvekSidebar = () => {
                             )}
 
                             <Button isPrimary isBusy={isSubmitting} onClick={submitToIndex} className="w-full justify-center mb-4">
-                                {isSubmitting ? __('Submitting...', 'holvek') : __('Submit to Search Engines', 'holvek')}
+                                {isSubmitting ? __('Submitting...', 'quinrel') : __('Submit to Search Engines', 'quinrel')}
                             </Button>
 
                         </div>
@@ -2679,26 +2679,26 @@ const HolvekSidebar = () => {
                 </div>
                 
                 {/* ── Social Media Sharing ── */}
-                <PanelBody title={__('Social Media Sharing', 'holvek')} initialOpen={false}>
+                <PanelBody title={__('Social Media Sharing', 'quinrel')} initialOpen={false}>
                     <div style={{ marginBottom: '16px' }}>
                         <ToggleControl
-                            label={__('Disable Auto-Share for this Post', 'holvek')}
-                            help={__('If enabled, this post will NOT be automatically shared to your connected social accounts when published.', 'holvek')}
-                            checked={meta._holvek_disable_social_share === '1'}
-                            onChange={(checked) => updateMeta('_holvek_disable_social_share', checked ? '1' : '0')}
+                            label={__('Disable Auto-Share for this Post', 'quinrel')}
+                            help={__('If enabled, this post will NOT be automatically shared to your connected social accounts when published.', 'quinrel')}
+                            checked={meta._quinrel_disable_social_share === '1'}
+                            onChange={(checked) => updateMeta('_quinrel_disable_social_share', checked ? '1' : '0')}
                         />
                     </div>
 
                     <div style={{ marginBottom: '16px' }}>
-                        <strong>{__('Live Social Preview', 'holvek')}</strong>
-                        <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 8px' }}>{__('Preview how your post will appear on Facebook, X (Twitter), and LinkedIn.', 'holvek')}</p>
+                        <strong>{__('Live Social Preview', 'quinrel')}</strong>
+                        <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 8px' }}>{__('Preview how your post will appear on Facebook, X (Twitter), and LinkedIn.', 'quinrel')}</p>
                         
                         <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                             <div style={{ width: '100%', height: '150px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                                {meta._holvek_og_image ? (
-                                    <img src={meta._holvek_og_image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="OG Preview" />
+                                {meta._quinrel_og_image ? (
+                                    <img src={meta._quinrel_og_image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="OG Preview" />
                                 ) : (
-                                    <div style={{ color: '#94a3b8', fontSize: '12px' }}>{__('[Default Share Image]', 'holvek')}</div>
+                                    <div style={{ color: '#94a3b8', fontSize: '12px' }}>{__('[Default Share Image]', 'quinrel')}</div>
                                 )}
                             </div>
                             <div style={{ padding: '12px' }}>
@@ -2706,35 +2706,35 @@ const HolvekSidebar = () => {
                                     {window.location.hostname}
                                 </div>
                                 <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#0f1419', lineHeight: '1.3', marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                    {meta._holvek_og_title || meta._holvek_seo_title || __('(Post Title)', 'holvek')}
+                                    {meta._quinrel_og_title || meta._quinrel_meta_title || __('(Post Title)', 'quinrel')}
                                 </div>
                                 <div style={{ fontSize: '13px', color: '#536471', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                    {meta._holvek_og_description || meta._holvek_meta_description || __('(Post Excerpt)', 'holvek')}
+                                    {meta._quinrel_og_description || meta._quinrel_meta_description || __('(Post Excerpt)', 'quinrel')}
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
-                        <strong>{__('Manual Share', 'holvek')}</strong>
-                        <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 8px' }}>{__('Force push this post to your connected social channels now.', 'holvek')}</p>
+                        <strong>{__('Manual Share', 'quinrel')}</strong>
+                        <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 8px' }}>{__('Force push this post to your connected social channels now.', 'quinrel')}</p>
                         <Button 
                             isSecondary 
                             className="w-full justify-center"
                             onClick={() => {
                                 const currentPostId = wp.data.select('core/editor').getCurrentPostId();
                                 wp.apiFetch({
-                                    path: '/holvek/v1/social/share',
+                                    path: '/quinrel/v1/social/share',
                                     method: 'POST',
                                     data: { post_id: currentPostId }
                                 }).then((res) => {
                                     alert(res.message);
                                 }).catch((err) => {
-                                    alert(err.message || __('Error triggering share.', 'holvek'));
+                                    alert(err.message || __('Error triggering share.', 'quinrel'));
                                 });
                             }}
                         >
-                            {__('Share Now', 'holvek')}
+                            {__('Share Now', 'quinrel')}
                         </Button>
                     </div>
                 </PanelBody>
@@ -2745,7 +2745,7 @@ const HolvekSidebar = () => {
 };
 
 // Register the Gutenberg plugin
-registerPlugin('holvek-editor-sidebar', {
-    render: HolvekSidebar,
+registerPlugin('quinrel-editor-sidebar', {
+    render: QuinrelSidebar,
     icon: 'chart-area',
 });

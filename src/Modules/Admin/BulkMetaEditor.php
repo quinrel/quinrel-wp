@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -14,7 +14,7 @@ class BulkMetaEditor {
 
 	public function registerRestRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/bulk-meta',
 			array(
 				array(
@@ -72,22 +72,11 @@ class BulkMetaEditor {
 		$items = array();
 
 		foreach ( $query->posts as $post ) {
-			$seoTitle = get_post_meta( $post->ID, '_holvek_seo_title', true );
-			$seoDesc  = get_post_meta( $post->ID, '_holvek_meta_description', true );
-			$noIndex  = get_post_meta( $post->ID, '_holvek_noindex', true );
+			$seoTitle = get_post_meta( $post->ID, '_quinrel_meta_title', true );
+			$seoDesc  = get_post_meta( $post->ID, '_quinrel_meta_description', true );
+			$noIndex  = get_post_meta( $post->ID, '_quinrel_noindex', true );
 
-			// Compute a simple SEO score indicator
-			$score = 0;
-			if ( ! empty( $seoTitle ) && strlen( $seoTitle ) >= 40 && strlen( $seoTitle ) <= 60 ) {
-				$score += 50;
-			} elseif ( ! empty( $seoTitle ) ) {
-				$score += 25;
-			}
-			if ( ! empty( $seoDesc ) && strlen( $seoDesc ) >= 120 && strlen( $seoDesc ) <= 160 ) {
-				$score += 50;
-			} elseif ( ! empty( $seoDesc ) ) {
-				$score += 25;
-			}
+			$score = \Quinrel\WordPress\Modules\Seo\SeoScoreCalculator::calculateForPost( (int) $post->ID );
 
 			$items[] = array(
 				'id'        => $post->ID,
@@ -112,12 +101,12 @@ class BulkMetaEditor {
 		);
 	}
 
-	public function saveMeta( \WP_REST_Request $request ): \WP_REST_Response {
+	public function saveMeta( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$params  = $request->get_json_params();
 		$updates = $params['updates'] ?? array();
 
 		if ( empty( $updates ) || ! is_array( $updates ) ) {
-			return new \WP_Error( 'missing_data', __( 'No updates provided.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_data', __( 'No updates provided.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$saved  = array();
@@ -129,20 +118,26 @@ class BulkMetaEditor {
 			if ( ! $postId || ! current_user_can( 'edit_post', $postId ) ) {
 				$errors[] = array(
 					'id'    => $postId,
-					'error' => 'Permission denied or invalid post.',
+					'error' => __( 'Permission denied or invalid post.', 'quinrel' ),
 				);
 				continue;
 			}
 
 			if ( isset( $update['seo_title'] ) ) {
-				update_post_meta( $postId, '_holvek_seo_title', sanitize_text_field( $update['seo_title'] ) );
+				update_post_meta( $postId, '_quinrel_meta_title', sanitize_text_field( $update['seo_title'] ) );
 			}
 			if ( isset( $update['seo_desc'] ) ) {
-				update_post_meta( $postId, '_holvek_meta_description', sanitize_textarea_field( $update['seo_desc'] ) );
+				update_post_meta( $postId, '_quinrel_meta_description', sanitize_textarea_field( $update['seo_desc'] ) );
 			}
 			if ( isset( $update['noindex'] ) ) {
-				update_post_meta( $postId, '_holvek_noindex', $update['noindex'] ? 'yes' : 'no' );
+				update_post_meta( $postId, '_quinrel_noindex', $update['noindex'] ? 'yes' : 'no' );
 			}
+
+			update_post_meta(
+				$postId,
+				'_quinrel_seo_score',
+				\Quinrel\WordPress\Modules\Seo\SeoScoreCalculator::calculateForPost( $postId, false )
+			);
 
 			$saved[] = $postId;
 		}

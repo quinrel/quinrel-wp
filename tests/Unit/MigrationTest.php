@@ -1,9 +1,9 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use Holvek\WordPress\Modules\Migration\MigrationManager;
+use Quinrel\WordPress\Modules\Migration\MigrationManager;
 
 class MigrationTest extends TestCase
 {
@@ -45,10 +45,10 @@ class MigrationTest extends TestCase
         unset($GLOBALS['mock_wpdb_var']);
     }
 
-    public function testConfirmedImportSkipsExistingHolvekMeta(): void
+    public function testConfirmedImportSkipsExistingQuinrelMeta(): void
     {
         $GLOBALS['mock_post_meta'] = array(
-            7 => array('_holvek_meta_title' => 'Keep me'),
+            7 => array('_quinrel_meta_title' => 'Keep me'),
         );
         $GLOBALS['mock_wpdb_results'] = function (string $query) {
             if (!str_contains($query, '_yoast_wpseo_title')) {
@@ -63,7 +63,7 @@ class MigrationTest extends TestCase
 
         $this->assertTrue($result['wrote']);
         $this->assertSame(50, $result['batch_size']);
-        $this->assertSame('Keep me', get_post_meta(7, '_holvek_meta_title', true));
+        $this->assertSame('Keep me', get_post_meta(7, '_quinrel_meta_title', true));
         $this->assertGreaterThan(0, $result['skipped']);
         $this->assertStringContainsString('Deactivate Yoast SEO', $result['message']);
         unset($GLOBALS['mock_wpdb_results']);
@@ -89,9 +89,9 @@ class MigrationTest extends TestCase
 
         (new MigrationManager())->migrate('rankmath');
 
-        $this->assertSame('yes', get_post_meta(8, '_holvek_noindex', true));
-        $this->assertSame('yes', get_post_meta(8, '_holvek_nofollow', true));
-        $this->assertSame('alpha', get_post_meta(8, '_holvek_focus_keyword', true));
+        $this->assertSame('yes', get_post_meta(8, '_quinrel_noindex', true));
+        $this->assertSame('yes', get_post_meta(8, '_quinrel_nofollow', true));
+        $this->assertSame('alpha', get_post_meta(8, '_quinrel_focus_keyword', true));
         unset($GLOBALS['mock_wpdb_results']);
     }
 
@@ -102,6 +102,70 @@ class MigrationTest extends TestCase
         $this->assertStringContainsString($sentence, (string) file_get_contents($root . '/readme.txt'));
         $this->assertStringContainsString($sentence, (string) file_get_contents($root . '/docs/features.md'));
         $this->assertStringNotContainsString('The import does not show a preview.', (string) file_get_contents($root . '/readme.txt'));
+    }
+
+    public function testMigratesAndResolvesCompetitorSmartTagsCleanly(): void
+    {
+        global $mock_posts;
+        $mock_posts[21] = new \WP_Post([
+            'ID' => 21,
+            'post_title' => 'Migrated SEO Post',
+            'post_excerpt' => 'Migrated post summary.',
+        ]);
+        $GLOBALS['mock_post_meta'] = array();
+        $GLOBALS['mock_wpdb_results'] = function (string $query) {
+            if (str_contains($query, '_yoast_wpseo_title')) {
+                return array(
+                    (object) array('post_id' => 21, 'meta_value' => '%%title%% %%page%% %%sep%% %%sitename%%'),
+                );
+            }
+            if (str_contains($query, '_yoast_wpseo_metadesc')) {
+                return array(
+                    (object) array('post_id' => 21, 'meta_value' => '%%excerpt%% - %%sitename%%'),
+                );
+            }
+            return array();
+        };
+
+        (new MigrationManager())->migrate('yoast');
+
+        $this->assertSame('Migrated SEO Post - Quinrel Test Site', get_post_meta(21, '_quinrel_meta_title', true));
+        $this->assertSame('Migrated post summary. - Quinrel Test Site', get_post_meta(21, '_quinrel_meta_description', true));
+        unset($GLOBALS['mock_wpdb_results']);
+    }
+
+    public function testPreviewReturnsResolvedSamplesAndDeactivateEndpointWorks(): void
+    {
+        $GLOBALS['mock_posts'][30] = new \WP_Post(
+            array(
+                'ID' => 30,
+                'post_status' => 'publish',
+                'post_title' => 'Sample Article',
+            )
+        );
+        $GLOBALS['mock_post_meta'][30] = array(
+            '_yoast_wpseo_title' => '%%title%% | %%sitename%%',
+            '_yoast_wpseo_metadesc' => 'Sample meta description for article.',
+        );
+        $GLOBALS['mock_wpdb_col'] = function (string $query) {
+            return array(30);
+        };
+
+        $manager = new MigrationManager();
+        $preview = $manager->preview('yoast');
+
+        $this->assertTrue($preview['success']);
+        $this->assertArrayHasKey('samples', $preview);
+        $this->assertNotEmpty($preview['samples']);
+        $this->assertSame('Sample Article | Quinrel Test Site', $preview['samples'][0]['resolved_title']);
+
+        $req = new \WP_REST_Request();
+        $req->set_param('plugin_id', 'yoast');
+        $deactivateResp = $manager->handleDeactivateCompetitor($req);
+        $this->assertTrue($deactivateResp->get_data()['success']);
+        $this->assertStringContainsString('Yoast SEO has been safely deactivated.', $deactivateResp->get_data()['message']);
+
+        unset($GLOBALS['mock_wpdb_col']);
     }
 
     private function migrationRequest(string $pluginId, bool $confirm): \WP_REST_Request

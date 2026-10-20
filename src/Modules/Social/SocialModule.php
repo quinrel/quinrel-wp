@@ -1,14 +1,14 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Social;
+namespace Quinrel\WordPress\Modules\Social;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Core\Queue\QueueManager;
-use Holvek\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Queue\QueueManager;
+use Quinrel\WordPress\Core\Security\KeyVault;
 
 class SocialModule {
 
@@ -28,7 +28,7 @@ class SocialModule {
 		if ( $newStatus === 'publish' && $oldStatus !== 'publish' ) {
 
 			// Check global auto-share toggle setting
-			$globalAutoShare = get_option( 'holvek_global_auto_share', 'yes' );
+			$globalAutoShare = get_option( 'quinrel_global_auto_share', 'yes' );
 			if ( $globalAutoShare !== 'yes' ) {
 				return;
 			}
@@ -48,7 +48,7 @@ class SocialModule {
 
 	public function registerRestRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/social/accounts',
 			array(
 				array(
@@ -65,7 +65,7 @@ class SocialModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/social/accounts/(?P<id>[\w-]+)',
 			array(
 				array(
@@ -82,7 +82,7 @@ class SocialModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/social/share',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -93,7 +93,7 @@ class SocialModule {
 
 		// Mock OAuth callback endpoints for testing UI
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/social/oauth-init',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -103,7 +103,7 @@ class SocialModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/social/oauth-callback',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -113,7 +113,7 @@ class SocialModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/social/settings',
 			array(
 				array(
@@ -148,7 +148,7 @@ class SocialModule {
 
 		return new \WP_Error(
 			'forbidden',
-			__( 'You do not have permission to manage social accounts.', 'holvek' ),
+			__( 'You do not have permission to manage social accounts.', 'quinrel' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -200,7 +200,7 @@ class SocialModule {
 		return rest_ensure_response(
 			array(
 				'accounts'          => $accounts,
-				'global_auto_share' => get_option( 'holvek_global_auto_share', 'yes' ) === 'yes',
+				'global_auto_share' => get_option( 'quinrel_global_auto_share', 'yes' ) === 'yes',
 				'categories'        => $categories,
 			)
 		);
@@ -215,12 +215,12 @@ class SocialModule {
 		$params = $request->get_json_params();
 
 		if ( isset( $params['global_auto_share'] ) ) {
-			update_option( 'holvek_global_auto_share', $params['global_auto_share'] ? 'yes' : 'no' );
+			update_option( 'quinrel_global_auto_share', $params['global_auto_share'] ? 'yes' : 'no' );
 			return rest_ensure_response( array( 'success' => true ) );
 		}
 
 		if ( empty( $params['network'] ) || empty( $params['access_token'] ) ) {
-			return new \WP_Error( 'missing_params', __( 'Network and Access Token are required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_params', __( 'Network and Access Token are required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$manager = new SocialAccountManager();
@@ -263,7 +263,7 @@ class SocialModule {
 			);
 		}
 
-		return new \WP_Error( 'not_found', __( 'Account not found.', 'holvek' ), array( 'status' => 404 ) );
+		return new \WP_Error( 'not_found', __( 'Account not found.', 'quinrel' ), array( 'status' => 404 ) );
 	}
 
 	public function updateAccount( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
@@ -288,7 +288,7 @@ class SocialModule {
 			);
 		}
 
-		return new \WP_Error( 'not_found', __( 'Account not found.', 'holvek' ), array( 'status' => 404 ) );
+		return new \WP_Error( 'not_found', __( 'Account not found.', 'quinrel' ), array( 'status' => 404 ) );
 	}
 
 	public function manualShare( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
@@ -299,7 +299,7 @@ class SocialModule {
 
 		$postId = $request->get_param( 'post_id' );
 		if ( ! $postId ) {
-			return new \WP_Error( 'missing_param', __( 'Post ID is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_param', __( 'Post ID is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$queueManager = new QueueManager();
@@ -316,7 +316,7 @@ class SocialModule {
 			array(
 				'success' => true,
 				'queued'  => true,
-				'message' => __( 'Share queued. Holvek will send it in the background.', 'holvek' ),
+				'message' => __( 'Share queued. Quinrel will send it in the background.', 'quinrel' ),
 			)
 		);
 	}
@@ -331,16 +331,16 @@ class SocialModule {
 		$network = sanitize_text_field( $params['network'] ?? '' );
 
 		if ( empty( $network ) ) {
-			return new \WP_Error( 'missing_network', __( 'Network parameter is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_network', __( 'Network parameter is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
-		$apps = get_option( 'holvek_social_apps', array() );
+		$apps = get_option( 'quinrel_social_apps', array() );
 		if ( empty( $apps[ $network ]['app_id'] ) || empty( $apps[ $network ]['app_secret'] ) ) {
 			return new \WP_Error(
 				'not_configured',
 				sprintf(
 					/* translators: %s: social network name. */
-					__( 'Please configure your %s App ID and Secret in the Platform API Settings first.', 'holvek' ),
+					__( 'Please configure your %s App ID and Secret in the Platform API Settings first.', 'quinrel' ),
 					ucfirst( $network )
 				),
 				array( 'status' => 400 )
@@ -354,7 +354,7 @@ class SocialModule {
 		// Store transient for 10 minutes tied to the initiating administrator.
 		// The verifier stays server-side and is never returned to the browser.
 		set_transient(
-			'holvek_oauth_state_' . $state,
+			'quinrel_oauth_state_' . $state,
 			array(
 				'user_id'       => get_current_user_id(),
 				'network'       => $network,
@@ -381,7 +381,7 @@ class SocialModule {
 		$error   = $request->get_param( 'error' );
 		$state   = sanitize_text_field( $request->get_param( 'state' ) ?? '' );
 
-		$redirectUrl = admin_url( 'admin.php?page=holvek#/social' );
+		$redirectUrl = admin_url( 'admin.php?page=quinrel#/social' );
 
 		if ( $error || ! $code || empty( $state ) ) {
 			$errParam = $error ? sanitize_key( (string) $error ) : 'missing_code_or_state';
@@ -392,7 +392,7 @@ class SocialModule {
 		}
 
 		// Verify state against transient
-		$transientKey = 'holvek_oauth_state_' . $state;
+		$transientKey = 'quinrel_oauth_state_' . $state;
 		$stateData    = get_transient( $transientKey );
 
 		if ( empty( $stateData ) || ! is_array( $stateData ) ) {
@@ -414,7 +414,7 @@ class SocialModule {
 			$this->redirectTo( add_query_arg( 'oauth_error', 'unauthorized', $redirectUrl ) );
 		}
 
-		$apps = get_option( 'holvek_social_apps', array() );
+		$apps = get_option( 'quinrel_social_apps', array() );
 		if ( empty( $apps[ $network ]['app_id'] ) || empty( $apps[ $network ]['app_secret'] ) ) {
 			$this->redirectTo( add_query_arg( 'oauth_error', 'not_configured', $redirectUrl ) );
 		}
@@ -523,7 +523,7 @@ class SocialModule {
 		return add_query_arg(
 			'network',
 			$network,
-			rest_url( 'holvek/v1/social/oauth-callback' )
+			rest_url( 'quinrel/v1/social/oauth-callback' )
 		);
 	}
 
@@ -603,7 +603,7 @@ class SocialModule {
 			return $denied;
 		}
 
-		$apps = get_option( 'holvek_social_apps', array() );
+		$apps = get_option( 'quinrel_social_apps', array() );
 
 		// Mask secrets before sending to frontend
 		foreach ( $apps as $network => $creds ) {
@@ -626,7 +626,7 @@ class SocialModule {
 		}
 
 		$params = $request->get_json_params();
-		$apps   = get_option( 'holvek_social_apps', array() );
+		$apps   = get_option( 'quinrel_social_apps', array() );
 
 		$networks = array( 'facebook', 'twitter', 'linkedin', 'pinterest' );
 
@@ -646,8 +646,8 @@ class SocialModule {
 							return $encrypted;
 						}
 						return new \WP_Error(
-							'holvek_encryption_failed',
-							__( 'Holvek could not encrypt this secret. The value was not saved.', 'holvek' ),
+							'quinrel_encryption_failed',
+							__( 'Quinrel could not encrypt this secret. The value was not saved.', 'quinrel' ),
 							array( 'status' => 500 )
 						);
 					}
@@ -661,7 +661,7 @@ class SocialModule {
 			}
 		}
 
-		update_option( 'holvek_social_apps', $apps, false );
+		update_option( 'quinrel_social_apps', $apps, false );
 
 		// Mask before returning
 		foreach ( $apps as $network => $creds ) {

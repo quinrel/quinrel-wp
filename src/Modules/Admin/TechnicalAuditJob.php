@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

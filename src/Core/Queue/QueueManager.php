@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Core\Queue;
+namespace Quinrel\WordPress\Core\Queue;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class QueueManager {
 
-	private const ACTION_HOOK = 'holvek_process_job';
+	private const ACTION_HOOK = 'quinrel_process_job';
 
 	public function boot(): void {
 		add_action( self::ACTION_HOOK, array( $this, 'process' ), 10, 2 );
@@ -23,7 +23,7 @@ class QueueManager {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/system/queue',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -144,7 +144,7 @@ class QueueManager {
 		if ( ! class_exists( $jobClass ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Background queue failures are written to the PHP log.
-				error_log( "[Holvek Queue] Job class not found: {$jobClass}" );
+				error_log( "[Quinrel Queue] Job class not found: {$jobClass}" );
 			}
 			return;
 		}
@@ -157,7 +157,7 @@ class QueueManager {
 		} catch ( \Throwable $e ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Background queue failures are written to the PHP log.
-				error_log( "[Holvek Queue] Job failed ({$jobClass}): " . $e->getMessage() );
+				error_log( "[Quinrel Queue] Job failed ({$jobClass}): " . $e->getMessage() );
 			}
 			throw $e;
 		}

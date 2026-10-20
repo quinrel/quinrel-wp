@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Ai;
+namespace Quinrel\WordPress\Modules\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,9 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class UsageMeteringManager {
 
-	private const TABLE_NAME   = 'holvek_ai_usage';
-	private const LIMIT_OPTION = 'holvek_ai_token_limits';
-	private const CRON_HOOK    = 'holvek_weekly_usage_email';
+	private const TABLE_NAME   = 'quinrel_ai_usage';
+	private const LIMIT_OPTION = 'quinrel_ai_token_limits';
+	private const CRON_HOOK    = 'quinrel_weekly_usage_email';
 
 	private static ?self $instance = null;
 
@@ -49,7 +49,9 @@ class UsageMeteringManager {
             KEY created_at (created_at)
         ) $charset;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 	}
 
@@ -158,7 +160,7 @@ class UsageMeteringManager {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/ai/usage',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -168,7 +170,7 @@ class UsageMeteringManager {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/ai/usage/site',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -178,7 +180,7 @@ class UsageMeteringManager {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/ai/usage/limits',
 			array(
 				array(
@@ -207,7 +209,7 @@ class UsageMeteringManager {
 		if ( ! is_user_logged_in() || $userId < 1 ) {
 			return new \WP_Error(
 				'rest_forbidden',
-				__( 'Sorry, you are not allowed to view AI usage.', 'holvek' ),
+				__( 'Sorry, you are not allowed to view AI usage.', 'quinrel' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -225,7 +227,7 @@ class UsageMeteringManager {
 		if ( ! $this->canViewSiteUsage() ) {
 			return new \WP_Error(
 				'rest_forbidden',
-				__( 'Sorry, you are not allowed to view site-wide AI usage.', 'holvek' ),
+				__( 'Sorry, you are not allowed to view site-wide AI usage.', 'quinrel' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -262,13 +264,13 @@ class UsageMeteringManager {
 		$admin   = get_option( 'admin_email' );
 		$subject = sprintf(
 			/* translators: %s: number of AI tokens used this week. */
-			__( '[Holvek] Weekly AI Usage Summary — %s tokens used', 'holvek' ),
+			__( '[Quinrel] Weekly AI Usage Summary — %s tokens used', 'quinrel' ),
 			number_format( $usage['total'] )
 		);
 
-		$body  = '<h2>' . esc_html__( 'Holvek Weekly AI Usage', 'holvek' ) . '</h2>';
-		$body .= '<p>' . esc_html__( 'Total tokens used this week:', 'holvek' ) . ' <strong>' . number_format( $usage['total'] ) . '</strong></p>';
-		$body .= "<table border='1' cellpadding='5'><tr><th>" . esc_html__( 'Provider', 'holvek' ) . '</th><th>' . esc_html__( 'Feature', 'holvek' ) . '</th><th>' . esc_html__( 'Tokens', 'holvek' ) . '</th></tr>';
+		$body  = '<h2>' . esc_html__( 'Quinrel Weekly AI Usage', 'quinrel' ) . '</h2>';
+		$body .= '<p>' . esc_html__( 'Total tokens used this week:', 'quinrel' ) . ' <strong>' . number_format( $usage['total'] ) . '</strong></p>';
+		$body .= "<table border='1' cellpadding='5'><tr><th>" . esc_html__( 'Provider', 'quinrel' ) . '</th><th>' . esc_html__( 'Feature', 'quinrel' ) . '</th><th>' . esc_html__( 'Tokens', 'quinrel' ) . '</th></tr>';
 
 		foreach ( (array) $usage['by_feature'] as $row ) {
 			$body .= '<tr><td>' . esc_html( $row->provider ) . '</td><td>' . esc_html( $row->feature ) . '</td><td>' . number_format( (int) $row->total ) . '</td></tr>';
@@ -286,13 +288,13 @@ class UsageMeteringManager {
 	 * in the local table either way. This release does not phone home.
 	 */
 	public function reportToCloud(): \WP_Error {
-		if ( ! \Holvek\WordPress\Core\Mode\OperatingMode::isCloudConfigured() ) {
-			return \Holvek\WordPress\Core\Mode\OperatingMode::disconnected( __( 'Cloud usage reporting', 'holvek' ) );
+		if ( ! \Quinrel\WordPress\Core\Mode\OperatingMode::isCloudConfigured() ) {
+			return \Quinrel\WordPress\Core\Mode\OperatingMode::disconnected( __( 'Cloud usage reporting', 'quinrel' ) );
 		}
 
 		return new \WP_Error(
-			'holvek_usage_local',
-			__( 'AI usage is stored on this site.', 'holvek' ),
+			'quinrel_usage_local',
+			__( 'AI usage is stored on this site.', 'quinrel' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -300,7 +302,7 @@ class UsageMeteringManager {
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
 	private function getLimit(): int {
-		$tier   = \Holvek\WordPress\Core\Api\CloudCredential::cachedTier();
+		$tier   = \Quinrel\WordPress\Core\Api\CloudCredential::cachedTier();
 		$limits = get_option( self::LIMIT_OPTION, $this->defaultLimits() );
 		return (int) ( $limits[ $tier ] ?? 50000 );
 	}
@@ -340,21 +342,21 @@ class UsageMeteringManager {
 		if ( 'day' === $period ) {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}holvek_ai_usage WHERE user_id = %d AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) GROUP BY provider, feature ORDER BY total DESC",
+					"SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}quinrel_ai_usage WHERE user_id = %d AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) GROUP BY provider, feature ORDER BY total DESC",
 					$userId
 				)
 			);
 		} elseif ( 'week' === $period ) {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}holvek_ai_usage WHERE user_id = %d AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY provider, feature ORDER BY total DESC",
+					"SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}quinrel_ai_usage WHERE user_id = %d AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY provider, feature ORDER BY total DESC",
 					$userId
 				)
 			);
 		} else {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}holvek_ai_usage WHERE user_id = %d AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY provider, feature ORDER BY total DESC",
+					"SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}quinrel_ai_usage WHERE user_id = %d AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY provider, feature ORDER BY total DESC",
 					$userId
 				)
 			);
@@ -372,11 +374,11 @@ class UsageMeteringManager {
 		global $wpdb;
 
 		if ( 'day' === $period ) {
-			$sql = "SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}holvek_ai_usage WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) GROUP BY provider, feature ORDER BY total DESC";
+			$sql = "SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}quinrel_ai_usage WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) GROUP BY provider, feature ORDER BY total DESC";
 		} elseif ( 'week' === $period ) {
-			$sql = "SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}holvek_ai_usage WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY provider, feature ORDER BY total DESC";
+			$sql = "SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}quinrel_ai_usage WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY provider, feature ORDER BY total DESC";
 		} else {
-			$sql = "SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}holvek_ai_usage WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY provider, feature ORDER BY total DESC";
+			$sql = "SELECT provider, feature, SUM(tokens_used) AS total FROM {$wpdb->prefix}quinrel_ai_usage WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY provider, feature ORDER BY total DESC";
 		}
 
 		// The period selects one of the three literal queries above.

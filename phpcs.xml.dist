@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="Holvek">
-    <description>WordPress Coding Standards for Holvek</description>
+<ruleset name="Quinrel">
+    <description>WordPress Coding Standards for Quinrel</description>
 
     <!-- Exclude paths -->
     <exclude-pattern>vendor/*</exclude-pattern>
@@ -58,7 +58,7 @@
     <rule ref="WordPress.WP.I18n">
         <properties>
             <property name="text_domain" type="array">
-                <element value="holvek"/>
+                <element value="quinrel"/>
             </property>
         </properties>
     </rule>

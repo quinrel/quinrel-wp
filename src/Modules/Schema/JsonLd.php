@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema;
+namespace Quinrel\WordPress\Modules\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Support\ValueList;
+use Quinrel\WordPress\Core\Support\ValueList;
 
 /**
  * Encodes JSON-LD for a script tag.
@@ -92,7 +92,7 @@ class JsonLd {
 		if ( strlen( $json ) > self::MAX_BYTES ) {
 			return new \WP_Error(
 				'invalid_custom_schema',
-				__( 'Custom schema JSON is too large.', 'holvek' ),
+				__( 'Custom schema JSON is too large.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -189,7 +189,7 @@ class JsonLd {
 	private static function invalidCustomSchema() {
 		return new \WP_Error(
 			'invalid_custom_schema',
-			__( 'Custom schema JSON must be a Schema.org object, a list of Schema.org objects, or custom properties with a key and a value.', 'holvek' ),
+			__( 'Custom schema JSON must be a Schema.org object, a list of Schema.org objects, or custom properties with a key and a value.', 'quinrel' ),
 			array( 'status' => 400 )
 		);
 	}

@@ -1,13 +1,13 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Ai\OllamaEndpoint;
-use Holvek\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Core\Ai\OllamaEndpoint;
+use Quinrel\WordPress\Core\Security\KeyVault;
 
 /**
  * Settings export and import.
@@ -28,29 +28,30 @@ class SettingsTransfer {
 	 * @var array<string, string>
 	 */
 	private const FIELDS = array(
-		'holvek_auto_index'                 => 'bool',
-		'holvek_enable_google_indexing_api' => 'bool',
-		'holvek_google_verify'              => 'token',
-		'holvek_bing_verify'                => 'token',
-		'holvek_yandex_verify'              => 'token',
-		'holvek_pinterest_verify'           => 'token',
-		'holvek_rss_before_content'         => 'html',
-		'holvek_rss_after_content'          => 'html',
-		'holvek_breadcrumb_separator'       => 'separator',
-		'holvek_breadcrumb_home_label'      => 'text',
-		'holvek_breadcrumb_auto_insert'     => 'breadcrumb_insert',
-		'holvek_sitemap_exclude_post_types' => 'slug_list',
-		'holvek_sitemap_exclude_posts'      => 'id_list',
-		'holvek_ai_provider'                => 'ai_provider',
-		'holvek_ollama_url'                 => 'ollama',
-		'holvek_default_share_image'        => 'url',
-		'holvek_ga4_measurement_id'         => 'ga4_measurement',
-		'holvek_ga4_property_id'            => 'ga4_property',
-		'holvek_html_sitemap_post_types'    => 'slug_list',
-		'holvek_html_sitemap_exclude_ids'   => 'id_list',
-		'holvek_html_sitemap_depth'         => 'depth',
-		'holvek_html_sitemap_order'         => 'sitemap_order',
-		'holvek_html_sitemap_show_count'    => 'bool',
+		'quinrel_auto_index'                 => 'bool',
+		'quinrel_auto_slug_redirects'        => 'bool',
+		'quinrel_enable_google_indexing_api' => 'bool',
+		'quinrel_google_verify'              => 'token',
+		'quinrel_bing_verify'                => 'token',
+		'quinrel_yandex_verify'              => 'token',
+		'quinrel_pinterest_verify'           => 'token',
+		'quinrel_rss_before_content'         => 'html',
+		'quinrel_rss_after_content'          => 'html',
+		'quinrel_breadcrumb_separator'       => 'separator',
+		'quinrel_breadcrumb_home_label'      => 'text',
+		'quinrel_breadcrumb_auto_insert'     => 'breadcrumb_insert',
+		'quinrel_sitemap_exclude_post_types' => 'slug_list',
+		'quinrel_sitemap_exclude_posts'      => 'id_list',
+		'quinrel_ai_provider'                => 'ai_provider',
+		'quinrel_ollama_url'                 => 'ollama',
+		'quinrel_default_share_image'        => 'url',
+		'quinrel_ga4_measurement_id'         => 'ga4_measurement',
+		'quinrel_ga4_property_id'            => 'ga4_property',
+		'quinrel_html_sitemap_post_types'    => 'slug_list',
+		'quinrel_html_sitemap_exclude_ids'   => 'id_list',
+		'quinrel_html_sitemap_depth'         => 'depth',
+		'quinrel_html_sitemap_order'         => 'sitemap_order',
+		'quinrel_html_sitemap_show_count'    => 'bool',
 	);
 
 	/**
@@ -74,7 +75,7 @@ class SettingsTransfer {
 
 		return array(
 			'_version'  => '1.0',
-			'_plugin'   => 'holvek',
+			'_plugin'   => 'quinrel',
 			'_exported' => gmdate( 'c' ),
 			'_site_url' => (string) get_option( 'siteurl', '' ),
 			'_redacted' => $redacted,
@@ -87,10 +88,10 @@ class SettingsTransfer {
 	 * @return array<string, mixed>|\WP_Error
 	 */
 	public static function importPayload( array $payload ): array|\WP_Error {
-		if ( ( $payload['_plugin'] ?? '' ) !== 'holvek' ) {
+		if ( ( $payload['_plugin'] ?? '' ) !== 'quinrel' ) {
 			return new \WP_Error(
 				'wrong_plugin',
-				__( 'This settings file was not exported from Holvek.', 'holvek' ),
+				__( 'This settings file was not exported from Quinrel.', 'quinrel' ),
 				array( 'status' => 422 )
 			);
 		}
@@ -99,7 +100,7 @@ class SettingsTransfer {
 		if ( ! is_array( $settings ) || $settings === array() ) {
 			return new \WP_Error(
 				'invalid_payload',
-				__( 'Missing or malformed settings object.', 'holvek' ),
+				__( 'Missing or malformed settings object.', 'quinrel' ),
 				array( 'status' => 422 )
 			);
 		}
@@ -149,7 +150,7 @@ class SettingsTransfer {
 			'imported' => $imported,
 			'message'  => sprintf(
 				/* translators: %d: number of imported settings. */
-				__( 'Imported %d settings successfully. API keys and credentials are excluded from import for security.', 'holvek' ),
+				__( 'Imported %d settings successfully. API keys and credentials are excluded from import for security.', 'quinrel' ),
 				$imported
 			),
 		);
@@ -166,19 +167,19 @@ class SettingsTransfer {
 				array_merge(
 					KeyVault::neverExportOptions(),
 					array(
-						'holvek_google_indexing_key',
-						'holvek_indexnow_key',
-						'holvek_openai_key',
-						'holvek_anthropic_key',
-						'holvek_api_key',
-						'holvek_license_key',
-						'holvek_user_tier',
-						'holvek_backend_api_url',
-						'holvek_cloud_verification',
-						'holvek_cloud_revoked',
-						'holvek_ga4_credentials',
-						'holvek_social_apps',
-						'holvek_social_accounts',
+						'quinrel_google_indexing_key',
+						'quinrel_indexnow_key',
+						'quinrel_openai_key',
+						'quinrel_anthropic_key',
+						'quinrel_api_key',
+						'quinrel_license_key',
+						'quinrel_user_tier',
+						'quinrel_backend_api_url',
+						'quinrel_cloud_verification',
+						'quinrel_cloud_revoked',
+						'quinrel_ga4_credentials',
+						'quinrel_social_apps',
+						'quinrel_social_accounts',
 						'google_indexing_key',
 						'ga4_credentials',
 						'openai_api_key',
@@ -486,7 +487,7 @@ class SettingsTransfer {
 	private static function unknownSetting(): \WP_Error {
 		return new \WP_Error(
 			'unknown_setting',
-			__( 'This settings file contains a setting Holvek does not import. Nothing was changed.', 'holvek' ),
+			__( 'This settings file contains a setting Quinrel does not import. Nothing was changed.', 'quinrel' ),
 			array( 'status' => 422 )
 		);
 	}
@@ -496,7 +497,7 @@ class SettingsTransfer {
 			'invalid_setting',
 			sprintf(
 				/* translators: %s: setting name. */
-				__( 'The setting %s has a value Holvek cannot import. Nothing was changed.', 'holvek' ),
+				__( 'The setting %s has a value Quinrel cannot import. Nothing was changed.', 'quinrel' ),
 				$key
 			),
 			array( 'status' => 422 )

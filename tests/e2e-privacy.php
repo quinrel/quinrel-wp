@@ -11,12 +11,12 @@ if (!defined('ABSPATH')) {
 echo "Starting Privacy & Retention E2E Tests...\n";
 
 // 1. Ensure plugin is active and tables are created
-$installer = new \Holvek\WordPress\Core\Database\Installer();
+$installer = new \Quinrel\WordPress\Core\Database\Installer();
 $installer->install();
 
 global $wpdb;
-$usageTable = $wpdb->prefix . 'holvek_ai_usage';
-$logsTable = $wpdb->prefix . 'holvek_404_logs';
+$usageTable = $wpdb->prefix . 'quinrel_ai_usage';
+$logsTable = $wpdb->prefix . 'quinrel_404_logs';
 
 // Create a dummy user
 $email = 'privacy_test_' . time() . '@example.com';
@@ -31,7 +31,7 @@ if (is_wp_error($user_id)) {
     die("ERROR: Failed to create user: " . $user_id->get_error_message() . "\n");
 }
 
-// Insert dummy data into holvek_ai_usage
+// Insert dummy data into quinrel_ai_usage
 $wpdb->insert($usageTable, [
     'user_id' => $user_id,
     'provider' => 'openai',
@@ -49,7 +49,7 @@ $wpdb->insert($usageTable, [
     'created_at' => gmdate('Y-m-d H:i:s', strtotime('-400 days'))
 ]);
 
-// Insert dummy data into holvek_404_logs (older than 90 days)
+// Insert dummy data into quinrel_404_logs (older than 90 days)
 $wpdb->insert($logsTable, [
     'uri' => '/old-404-url',
     'hits' => 5,
@@ -62,9 +62,9 @@ $wpdb->insert($logsTable, [
 ]);
 
 // Add user meta
-update_user_meta($user_id, 'holvek_test_meta', 'test_value');
+update_user_meta($user_id, 'quinrel_test_meta', 'test_value');
 
-$tools = new \Holvek\WordPress\Modules\Compliance\CcpaPrivacyTools();
+$tools = new \Quinrel\WordPress\Modules\Compliance\CcpaPrivacyTools();
 
 // ----------------------------------------------------------------------------
 // TEST: Exporter
@@ -77,8 +77,8 @@ if (empty($export['data'])) {
 $foundUsage = false;
 $foundMeta = false;
 foreach ($export['data'] as $item) {
-    if ($item['group_id'] === 'holvek_ai_usage') $foundUsage = true;
-    if ($item['group_id'] === 'holvek_user_meta') $foundMeta = true;
+    if ($item['group_id'] === 'quinrel_ai_usage') $foundUsage = true;
+    if ($item['group_id'] === 'quinrel_user_meta') $foundMeta = true;
 }
 if (!$foundUsage || !$foundMeta) {
     die("ERROR: Export failed: missing expected groups.\n");
@@ -99,7 +99,7 @@ $count = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$usageTable}
 if ($count > 0) {
     die("ERROR: Eraser failed: DB records still exist.\n");
 }
-$meta = get_user_meta($user_id, 'holvek_test_meta', true);
+$meta = get_user_meta($user_id, 'quinrel_test_meta', true);
 if (!empty($meta)) {
     die("ERROR: Eraser failed: User meta still exists.\n");
 }
@@ -110,7 +110,7 @@ echo "Eraser OK.\n";
 // ----------------------------------------------------------------------------
 echo "Testing Retention Purge...\n";
 // Set options explicitly
-update_option('holvek_retention_settings', ['keep_404_logs_days' => 90, 'keep_usage_logs_days' => 365]);
+update_option('quinrel_retention_settings', ['keep_404_logs_days' => 90, 'keep_usage_logs_days' => 365]);
 
 // Repopulate a 404 old log since we didn't erase it, it should still be there
 $tools->applyRetentionPolicy();

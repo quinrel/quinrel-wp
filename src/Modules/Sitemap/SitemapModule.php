@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Sitemap;
+namespace Quinrel\WordPress\Modules\Sitemap;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Event\EventManager;
 
 /**
  * Boots the sitemap module, registers REST endpoints for sitemaps config,
@@ -38,7 +38,7 @@ class SitemapModule {
 		$this->eventManager->addAction( 'template_redirect', array( $this->routeManager, 'handleSitemapRequests' ), 0 );
 
 		// Ensure rewrite rules are flushed on activation
-		$this->eventManager->addAction( 'holvek_activation', array( $this->routeManager, 'flushRules' ) );
+		$this->eventManager->addAction( 'quinrel_activation', array( $this->routeManager, 'flushRules' ) );
 
 		// Clear sitemap cache when content changes
 		$this->eventManager->addAction( 'save_post', array( SitemapGenerator::class, 'clearCache' ) );
@@ -52,13 +52,13 @@ class SitemapModule {
 		// Register configuration routes
 		$this->eventManager->addAction( 'rest_api_init', array( $this, 'registerRoutes' ) );
 
-		// Another SEO plugin's sitemap is a Holvek-screen warning, not a front-end hook.
+		// Another SEO plugin's sitemap is a Quinrel-screen warning, not a front-end hook.
 		$this->eventManager->addAction( 'admin_notices', array( $this, 'renderConflictNotice' ) );
-		add_action( 'wp_ajax_holvek_dismiss_sitemap_conflict', array( $this, 'dismissConflictNotice' ) );
+		add_action( 'wp_ajax_quinrel_dismiss_sitemap_conflict', array( $this, 'dismissConflictNotice' ) );
 	}
 
 	/**
-	 * SEO plugins that publish their own sitemap alongside Holvek.
+	 * SEO plugins that publish their own sitemap alongside Quinrel.
 	 *
 	 * @return array<string, string> Plugin file => short name.
 	 */
@@ -112,7 +112,7 @@ class SitemapModule {
 			$names[] = 'SEOPress';
 		}
 
-		$filtered = apply_filters( 'holvek_sitemap_conflicting_plugins', $names );
+		$filtered = apply_filters( 'quinrel_sitemap_conflicting_plugins', $names );
 		if ( ! is_array( $filtered ) ) {
 			return array();
 		}
@@ -128,7 +128,7 @@ class SitemapModule {
 	}
 
 	/**
-	 * Notice text when Holvek and another SEO plugin would both publish a sitemap.
+	 * Notice text when Quinrel and another SEO plugin would both publish a sitemap.
 	 */
 	public function conflictNoticeText(): string {
 		if ( SitemapSettings::get( 'enable_index_sitemap', 'no' ) !== 'yes' ) {
@@ -142,13 +142,13 @@ class SitemapModule {
 
 		return sprintf(
 			/* translators: %s: names of the other SEO plugins. */
-			__( 'Another SEO plugin is also publishing a sitemap (%s). Disable the Holvek XML sitemap or disable the sitemap in the other plugin so search engines receive one sitemap.', 'holvek' ),
+			__( 'Another SEO plugin is also publishing a sitemap (%s). Disable the Quinrel XML sitemap or disable the sitemap in the other plugin so search engines receive one sitemap.', 'quinrel' ),
 			implode( ', ', $names )
 		);
 	}
 
 	/**
-	 * Tell an SEO manager, on a Holvek screen, to leave only one sitemap published.
+	 * Tell an SEO manager, on a Quinrel screen, to leave only one sitemap published.
 	 */
 	public function renderConflictNotice(): void {
 		if ( ! current_user_can( 'manage_seo' ) && ! current_user_can( 'manage_options' ) ) {
@@ -159,36 +159,36 @@ class SitemapModule {
 		}
 
 		$screen = get_current_screen();
-		if ( ! is_object( $screen ) || ! isset( $screen->id ) || ! str_contains( (string) $screen->id, 'holvek' ) ) {
+		if ( ! is_object( $screen ) || ! isset( $screen->id ) || ! str_contains( (string) $screen->id, 'quinrel' ) ) {
 			return;
 		}
 
 		$text = $this->conflictNoticeText();
-		if ( $text === '' || get_user_meta( get_current_user_id(), 'holvek_sitemap_conflict_dismissed', true ) ) {
+		if ( $text === '' || get_user_meta( get_current_user_id(), 'quinrel_sitemap_conflict_dismissed', true ) ) {
 			return;
 		}
 
-		$nonce = wp_create_nonce( 'holvek_dismiss_sitemap_conflict' );
+		$nonce = wp_create_nonce( 'quinrel_dismiss_sitemap_conflict' );
 		printf(
-			'<div class="notice notice-warning is-dismissible holvek-sitemap-conflict-notice" data-nonce="%1$s"><p>%2$s</p></div>',
+			'<div class="notice notice-warning is-dismissible quinrel-sitemap-conflict-notice" data-nonce="%1$s"><p>%2$s</p></div>',
 			esc_attr( $nonce ),
 			esc_html( $text )
 		);
-		echo '<script>document.addEventListener("DOMContentLoaded",function(){var el=document.querySelector(".holvek-sitemap-conflict-notice");if(!el){return;}el.addEventListener("click",function(e){if(!e.target.classList.contains("notice-dismiss")){return;}var body=new FormData();body.append("action","holvek_dismiss_sitemap_conflict");body.append("_ajax_nonce",el.dataset.nonce);fetch(window.ajaxurl,{method:"POST",body:body});});});</script>';
+		echo '<script>document.addEventListener("DOMContentLoaded",function(){var el=document.querySelector(".quinrel-sitemap-conflict-notice");if(!el){return;}el.addEventListener("click",function(e){if(!e.target.classList.contains("notice-dismiss")){return;}var body=new FormData();body.append("action","quinrel_dismiss_sitemap_conflict");body.append("_ajax_nonce",el.dataset.nonce);fetch(window.ajaxurl,{method:"POST",body:body});});});</script>';
 	}
 
 	/**
 	 * Keep the sitemap conflict notice dismissed for this user.
 	 */
 	public function dismissConflictNotice(): void {
-		check_ajax_referer( 'holvek_dismiss_sitemap_conflict' );
+		check_ajax_referer( 'quinrel_dismiss_sitemap_conflict' );
 		if ( ! current_user_can( 'manage_seo' ) && ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Sorry, you are not allowed to do that.', 'holvek' ) ),
+				array( 'message' => __( 'Sorry, you are not allowed to do that.', 'quinrel' ) ),
 				403
 			);
 		}
-		update_user_meta( get_current_user_id(), 'holvek_sitemap_conflict_dismissed', '1' );
+		update_user_meta( get_current_user_id(), 'quinrel_sitemap_conflict_dismissed', '1' );
 		wp_send_json_success();
 	}
 
@@ -197,7 +197,7 @@ class SitemapModule {
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/sitemaps',
 			array(
 				array(

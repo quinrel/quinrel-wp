@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Core\Api;
+namespace Quinrel\WordPress\Core\Api;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Mode\OperatingMode;
+use Quinrel\WordPress\Core\Mode\OperatingMode;
 
 /**
  * Provides a fallback proxy for heavy data computation and analytics API calls
@@ -14,15 +14,15 @@ use Holvek\WordPress\Core\Mode\OperatingMode;
  *
  * E.g., PageSpeed Insights, Indexing limits, GSC aggregate queries.
  */
-class HolvekApiGateway {
+class QuinrelApiGateway {
 
-	private const PROXY_ENDPOINT = 'https://api.holvek.com/v1';
+	private const PROXY_ENDPOINT = 'https://api.quinrel.com/v1';
 
 	/**
-	 * Whether this site has a verified Holvek credential.
+	 * Whether this site has a verified Quinrel credential.
 	 *
 	 * A stored string is not enough. Verification is cached by the connection
-	 * screen and this method does not call api.holvek.com.
+	 * screen and this method does not call api.quinrel.com.
 	 */
 	public static function hasActiveLicense(): bool {
 		return OperatingMode::isCloudConfigured();
@@ -30,7 +30,7 @@ class HolvekApiGateway {
 
 	public static function proxyRequest( string $service, array $payload ): array|\WP_Error {
 		if ( ! OperatingMode::isCloudConfigured() ) {
-			return OperatingMode::disconnected( __( 'PageSpeed through Holvek', 'holvek' ) );
+			return OperatingMode::disconnected( __( 'PageSpeed through Quinrel', 'quinrel' ) );
 		}
 
 		$response = wp_safe_remote_post(
@@ -53,7 +53,7 @@ class HolvekApiGateway {
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( $code !== 200 ) {
-			return new \WP_Error( 'api_error', $body['message'] ?? __( 'Holvek API error.', 'holvek' ) );
+			return new \WP_Error( 'api_error', $body['message'] ?? __( 'Quinrel API error.', 'quinrel' ) );
 		}
 
 		return $body;

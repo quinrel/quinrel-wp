@@ -1,11 +1,11 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Core\Security\KeyVault;
-use Holvek\WordPress\Modules\Social\SocialAccountManager;
-use Holvek\WordPress\Modules\Social\SocialModule;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Modules\Social\SocialAccountManager;
+use Quinrel\WordPress\Modules\Social\SocialModule;
 use PHPUnit\Framework\TestCase;
 
 class SocialAccountAccessTest extends TestCase {
@@ -25,10 +25,10 @@ class SocialAccountAccessTest extends TestCase {
 		$GLOBALS['mock_current_user_id']    = 4;
 		$GLOBALS['mock_generated_password'] = 'fixed-oauth-state-value';
 
-		update_option( 'holvek_encryption_salt', 'social-test-salt-0123456789abcdef' );
-		update_option( 'holvek_social_accounts', array() );
-		update_option( 'holvek_social_apps', array() );
-		update_option( 'holvek_global_auto_share', 'yes' );
+		update_option( 'quinrel_encryption_salt', 'social-test-salt-0123456789abcdef' );
+		update_option( 'quinrel_social_accounts', array() );
+		update_option( 'quinrel_social_apps', array() );
+		update_option( 'quinrel_global_auto_share', 'yes' );
 		$this->grant( false, false );
 	}
 
@@ -62,9 +62,9 @@ class SocialAccountAccessTest extends TestCase {
 			$GLOBALS['mock_user_caps']      = $caps;
 			$GLOBALS['mock_transients']     = array();
 			$secret                         = $role . '-token-must-not-leak';
-			update_option( 'holvek_social_accounts', array() );
-			update_option( 'holvek_social_apps', array() );
-			update_option( 'holvek_global_auto_share', 'yes' );
+			update_option( 'quinrel_social_accounts', array() );
+			update_option( 'quinrel_social_apps', array() );
+			update_option( 'quinrel_global_auto_share', 'yes' );
 
 			$this->assertFalse( $module->checkPermission(), $role );
 
@@ -72,7 +72,7 @@ class SocialAccountAccessTest extends TestCase {
 			$toggle->set_json_params( array( 'global_auto_share' => false ) );
 			$toggled = $module->saveAccount( $toggle );
 			$this->assertForbidden( $toggled, $secret );
-			$this->assertSame( 'yes', get_option( 'holvek_global_auto_share' ) );
+			$this->assertSame( 'yes', get_option( 'quinrel_global_auto_share' ) );
 
 			$save = new \WP_REST_Request();
 			$save->set_json_params(
@@ -111,7 +111,7 @@ class SocialAccountAccessTest extends TestCase {
 			$this->assertSame( array(), $GLOBALS['mock_transients'] );
 
 			update_option(
-				'holvek_social_apps',
+				'quinrel_social_apps',
 				array(
 					'twitter' => array(
 						'app_id'     => 'app',
@@ -131,7 +131,7 @@ class SocialAccountAccessTest extends TestCase {
 				)
 			);
 			$this->assertForbidden( $module->saveSocialSettings( $saveSettings ), $secret );
-			$this->assertSame( $secret, get_option( 'holvek_social_apps' )['twitter']['app_secret'] );
+			$this->assertSame( $secret, get_option( 'quinrel_social_apps' )['twitter']['app_secret'] );
 		}
 	}
 
@@ -163,7 +163,7 @@ class SocialAccountAccessTest extends TestCase {
 
 		$stored = ( new SocialAccountManager() )->getAccounts();
 		$this->assertCount( 1, $stored );
-		$this->assertStringStartsWith( 'holvek_enc::', $stored[0]['access_token'] );
+		$this->assertStringStartsWith( 'quinrel_enc::', $stored[0]['access_token'] );
 		$this->assertSame( self::PLAINTEXT_TOKEN, KeyVault::decrypt( $stored[0]['access_token'] ) );
 
 		$listed = $module->getAccounts( new \WP_REST_Request() );
@@ -223,8 +223,8 @@ class SocialAccountAccessTest extends TestCase {
 		$this->assertSame( '********', $saved->get_data()['apps']['facebook']['app_secret'] );
 		$this->assertStringNotContainsString( 'fb-app-secret', wp_json_encode( $saved->get_data() ) );
 
-		$storedSecret = get_option( 'holvek_social_apps' )['facebook']['app_secret'];
-		$this->assertStringStartsWith( 'holvek_enc::', $storedSecret );
+		$storedSecret = get_option( 'quinrel_social_apps' )['facebook']['app_secret'];
+		$this->assertStringStartsWith( 'quinrel_enc::', $storedSecret );
 		$this->assertSame( 'fb-app-secret', KeyVault::decrypt( $storedSecret ) );
 
 		$listed = $module->getSocialSettings( new \WP_REST_Request() );
@@ -232,6 +232,7 @@ class SocialAccountAccessTest extends TestCase {
 		$this->assertStringNotContainsString( 'fb-app-secret', wp_json_encode( $listed->get_data() ) );
 		$this->assertStringNotContainsString( 'aew_enc::', wp_json_encode( $listed->get_data() ) );
 		$this->assertStringNotContainsString( 'holvek_enc::', wp_json_encode( $listed->get_data() ) );
+		$this->assertStringNotContainsString( 'quinrel_enc::', wp_json_encode( $listed->get_data() ) );
 
 		$keep = new \WP_REST_Request();
 		$keep->set_json_params(
@@ -243,7 +244,7 @@ class SocialAccountAccessTest extends TestCase {
 			)
 		);
 		$module->saveSocialSettings( $keep );
-		$this->assertSame( 'fb-app-secret', KeyVault::decrypt( get_option( 'holvek_social_apps' )['facebook']['app_secret'] ) );
+		$this->assertSame( 'fb-app-secret', KeyVault::decrypt( get_option( 'quinrel_social_apps' )['facebook']['app_secret'] ) );
 	}
 
 	public function testRegisteredRoutesKeepThePublicCallbackAndManagerPermissions(): void {
@@ -251,18 +252,18 @@ class SocialAccountAccessTest extends TestCase {
 		$module                      = $this->module();
 		$module->registerRestRoutes();
 
-		$accounts = $GLOBALS['mock_rest_routes']['holvek/v1/social/accounts'];
+		$accounts = $GLOBALS['mock_rest_routes']['quinrel/v1/social/accounts'];
 		foreach ( $accounts as $endpoint ) {
 			$this->assertSame( array( $module, 'checkPermission' ), $endpoint['permission_callback'] );
 		}
 
-		$callback = $GLOBALS['mock_rest_routes']['holvek/v1/social/oauth-callback'];
+		$callback = $GLOBALS['mock_rest_routes']['quinrel/v1/social/oauth-callback'];
 		$this->assertSame( '__return_true', $callback['permission_callback'] );
 
-		$init = $GLOBALS['mock_rest_routes']['holvek/v1/social/oauth-init'];
+		$init = $GLOBALS['mock_rest_routes']['quinrel/v1/social/oauth-init'];
 		$this->assertSame( array( $module, 'checkPermission' ), $init['permission_callback'] );
 
-		$settings = $GLOBALS['mock_rest_routes']['holvek/v1/social/settings'];
+		$settings = $GLOBALS['mock_rest_routes']['quinrel/v1/social/settings'];
 		foreach ( $settings as $endpoint ) {
 			$this->assertSame( array( $module, 'checkPermission' ), $endpoint['permission_callback'] );
 		}
@@ -276,7 +277,7 @@ class SocialAccountAccessTest extends TestCase {
 		$result = $this->module()->initOAuth( $this->networkRequest( 'twitter' ) );
 		$data   = $result->get_data();
 		$state  = $data['state'];
-		$stored = get_transient( 'holvek_oauth_state_' . $state );
+		$stored = get_transient( 'quinrel_oauth_state_' . $state );
 
 		$this->assertIsArray( $stored );
 		$verifier = (string) $stored['code_verifier'];
@@ -291,7 +292,7 @@ class SocialAccountAccessTest extends TestCase {
 		$this->assertNotSame( 'challenge', $query['code_challenge'] );
 		$this->assertSame( $this->s256( $verifier ), $query['code_challenge'] );
 		$this->assertSame(
-			'https://example.com/wp-json/holvek/v1/social/oauth-callback?network=twitter',
+			'https://example.com/wp-json/quinrel/v1/social/oauth-callback?network=twitter',
 			$query['redirect_uri']
 		);
 	}
@@ -304,7 +305,7 @@ class SocialAccountAccessTest extends TestCase {
 
 		$module = $this->module();
 		$init   = $module->initOAuth( $this->networkRequest( 'twitter' ) )->get_data();
-		$state  = get_transient( 'holvek_oauth_state_' . $init['state'] );
+		$state  = get_transient( 'quinrel_oauth_state_' . $init['state'] );
 		$query  = $this->query( $init['auth_url'] );
 
 		$location = $this->captureRedirect(
@@ -316,7 +317,7 @@ class SocialAccountAccessTest extends TestCase {
 		$this->assertStringStartsWith( 'https://example.com/wp-admin/admin.php?', $location );
 		$this->assertStringContainsString( '#/social', $location );
 		$this->assertStringNotContainsString( 'oauth_error', $location );
-		$this->assertFalse( get_transient( 'holvek_oauth_state_' . $init['state'] ) );
+		$this->assertFalse( get_transient( 'quinrel_oauth_state_' . $init['state'] ) );
 
 		$calls = $this->httpCalls( 'POST', 'https://api.twitter.com/2/oauth2/token' );
 		$this->assertCount( 1, $calls );
@@ -345,7 +346,7 @@ class SocialAccountAccessTest extends TestCase {
 				'data' => array(
 					array(
 						'access_token' => 'page-token-secret',
-						'name'         => 'Holvek Page',
+						'name'         => 'Quinrel Page',
 					),
 				),
 			)
@@ -381,7 +382,7 @@ class SocialAccountAccessTest extends TestCase {
 		$this->assertStringNotContainsString( 'user-token-secret', $pageCalls[0]['url'] );
 
 		$stored = ( new SocialAccountManager() )->getAccounts();
-		$this->assertSame( 'Holvek Page', $stored[0]['profile_name'] );
+		$this->assertSame( 'Quinrel Page', $stored[0]['profile_name'] );
 		$this->assertSame( 'page-token-secret', KeyVault::decrypt( $stored[0]['access_token'] ) );
 	}
 
@@ -484,12 +485,12 @@ class SocialAccountAccessTest extends TestCase {
 	}
 
 	private function configureApp( string $network, string $appId, string $secret ): void {
-		$apps              = get_option( 'holvek_social_apps', array() );
+		$apps              = get_option( 'quinrel_social_apps', array() );
 		$apps[ $network ]  = array(
 			'app_id'     => $appId,
 			'app_secret' => $secret,
 		);
-		update_option( 'holvek_social_apps', $apps );
+		update_option( 'quinrel_social_apps', $apps );
 	}
 
 	private function networkRequest( string $network ): \WP_REST_Request {
@@ -551,6 +552,7 @@ class SocialAccountAccessTest extends TestCase {
 		$this->assertStringNotContainsString( self::PLAINTEXT_TOKEN, $encoded );
 		$this->assertStringNotContainsString( 'aew_enc::', $encoded );
 		$this->assertStringNotContainsString( 'holvek_enc::', $encoded );
+		$this->assertStringNotContainsString( 'quinrel_enc::', $encoded );
 		$this->assertStringNotContainsString( 'second-secret-token', $encoded );
 		$this->assertStringNotContainsString( 'replacement-token-must-not-stick', $encoded );
 		foreach ( $accounts as $account ) {

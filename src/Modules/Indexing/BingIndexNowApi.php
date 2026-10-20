@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Indexing;
+namespace Quinrel\WordPress\Modules\Indexing;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Queue\QueueManager;
+use Quinrel\WordPress\Core\Queue\QueueManager;
 
 /**
  * Submits URLs to IndexNow (Bing, Yandex, Seznam, and the shared hub).
@@ -14,20 +14,20 @@ use Holvek\WordPress\Core\Queue\QueueManager;
  * The verification file is the site path plus /{key}.txt, so a subdirectory
  * install and a query string still resolve. Publishing only queues URLs.
  * A cron callback sends them in small batches, and only after an
- * administrator has turned IndexNow on and saved a key. Holvek does not
+ * administrator has turned IndexNow on and saved a key. Quinrel does not
  * create a key.
  */
 class BingIndexNowApi {
 
-	public const FLUSH_HOOK    = 'holvek_indexnow_flush';
-	public const QUEUE_OPTION  = 'holvek_indexnow_queue';
-	public const FLUSH_PENDING = 'holvek_indexnow_flush_pending';
+	public const FLUSH_HOOK    = 'quinrel_indexnow_flush';
+	public const QUEUE_OPTION  = 'quinrel_indexnow_queue';
+	public const FLUSH_PENDING = 'quinrel_indexnow_flush_pending';
 	public const BATCH_SIZE    = 10;
 	public const QUEUE_MAX     = 100;
 
-	private const LOG_OPTION       = 'holvek_indexnow_log';
+	private const LOG_OPTION       = 'quinrel_indexnow_log';
 	private const LOG_MAX          = 100;
-	private const KEY_OPTION       = 'holvek_indexnow_key';
+	private const KEY_OPTION       = 'quinrel_indexnow_key';
 	private const DEFAULT_ENDPOINT = 'https://api.indexnow.org/indexnow';
 
 	/**
@@ -83,7 +83,7 @@ class BingIndexNowApi {
 	}
 
 	private function getEndpoint(): string {
-		$configured = get_option( 'holvek_indexnow_endpoint', self::DEFAULT_ENDPOINT );
+		$configured = get_option( 'quinrel_indexnow_endpoint', self::DEFAULT_ENDPOINT );
 		if ( ! is_string( $configured ) ) {
 			return self::DEFAULT_ENDPOINT;
 		}
@@ -151,7 +151,7 @@ class BingIndexNowApi {
 			return;
 		}
 
-		if ( 'yes' === get_post_meta( $post->ID, '_holvek_noindex', true ) ) {
+		if ( 'yes' === get_post_meta( $post->ID, '_quinrel_noindex', true ) ) {
 			return;
 		}
 
@@ -167,7 +167,7 @@ class BingIndexNowApi {
 	 * IndexNow is on only when an administrator enabled it and saved a valid key.
 	 */
 	public function isEnabled(): bool {
-		return 'yes' === get_option( 'holvek_auto_index', 'no' ) && '' !== $this->storedKey();
+		return 'yes' === get_option( 'quinrel_auto_index', 'no' ) && '' !== $this->storedKey();
 	}
 
 	public function storedKey(): string {
@@ -354,7 +354,7 @@ class BingIndexNowApi {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/indexing/indexnow-log',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -364,7 +364,7 @@ class BingIndexNowApi {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/indexing/indexnow-submit',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -378,7 +378,7 @@ class BingIndexNowApi {
 		if ( ! $this->isEnabled() ) {
 			return new \WP_Error(
 				'indexnow_disabled',
-				__( 'Turn on IndexNow and save a key before submitting a URL. Holvek does not create a key.', 'holvek' ),
+				__( 'Turn on IndexNow and save a key before submitting a URL. Quinrel does not create a key.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -396,7 +396,7 @@ class BingIndexNowApi {
 		if ( '' === $url || ! $this->enqueueUrl( $url ) ) {
 			return new \WP_Error(
 				'indexnow_not_queued',
-				__( 'Provide a URL on this site, or a post ID.', 'holvek' ),
+				__( 'Provide a URL on this site, or a post ID.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}

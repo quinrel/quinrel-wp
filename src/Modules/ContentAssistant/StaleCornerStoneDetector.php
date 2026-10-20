@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ContentAssistant;
+namespace Quinrel\WordPress\Modules\ContentAssistant;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,17 +17,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class StaleCornerStoneDetector {
 
-	private const STALE_IDS_OPTION     = 'holvek_stale_cornerstone_ids';
-	private const THRESHOLD_OPTION     = 'holvek_cornerstone_stale_days';
-	private const DISMISSED_OPTION     = 'holvek_cornerstone_notice_dismissed';
-	private const CRON_HOOK            = 'holvek_cornerstone_staleness_check';
-	private const CORNERSTONE_META_KEY = '_holvek_is_cornerstone';
+	private const STALE_IDS_OPTION     = 'quinrel_stale_cornerstone_ids';
+	private const THRESHOLD_OPTION     = 'quinrel_cornerstone_stale_days';
+	private const DISMISSED_OPTION     = 'quinrel_cornerstone_notice_dismissed';
+	private const CRON_HOOK            = 'quinrel_cornerstone_staleness_check';
+	private const CORNERSTONE_META_KEY = '_quinrel_is_cornerstone';
 
 	public function register(): void {
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
 		add_action( 'admin_notices', array( $this, 'showAdminNotice' ) );
 		add_action( self::CRON_HOOK, array( $this, 'checkStaleness' ) );
-		add_action( 'wp_ajax_holvek_dismiss_cornerstone_notice', array( $this, 'dismissNotice' ) );
+		add_action( 'wp_ajax_quinrel_dismiss_cornerstone_notice', array( $this, 'dismissNotice' ) );
 	}
 
 	/**
@@ -87,26 +87,26 @@ class StaleCornerStoneDetector {
 
 	private function sendStaleEmail( array $postIds ): void {
 		$adminEmail = get_option( 'admin_email' );
-		$subject    = '[Holvek] Cornerstone Content Needs Refresh';
+		$subject    = '[Quinrel] Cornerstone Content Needs Refresh';
 		$body       = "<h2>Stale Cornerstone Content Alert</h2><p>The following cornerstone posts haven't been updated recently:</p><ul>";
 
 		foreach ( $postIds as $id ) {
 			$body .= '<li><a href="' . esc_url( get_edit_post_link( $id ) ) . '">' . esc_html( get_the_title( $id ) ) . '</a> (last modified: ' . get_the_modified_date( 'Y-m-d', $id ) . ')</li>';
 		}
 
-		$body .= '</ul><p><a href="' . esc_url( admin_url( 'admin.php?page=holvek' ) ) . '">Open Holvek Dashboard →</a></p>';
+		$body .= '</ul><p><a href="' . esc_url( admin_url( 'admin.php?page=quinrel' ) ) . '">Open Quinrel Dashboard →</a></p>';
 
 		wp_mail( $adminEmail, $subject, $body, array( 'Content-Type: text/html; charset=UTF-8' ) );
 	}
 
 	// ── Admin notice ──────────────────────────────────────────────────────────
 
-	private function isHolvekScreen(): bool {
+	private function isQuinrelScreen(): bool {
 		if ( ! function_exists( 'get_current_screen' ) ) {
 			return false;
 		}
 		$screen = get_current_screen();
-		return is_object( $screen ) && isset( $screen->id ) && str_contains( (string) $screen->id, 'holvek' );
+		return is_object( $screen ) && isset( $screen->id ) && str_contains( (string) $screen->id, 'quinrel' );
 	}
 
 	public function showAdminNotice(): void {
@@ -116,22 +116,22 @@ class StaleCornerStoneDetector {
 		}
 
 		$dismissed = (bool) get_user_meta( get_current_user_id(), self::DISMISSED_OPTION, true );
-		if ( $dismissed || ! $this->isHolvekScreen() ) {
+		if ( $dismissed || ! $this->isQuinrelScreen() ) {
 			return;
 		}
 
 		$count = count( $stale );
-		$nonce = wp_create_nonce( 'holvek_dismiss_cornerstone' );
-		echo '<div class="notice notice-warning is-dismissible holvek-cornerstone-notice" data-nonce="' . esc_attr( $nonce ) . '">';
+		$nonce = wp_create_nonce( 'quinrel_dismiss_cornerstone' );
+		echo '<div class="notice notice-warning is-dismissible quinrel-cornerstone-notice" data-nonce="' . esc_attr( $nonce ) . '">';
 		echo '<p>';
 		printf(
 			wp_kses(
 				/* translators: 1: number of stale cornerstone posts, 2: review URL. */
 				_n(
-					'Holvek: %1$d cornerstone post is stale. <a href="%2$s">Review and refresh</a>',
-					'Holvek: %1$d cornerstone posts are stale. <a href="%2$s">Review and refresh</a>',
+					'Quinrel: %1$d cornerstone post is stale. <a href="%2$s">Review and refresh</a>',
+					'Quinrel: %1$d cornerstone posts are stale. <a href="%2$s">Review and refresh</a>',
 					$count,
-					'holvek'
+					'quinrel'
 				),
 				array(
 					'a' => array(
@@ -140,7 +140,7 @@ class StaleCornerStoneDetector {
 				)
 			),
 			(int) $count,
-			esc_url( admin_url( 'admin.php?page=holvek#cornerstone' ) )
+			esc_url( admin_url( 'admin.php?page=quinrel#cornerstone' ) )
 		);
 		echo '</p>';
 		echo '</div>';
@@ -148,12 +148,12 @@ class StaleCornerStoneDetector {
 		// Inline JS to handle dismissal
 		echo '<script>
         document.addEventListener("DOMContentLoaded", function() {
-            var el = document.querySelector(".holvek-cornerstone-notice");
+            var el = document.querySelector(".quinrel-cornerstone-notice");
             if (!el) return;
             el.addEventListener("click", function(e) {
                 if (e.target.classList.contains("notice-dismiss")) {
                     fetch(ajaxurl, { method: "POST", headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                        body: "action=holvek_dismiss_cornerstone_notice&_ajax_nonce=" + el.dataset.nonce });
+                        body: "action=quinrel_dismiss_cornerstone_notice&_ajax_nonce=" + el.dataset.nonce });
                 }
             });
         });
@@ -161,7 +161,7 @@ class StaleCornerStoneDetector {
 	}
 
 	public function dismissNotice(): void {
-		check_ajax_referer( 'holvek_dismiss_cornerstone' );
+		check_ajax_referer( 'quinrel_dismiss_cornerstone' );
 		update_user_meta( get_current_user_id(), self::DISMISSED_OPTION, true );
 		wp_die();
 	}
@@ -173,7 +173,7 @@ class StaleCornerStoneDetector {
 		$adminCap  = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/content/stale-cornerstone',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -183,7 +183,7 @@ class StaleCornerStoneDetector {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/content/stale-cornerstone/mark-refreshed',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -193,7 +193,7 @@ class StaleCornerStoneDetector {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/cornerstone-stale-threshold',
 			array(
 				array(
@@ -252,7 +252,7 @@ class StaleCornerStoneDetector {
 		$postId = absint( $params['post_id'] ?? 0 );
 
 		if ( ! $postId || ! get_post( $postId ) ) {
-			return new \WP_Error( 'not_found', __( 'Post not found.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'not_found', __( 'Post not found.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		// Touch the post modified date

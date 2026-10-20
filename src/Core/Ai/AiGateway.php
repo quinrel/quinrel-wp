@@ -1,14 +1,14 @@
 <?php
 
-namespace Holvek\WordPress\Core\Ai;
+namespace Quinrel\WordPress\Core\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Security\KeyVault;
-use Holvek\WordPress\Core\Api\BackendApiClient;
-use Holvek\WordPress\Modules\Ai\UsageMeteringManager;
+use Quinrel\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Core\Api\BackendApiClient;
+use Quinrel\WordPress\Modules\Ai\UsageMeteringManager;
 
 class AiGateway {
 
@@ -50,7 +50,7 @@ class AiGateway {
 			);
 
 			if ( is_wp_error( $remoteResult ) ) {
-				if ( 'holvek_not_connected' !== $remoteResult->get_error_code() ) {
+				if ( 'quinrel_not_connected' !== $remoteResult->get_error_code() ) {
 					return array(
 						'success' => false,
 						'message' => $remoteResult->get_error_message(),
@@ -67,9 +67,9 @@ class AiGateway {
 		}
 
 		// 2. BYOK (Bring Your Own Key) Fallback Mode
-		$provider = get_option( 'holvek_ai_provider' );
+		$provider = get_option( 'quinrel_ai_provider' );
 		if ( ! $provider ) {
-			$provider = get_option( 'holvek_ai_provider', 'openai' );
+			$provider = get_option( 'quinrel_ai_provider', 'openai' );
 		}
 
 		$userId   = get_current_user_id();
@@ -77,7 +77,7 @@ class AiGateway {
 		if ( $userId && $metering && ! $metering->checkLimit( $userId, $provider ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'AI token usage limit exceeded for this billing cycle.', 'holvek' ),
+				'message' => __( 'AI token usage limit exceeded for this billing cycle.', 'quinrel' ),
 			);
 		}
 
@@ -87,7 +87,7 @@ class AiGateway {
 			'ollama'    => $this->queryOllama( $prompt, $systemPrompt ),
 			default     => array(
 				'success' => false,
-				'message' => __( 'Invalid AI provider selected.', 'holvek' ),
+				'message' => __( 'Invalid AI provider selected.', 'quinrel' ),
 			),
 		};
 
@@ -103,28 +103,28 @@ class AiGateway {
 	 * Query OpenAI Chat Completions API.
 	 */
 	private function queryOpenAi( string $prompt, string $systemPrompt ): array {
-		$encryptedKey = get_option( 'holvek_openai_key', '' );
+		$encryptedKey = get_option( 'quinrel_openai_key', '' );
 		if ( empty( $encryptedKey ) ) {
-			$encryptedKey = get_option( 'holvek_openai_api_key', '' );
+			$encryptedKey = get_option( 'quinrel_openai_api_key', '' );
 		}
 		if ( empty( $encryptedKey ) ) {
-			$encryptedKey = get_option( 'holvek_openai_key', '' );
+			$encryptedKey = get_option( 'quinrel_openai_key', '' );
 		}
 		if ( empty( $encryptedKey ) ) {
-			$encryptedKey = get_option( 'holvek_openai_api_key', '' );
+			$encryptedKey = get_option( 'quinrel_openai_api_key', '' );
 		}
 		$apiKey = KeyVault::decrypt( $encryptedKey );
 
 		if ( empty( $apiKey ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'OpenAI API key is missing or not configured.', 'holvek' ),
+				'message' => __( 'OpenAI API key is missing or not configured.', 'quinrel' ),
 			);
 		}
 
-		$model = get_option( 'holvek_openai_model' );
+		$model = get_option( 'quinrel_openai_model' );
 		if ( ! $model ) {
-			$model = get_option( 'holvek_openai_model', 'gpt-4o-mini' );
+			$model = get_option( 'quinrel_openai_model', 'gpt-4o-mini' );
 		}
 
 		$url  = 'https://api.openai.com/v1/chat/completions';
@@ -168,7 +168,7 @@ class AiGateway {
 		$data         = json_decode( $responseBody, true );
 
 		if ( $responseCode !== 200 ) {
-			$errMsg = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'OpenAI API Error.', 'holvek' );
+			$errMsg = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'OpenAI API Error.', 'quinrel' );
 			return array(
 				'success' => false,
 				'message' => $errMsg,
@@ -186,28 +186,28 @@ class AiGateway {
 	 * Query Anthropic Messages API.
 	 */
 	private function queryAnthropic( string $prompt, string $systemPrompt ): array {
-		$encryptedKey = get_option( 'holvek_anthropic_key', '' );
+		$encryptedKey = get_option( 'quinrel_anthropic_key', '' );
 		if ( empty( $encryptedKey ) ) {
-			$encryptedKey = get_option( 'holvek_anthropic_api_key', '' );
+			$encryptedKey = get_option( 'quinrel_anthropic_api_key', '' );
 		}
 		if ( empty( $encryptedKey ) ) {
-			$encryptedKey = get_option( 'holvek_anthropic_key', '' );
+			$encryptedKey = get_option( 'quinrel_anthropic_key', '' );
 		}
 		if ( empty( $encryptedKey ) ) {
-			$encryptedKey = get_option( 'holvek_anthropic_api_key', '' );
+			$encryptedKey = get_option( 'quinrel_anthropic_api_key', '' );
 		}
 		$apiKey = KeyVault::decrypt( $encryptedKey );
 
 		if ( empty( $apiKey ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Anthropic API key is missing or not configured.', 'holvek' ),
+				'message' => __( 'Anthropic API key is missing or not configured.', 'quinrel' ),
 			);
 		}
 
-		$model = get_option( 'holvek_anthropic_model' );
+		$model = get_option( 'quinrel_anthropic_model' );
 		if ( ! $model ) {
-			$model = get_option( 'holvek_anthropic_model', 'claude-3-5-sonnet-20241022' );
+			$model = get_option( 'quinrel_anthropic_model', 'claude-3-5-sonnet-20241022' );
 		}
 
 		$url  = 'https://api.anthropic.com/v1/messages';
@@ -249,7 +249,7 @@ class AiGateway {
 		$data         = json_decode( $responseBody, true );
 
 		if ( $responseCode !== 200 ) {
-			$errMsg = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'Anthropic API Error.', 'holvek' );
+			$errMsg = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'Anthropic API Error.', 'quinrel' );
 			return array(
 				'success' => false,
 				'message' => $errMsg,
@@ -271,7 +271,7 @@ class AiGateway {
 		if ( null === $ollamaUrl ) {
 			return array(
 				'success' => false,
-				'message' => __( 'The Ollama address must be an http or https host. A remote host has to be confirmed because it receives post content.', 'holvek' ),
+				'message' => __( 'The Ollama address must be an http or https host. A remote host has to be confirmed because it receives post content.', 'quinrel' ),
 			);
 		}
 
@@ -308,7 +308,7 @@ class AiGateway {
 		if ( is_wp_error( $response ) ) {
 			return array(
 				'success' => false,
-				'message' => sprintf( /* translators: %s: Error message */ __( 'Ollama Connection Error: %s', 'holvek' ), $response->get_error_message() ),
+				'message' => sprintf( /* translators: %s: Error message */ __( 'Ollama Connection Error: %s', 'quinrel' ), $response->get_error_message() ),
 			);
 		}
 
@@ -319,7 +319,7 @@ class AiGateway {
 		if ( $responseCode !== 200 ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Ollama local instance returned an error.', 'holvek' ),
+				'message' => __( 'Ollama local instance returned an error.', 'quinrel' ),
 			);
 		}
 

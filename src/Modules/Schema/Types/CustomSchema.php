@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema\Types;
+namespace Quinrel\WordPress\Modules\Schema\Types;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Modules\Schema\JsonLd;
+use Quinrel\WordPress\Modules\Schema\JsonLd;
 
 /**
  * Generates custom point-and-click schemas (Product, FAQ, HowTo, LocalBusiness, Recipe, Event)
@@ -23,7 +23,7 @@ class CustomSchema {
 			return false;
 		}
 
-		$schemaType = \Holvek\WordPress\Modules\Schema\SchemaGenerator::getEffectivePrimarySchema( $id );
+		$schemaType = \Quinrel\WordPress\Modules\Schema\SchemaGenerator::getEffectivePrimarySchema( $id );
 		return ! empty( $schemaType ) && $schemaType !== 'none';
 	}
 
@@ -36,7 +36,7 @@ class CustomSchema {
 			return array();
 		}
 
-		$schemaType = \Holvek\WordPress\Modules\Schema\SchemaGenerator::getEffectivePrimarySchema( $id );
+		$schemaType = \Quinrel\WordPress\Modules\Schema\SchemaGenerator::getEffectivePrimarySchema( $id );
 		$schema     = array();
 
 		switch ( $schemaType ) {
@@ -88,12 +88,12 @@ class CustomSchema {
 			return array();
 		}
 
-		$name     = $this->textValue( get_post_meta( $postId, '_holvek_schema_product_name', true ), get_the_title( $postId ) );
-		$desc     = $this->textValue( get_post_meta( $postId, '_holvek_schema_product_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
-		$price    = $this->textValue( get_post_meta( $postId, '_holvek_schema_product_price', true ) );
-		$currency = $this->textValue( get_post_meta( $postId, '_holvek_schema_product_currency', true ), 'USD' );
-		$rating   = $this->textValue( get_post_meta( $postId, '_holvek_schema_product_rating', true ) );
-		$stock    = $this->textValue( get_post_meta( $postId, '_holvek_schema_product_availability', true ), 'InStock' );
+		$name     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_product_name', true ), get_the_title( $postId ) );
+		$desc     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_product_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$price    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_product_price', true ) );
+		$currency = $this->textValue( get_post_meta( $postId, '_quinrel_schema_product_currency', true ), 'USD' );
+		$rating   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_product_rating', true ) );
+		$stock    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_product_availability', true ), 'InStock' );
 
 		if ( $name === '' || ( $price === '' && $rating === '' ) ) {
 			return array();
@@ -143,14 +143,14 @@ class CustomSchema {
 		}
 
 		$active = class_exists( '\WC_Product' ) || function_exists( 'wc_get_product' );
-		return (bool) apply_filters( 'holvek_woocommerce_owns_product_schema', $active, $postId );
+		return (bool) apply_filters( 'quinrel_woocommerce_owns_product_schema', $active, $postId );
 	}
 
 	/**
 	 * FAQ Schema.
 	 */
 	private function generateFaqSchema( int $postId ): array {
-		$faqsJson = get_post_meta( $postId, '_holvek_schema_faq_questions', true );
+		$faqsJson = get_post_meta( $postId, '_quinrel_schema_faq_questions', true );
 		$faqs     = ! empty( $faqsJson ) ? json_decode( $faqsJson, true ) : array();
 
 		if ( empty( $faqs ) || ! is_array( $faqs ) ) {
@@ -187,17 +187,17 @@ class CustomSchema {
 	 * HowTo Schema.
 	 */
 	private function generateHowToSchema( int $postId ): array {
-		$name = $this->textValue( get_post_meta( $postId, '_holvek_schema_howto_name', true ), get_the_title( $postId ) );
-		$desc = $this->textValue( get_post_meta( $postId, '_holvek_schema_howto_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$name = $this->textValue( get_post_meta( $postId, '_quinrel_schema_howto_name', true ), get_the_title( $postId ) );
+		$desc = $this->textValue( get_post_meta( $postId, '_quinrel_schema_howto_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
 		if ( $name === '' ) {
 			return array();
 		}
 
-		$stepsJson = get_post_meta( $postId, '_holvek_schema_howto_steps', true );
+		$stepsJson = get_post_meta( $postId, '_quinrel_schema_howto_steps', true );
 		$steps     = ! empty( $stepsJson ) ? json_decode( $stepsJson, true ) : array();
 
-		$suppliesText = get_post_meta( $postId, '_holvek_schema_howto_supplies', true );
-		$toolsText    = get_post_meta( $postId, '_holvek_schema_howto_tools', true );
+		$suppliesText = get_post_meta( $postId, '_quinrel_schema_howto_supplies', true );
+		$toolsText    = get_post_meta( $postId, '_quinrel_schema_howto_tools', true );
 
 		$schema = array(
 			'@type' => 'HowTo',
@@ -244,12 +244,12 @@ class CustomSchema {
 	 * LocalBusiness Schema.
 	 */
 	private function generateLocalBusinessSchema( int $postId ): array {
-		$name      = $this->textValue( get_post_meta( $postId, '_holvek_schema_localbusiness_name', true ), get_bloginfo( 'name' ) );
-		$telephone = $this->textValue( get_post_meta( $postId, '_holvek_schema_localbusiness_telephone', true ) );
-		$street    = $this->textValue( get_post_meta( $postId, '_holvek_schema_localbusiness_street', true ) );
-		$city      = $this->textValue( get_post_meta( $postId, '_holvek_schema_localbusiness_city', true ) );
-		$postal    = $this->textValue( get_post_meta( $postId, '_holvek_schema_localbusiness_postal', true ) );
-		$country   = $this->textValue( get_post_meta( $postId, '_holvek_schema_localbusiness_country', true ) );
+		$name      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_localbusiness_name', true ), get_bloginfo( 'name' ) );
+		$telephone = $this->textValue( get_post_meta( $postId, '_quinrel_schema_localbusiness_telephone', true ) );
+		$street    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_localbusiness_street', true ) );
+		$city      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_localbusiness_city', true ) );
+		$postal    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_localbusiness_postal', true ) );
+		$country   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_localbusiness_country', true ) );
 
 		if ( $name === '' || ( $street === '' && $city === '' ) ) {
 			return array();
@@ -281,14 +281,14 @@ class CustomSchema {
 	 * Recipe Schema.
 	 */
 	private function generateRecipeSchema( int $postId ): array {
-		$name  = $this->textValue( get_post_meta( $postId, '_holvek_schema_recipe_name', true ), get_the_title( $postId ) );
-		$desc  = $this->textValue( get_post_meta( $postId, '_holvek_schema_recipe_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$name  = $this->textValue( get_post_meta( $postId, '_quinrel_schema_recipe_name', true ), get_the_title( $postId ) );
+		$desc  = $this->textValue( get_post_meta( $postId, '_quinrel_schema_recipe_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
 		$image = $this->thumbnailUrl( $postId );
 		if ( $name === '' || $image === '' ) {
 			return array();
 		}
 
-		$ingredientsText = get_post_meta( $postId, '_holvek_schema_recipe_ingredients', true );
+		$ingredientsText = get_post_meta( $postId, '_quinrel_schema_recipe_ingredients', true );
 		$ingredients     = array();
 		if ( ! empty( $ingredientsText ) ) {
 			// Can be JSON or comma-separated
@@ -308,12 +308,12 @@ class CustomSchema {
 			)
 		);
 
-		$instructionsJson = get_post_meta( $postId, '_holvek_schema_recipe_instructions', true );
+		$instructionsJson = get_post_meta( $postId, '_quinrel_schema_recipe_instructions', true );
 		$instructions     = ! empty( $instructionsJson ) ? json_decode( $instructionsJson, true ) : array();
 
-		$prepTimeRaw = get_post_meta( $postId, '_holvek_schema_recipe_prep_time', true );
-		$cookTimeRaw = get_post_meta( $postId, '_holvek_schema_recipe_cook_time', true );
-		$calories    = get_post_meta( $postId, '_holvek_schema_recipe_calories', true );
+		$prepTimeRaw = get_post_meta( $postId, '_quinrel_schema_recipe_prep_time', true );
+		$cookTimeRaw = get_post_meta( $postId, '_quinrel_schema_recipe_cook_time', true );
+		$calories    = get_post_meta( $postId, '_quinrel_schema_recipe_calories', true );
 
 		$schema = array(
 			'@type' => 'Recipe',
@@ -369,14 +369,14 @@ class CustomSchema {
 	 * Event Schema.
 	 */
 	private function generateEventSchema( int $postId ): array {
-		$name          = $this->textValue( get_post_meta( $postId, '_holvek_schema_event_name', true ), get_the_title( $postId ) );
-		$startDate     = $this->textValue( get_post_meta( $postId, '_holvek_schema_event_start_date', true ) );
-		$endDate       = $this->textValue( get_post_meta( $postId, '_holvek_schema_event_end_date', true ) );
-		$venue         = $this->textValue( get_post_meta( $postId, '_holvek_schema_event_venue', true ), 'Online' );
-		$address       = $this->textValue( get_post_meta( $postId, '_holvek_schema_event_address', true ) );
-		$performerName = $this->textValue( get_post_meta( $postId, '_holvek_schema_event_performer', true ) );
-		$price         = $this->textValue( get_post_meta( $postId, '_holvek_schema_event_price', true ) );
-		$currency      = $this->textValue( get_post_meta( $postId, '_holvek_schema_event_currency', true ), 'USD' );
+		$name          = $this->textValue( get_post_meta( $postId, '_quinrel_schema_event_name', true ), get_the_title( $postId ) );
+		$startDate     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_event_start_date', true ) );
+		$endDate       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_event_end_date', true ) );
+		$venue         = $this->textValue( get_post_meta( $postId, '_quinrel_schema_event_venue', true ), 'Online' );
+		$address       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_event_address', true ) );
+		$performerName = $this->textValue( get_post_meta( $postId, '_quinrel_schema_event_performer', true ) );
+		$price         = $this->textValue( get_post_meta( $postId, '_quinrel_schema_event_price', true ) );
+		$currency      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_event_currency', true ), 'USD' );
 
 		if ( $name === '' || $startDate === '' ) {
 			return array();
@@ -548,7 +548,7 @@ class CustomSchema {
 	 * @return array<string, mixed>|null
 	 */
 	private function parsedCustomJson( int $postId ): ?array {
-		$raw = get_post_meta( $postId, '_holvek_custom_schema_properties', true );
+		$raw = get_post_meta( $postId, '_quinrel_custom_schema_properties', true );
 		if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
 			return null;
 		}
@@ -562,7 +562,7 @@ class CustomSchema {
 	}
 
 	private function customType( int $postId ): string {
-		$type = get_post_meta( $postId, '_holvek_schema_custom_type', true );
+		$type = get_post_meta( $postId, '_quinrel_schema_custom_type', true );
 		if ( ! JsonLd::isSchemaType( $type ) ) {
 			return 'Thing';
 		}

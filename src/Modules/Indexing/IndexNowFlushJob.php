@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Indexing;
+namespace Quinrel\WordPress\Modules\Indexing;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

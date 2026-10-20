@@ -1,13 +1,13 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Adds Holvek rules to the robots.txt document WordPress and other plugins built.
+ * Adds Quinrel rules to the robots.txt document WordPress and other plugins built.
  * A saved document replaces that file only after an administrator confirms it.
  *
  * BL-010: Editable custom AI bot list (merged with built-in AI_BOTS at runtime).
@@ -15,10 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class RobotsTxtEditor {
 
-	private const OPTION_KEY           = 'holvek_robots_txt';
-	private const REPLACE_OPTION       = 'holvek_robots_txt_replaces_generated';
-	private const CUSTOM_BOTS_OPTION   = 'holvek_custom_ai_bots';
-	private const TRAINING_OPT_OUT_OPT = 'holvek_ai_training_optout';
+	private const OPTION_KEY           = 'quinrel_robots_txt';
+	private const REPLACE_OPTION       = 'quinrel_robots_txt_replaces_generated';
+	private const CUSTOM_BOTS_OPTION   = 'quinrel_custom_ai_bots';
+	private const TRAINING_OPT_OUT_OPT = 'quinrel_ai_training_optout';
 	private const MAX_ROBOTS_BYTES     = 100000;
 
 	// List of major AI scraper/crawler User-Agents (built-in, always applied)
@@ -53,7 +53,7 @@ class RobotsTxtEditor {
 		$adminCap = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/robots-txt',
 			array(
 				array(
@@ -71,7 +71,7 @@ class RobotsTxtEditor {
 
 		// BL-010: Editable AI bot list
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/ai-bots',
 			array(
 				array(
@@ -89,7 +89,7 @@ class RobotsTxtEditor {
 
 		// BL-032: Training data opt-out toggle
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/ai-training-optout',
 			array(
 				array(
@@ -171,7 +171,7 @@ class RobotsTxtEditor {
 			array(
 				'content'           => (string) get_option( self::OPTION_KEY, '' ),
 				'replace_generated' => $this->replacesGeneratedFile(),
-				'block_ai_bots'     => get_option( 'holvek_block_ai_bots', 'no' ) === 'yes',
+				'block_ai_bots'     => get_option( 'quinrel_block_ai_bots', 'no' ) === 'yes',
 				'training_optout'   => get_option( self::TRAINING_OPT_OUT_OPT, 'no' ) === 'yes',
 			)
 		);
@@ -195,7 +195,7 @@ class RobotsTxtEditor {
 		if ( $hasContent && ! is_string( $params['content'] ) ) {
 			return new \WP_Error(
 				'invalid_robots_txt',
-				__( 'robots.txt content must be text.', 'holvek' ),
+				__( 'robots.txt content must be text.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -207,7 +207,7 @@ class RobotsTxtEditor {
 		if ( strlen( $nextContent ) > self::MAX_ROBOTS_BYTES ) {
 			return new \WP_Error(
 				'invalid_robots_txt',
-				__( 'robots.txt is too large.', 'holvek' ),
+				__( 'robots.txt is too large.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -220,7 +220,7 @@ class RobotsTxtEditor {
 		if ( $replace && '' === trim( $nextContent ) ) {
 			return new \WP_Error(
 				'robots_replace_empty',
-				__( 'Add robots.txt rules before replacing the generated file.', 'holvek' ),
+				__( 'Add robots.txt rules before replacing the generated file.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -234,7 +234,7 @@ class RobotsTxtEditor {
 		}
 
 		if ( isset( $params['block_ai_bots'] ) ) {
-			update_option( 'holvek_block_ai_bots', ! empty( $params['block_ai_bots'] ) ? 'yes' : 'no', true );
+			update_option( 'quinrel_block_ai_bots', ! empty( $params['block_ai_bots'] ) ? 'yes' : 'no', true );
 		}
 
 		return rest_ensure_response(
@@ -251,7 +251,7 @@ class RobotsTxtEditor {
 		$replacing = $this->replacesGeneratedFile();
 		$document  = $replacing ? (string) get_option( self::OPTION_KEY, '' ) : $output;
 
-		return $this->appendHolvekRules( $document, $isPublic && ! $replacing );
+		return $this->appendQuinrelRules( $document, $isPublic && ! $replacing );
 	}
 
 	// ── BL-032: HTTP headers for training opt-out ─────────────────────────────
@@ -274,7 +274,7 @@ class RobotsTxtEditor {
 	 * Usage in MetaTagsGenerator::getMetaTags(): echo RobotsTxtEditor::getPerPostAiMeta(get_the_ID());
 	 */
 	public static function getPerPostAiMeta( int $postId ): string {
-		$allowAi = get_post_meta( $postId, '_holvek_ai_training_allow', true );
+		$allowAi = get_post_meta( $postId, '_quinrel_ai_training_allow', true );
 		if ( $allowAi === 'yes' ) {
 			return '<meta name="robots" content="ai">' . "\n";
 		}
@@ -289,7 +289,7 @@ class RobotsTxtEditor {
 			return;
 		}
 
-		if ( get_option( 'holvek_block_ai_bots', 'no' ) !== 'yes' ) {
+		if ( get_option( 'quinrel_block_ai_bots', 'no' ) !== 'yes' ) {
 			return;
 		}
 
@@ -343,16 +343,16 @@ class RobotsTxtEditor {
 
 		$title = sprintf(
 			/* translators: %s: site name. */
-			esc_html__( '403 Forbidden — %s', 'holvek' ),
+			esc_html__( '403 Forbidden — %s', 'quinrel' ),
 			$siteName
 		);
-		$heading = esc_html__( 'Access Denied', 'holvek' );
+		$heading = esc_html__( 'Access Denied', 'quinrel' );
 		$message = sprintf(
 			/* translators: %s: site name. */
-			esc_html__( 'Automated AI crawlers and scrapers are not permitted to access %s.', 'holvek' ),
+			esc_html__( 'Automated AI crawlers and scrapers are not permitted to access %s.', 'quinrel' ),
 			'<strong>' . $siteName . '</strong>'
 		);
-		$back    = esc_html__( 'Return to homepage', 'holvek' );
+		$back    = esc_html__( 'Return to homepage', 'quinrel' );
 		$htmlTag = '' === $lang ? '<html>' : '<html lang="' . esc_attr( $lang ) . '">';
 
 		return '<!DOCTYPE html>' . "\n"
@@ -386,12 +386,12 @@ class RobotsTxtEditor {
 	/**
 	 * Append sitemap, AI crawler, and training opt-out rules.
 	 */
-	private function appendHolvekRules( string $document, bool $includeSitemaps ): string {
+	private function appendQuinrelRules( string $document, bool $includeSitemaps ): string {
 		$blocks = array();
 
 		if ( $includeSitemaps ) {
 			$missing = array();
-			foreach ( $this->holvekSitemapLines() as $line ) {
+			foreach ( $this->quinrelSitemapLines() as $line ) {
 				if ( ! str_contains( $document, $line ) ) {
 					$missing[] = $line;
 				}
@@ -401,8 +401,8 @@ class RobotsTxtEditor {
 			}
 		}
 
-		if ( get_option( 'holvek_block_ai_bots', 'no' ) === 'yes' ) {
-			$lines   = array( '# Block AI Crawlers and LLM Bots (Holvek AI Crawler Manager)' );
+		if ( get_option( 'quinrel_block_ai_bots', 'no' ) === 'yes' ) {
+			$lines   = array( '# Block AI Crawlers and LLM Bots (Quinrel AI Crawler Manager)' );
 			$lines[] = '';
 			foreach ( $this->getMergedBotList() as $bot ) {
 				$lines[] = 'User-agent: ' . $bot;
@@ -413,7 +413,7 @@ class RobotsTxtEditor {
 		}
 
 		if ( get_option( self::TRAINING_OPT_OUT_OPT, 'no' ) === 'yes' ) {
-			$blocks[] = "# AI Training Data Opt-Out (Holvek)\nUser-agent: *\nNoAI: 1\nNoImageAI: 1";
+			$blocks[] = "# AI Training Data Opt-Out (Quinrel)\nUser-agent: *\nNoAI: 1\nNoImageAI: 1";
 		}
 
 		if ( array() === $blocks ) {
@@ -431,7 +431,7 @@ class RobotsTxtEditor {
 	/**
 	 * @return array<int, string>
 	 */
-	private function holvekSitemapLines(): array {
+	private function quinrelSitemapLines(): array {
 		$lines = array();
 
 		foreach ( array( '/sitemap.xml', '/news-sitemap.xml' ) as $path ) {

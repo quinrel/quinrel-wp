@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\Onboarding\SetupWizard;
+use Quinrel\WordPress\Modules\Onboarding\SetupWizard;
 use PHPUnit\Framework\TestCase;
 
 class AdminUxTest extends TestCase {
@@ -14,11 +14,11 @@ class AdminUxTest extends TestCase {
 			$GLOBALS['mock_user_meta'],
 			$GLOBALS['mock_flush_count']
 		);
-		unset( $GLOBALS['mock_wp_options']['holvek_setup_complete'] );
+		unset( $GLOBALS['mock_wp_options']['quinrel_setup_complete'] );
 		parent::tearDown();
 	}
 
-	public function testWelcomeNoticeIsOnHolvekScreensAndStaysDismissed(): void {
+	public function testWelcomeNoticeIsOnQuinrelScreensAndStaysDismissed(): void {
 		$wizard = new SetupWizard();
 		$GLOBALS['mock_user_caps'] = array(
 			'manage_seo'     => true,
@@ -27,13 +27,13 @@ class AdminUxTest extends TestCase {
 		$GLOBALS['mock_current_screen'] = (object) array( 'id' => 'dashboard' );
 		$this->assertSame( '', $this->capture( array( $wizard, 'showWelcomeNotice' ) ) );
 
-		$GLOBALS['mock_current_screen'] = (object) array( 'id' => 'toplevel_page_holvek' );
+		$GLOBALS['mock_current_screen'] = (object) array( 'id' => 'toplevel_page_quinrel' );
 		$html = $this->capture( array( $wizard, 'showWelcomeNotice' ) );
-		$this->assertStringContainsString( 'Welcome to Holvek', $html );
+		$this->assertStringContainsString( 'Welcome to Quinrel', $html );
 		$this->assertStringContainsString( 'is-dismissible', $html );
 		$this->assertStringNotContainsString( '🚀', $html );
 
-		$GLOBALS['mock_user_meta'][1]['holvek_setup_notice_dismissed'] = '1';
+		$GLOBALS['mock_user_meta'][1]['quinrel_setup_notice_dismissed'] = '1';
 		$this->assertSame( '', $this->capture( array( $wizard, 'showWelcomeNotice' ) ) );
 	}
 
@@ -45,9 +45,9 @@ class AdminUxTest extends TestCase {
 		$result = ( new SetupWizard() )->completeSetup( $request )->get_data();
 
 		$this->assertTrue( $result['skipped'] );
-		$this->assertTrue( (bool) get_option( 'holvek_setup_complete' ) );
+		$this->assertTrue( (bool) get_option( 'quinrel_setup_complete' ) );
 		$this->assertSame( 0, $GLOBALS['mock_flush_count'] );
-		$this->assertSame( '1', get_user_meta( 1, 'holvek_setup_notice_dismissed', true ) );
+		$this->assertSame( '1', get_user_meta( 1, 'quinrel_setup_notice_dismissed', true ) );
 	}
 
 	public function testActivationDoesNotRedirect(): void {

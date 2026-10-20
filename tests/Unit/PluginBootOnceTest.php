@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Plugin;
+use Quinrel\WordPress\Plugin;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -13,7 +13,7 @@ class PluginBootOnceTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		update_option( 'holvek_db_version', HOLVEK_VERSION );
+		update_option( 'quinrel_db_version', QUINREL_VERSION );
 		$GLOBALS['mock_hooks'] = array();
 
 		$instance = ( new ReflectionClass( Plugin::class ) )->getProperty( 'instance' );
@@ -38,29 +38,42 @@ class PluginBootOnceTest extends TestCase {
 		$this->assertSame( $once, $GLOBALS['mock_hooks'] );
 	}
 
-	public function testHolvekInitDoesNotRegisterHooksAgain(): void {
-		require_once dirname( __DIR__, 2 ) . '/holvek.php';
+	public function testQuinrelInitDoesNotRegisterHooksAgain(): void {
+		require_once dirname( __DIR__, 2 ) . '/quinrel.php';
 
-		holvek_init();
+		quinrel_init();
 		$once = $GLOBALS['mock_hooks'];
 		$this->assertGreaterThan( 10, count( $once ) );
 
-		holvek_init();
+		quinrel_init();
 
 		$this->assertSame( $once, $GLOBALS['mock_hooks'] );
 	}
 
 	public function testBootInstallsSchemaWhenStoredVersionIsBehind(): void {
 		$this->stubWordPressUpgrade();
-		update_option( 'holvek_db_version', '0' );
+		update_option( 'quinrel_db_version', '0' );
 		$GLOBALS['mock_db_delta'] = array();
 
 		Plugin::getInstance()->boot();
 
-		$this->assertSame( HOLVEK_VERSION, get_option( 'holvek_db_version' ) );
+		$this->assertSame( QUINREL_VERSION, get_option( 'quinrel_db_version' ) );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_db_version'] ?? false );
 		$created = implode( "\n", array_map( 'strval', $GLOBALS['mock_db_delta'] ) );
-		$this->assertStringContainsString( 'wp_holvek_redirects', $created );
-		$this->assertStringContainsString( 'wp_holvek_404_logs', $created );
+		foreach (
+			array(
+				'wp_quinrel_redirects',
+				'wp_quinrel_404_logs',
+				'wp_quinrel_sitemap_settings',
+				'wp_quinrel_links',
+				'wp_quinrel_ai_usage',
+				'wp_quinrel_audit_log',
+				'wp_quinrel_rank_history',
+				'wp_quinrel_broken_links',
+			) as $table
+		) {
+			$this->assertStringContainsString( $table, $created );
+		}
 	}
 
 	private function stubWordPressUpgrade(): void {

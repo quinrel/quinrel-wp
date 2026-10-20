@@ -1,16 +1,16 @@
 <?php
 
-namespace Holvek\WordPress\Core\Api;
+namespace Quinrel\WordPress\Core\Api;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Mode\OperatingMode;
-use Holvek\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Core\Mode\OperatingMode;
+use Quinrel\WordPress\Core\Security\KeyVault;
 
 /**
- * Site credential for api.holvek.com.
+ * Site credential for api.quinrel.com.
  *
  * Exchange, verify, rotate, and revoke run only when an administrator uses
  * the connection screen. A page view reads the stored result and does not
@@ -18,13 +18,13 @@ use Holvek\WordPress\Core\Security\KeyVault;
  */
 class CloudCredential {
 
-	public const API_KEY_OPTION      = 'holvek_api_key';
-	public const LICENSE_OPTION      = 'holvek_license_key';
-	public const VERIFICATION_OPTION = 'holvek_cloud_verification';
-	public const TIER_OPTION         = 'holvek_user_tier';
+	public const API_KEY_OPTION      = 'quinrel_api_key';
+	public const LICENSE_OPTION      = 'quinrel_license_key';
+	public const VERIFICATION_OPTION = 'quinrel_cloud_verification';
+	public const TIER_OPTION         = 'quinrel_user_tier';
 	public const TIMEOUT             = 10;
 
-	private const HOST = 'https://api.holvek.com';
+	private const HOST = 'https://api.quinrel.com';
 
 	/**
 	 * @var array<int, string>
@@ -35,7 +35,7 @@ class CloudCredential {
 		$permission = array( $this, 'canManage' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/connection',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -45,7 +45,7 @@ class CloudCredential {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/connection/site-token',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -55,7 +55,7 @@ class CloudCredential {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/connection/authorization-code',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -65,7 +65,7 @@ class CloudCredential {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/connection/verify',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -75,7 +75,7 @@ class CloudCredential {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/connection/rotate',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -85,7 +85,7 @@ class CloudCredential {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/connection/revoke',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -250,8 +250,8 @@ class CloudCredential {
 			delete_option( self::VERIFICATION_OPTION );
 			delete_option( self::TIER_OPTION );
 			return new \WP_Error(
-				'holvek_not_verified',
-				__( 'Holvek did not confirm the saved credential. It is no longer treated as connected. SEO data was kept.', 'holvek' ),
+				'quinrel_not_verified',
+				__( 'Quinrel did not confirm the saved credential. It is no longer treated as connected. SEO data was kept.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -260,8 +260,8 @@ class CloudCredential {
 			delete_option( self::VERIFICATION_OPTION );
 			delete_option( self::TIER_OPTION );
 			return new \WP_Error(
-				'holvek_not_verified',
-				__( 'Holvek did not confirm the saved credential. It is no longer treated as connected. SEO data was kept.', 'holvek' ),
+				'quinrel_not_verified',
+				__( 'Quinrel did not confirm the saved credential. It is no longer treated as connected. SEO data was kept.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -338,7 +338,7 @@ class CloudCredential {
 				array(
 					'disconnected'   => true,
 					'remote_revoked' => false,
-					'message'        => __( 'The Holvek credential was removed from this site. SEO data was kept. Holvek could not be reached to revoke the remote token.', 'holvek' ),
+					'message'        => __( 'The Quinrel credential was removed from this site. SEO data was kept. Quinrel could not be reached to revoke the remote token.', 'quinrel' ),
 				)
 			);
 		}
@@ -347,7 +347,7 @@ class CloudCredential {
 			array(
 				'disconnected'   => true,
 				'remote_revoked' => $token !== '',
-				'message'        => __( 'The Holvek credential was removed from this site. SEO data was kept.', 'holvek' ),
+				'message'        => __( 'The Quinrel credential was removed from this site. SEO data was kept.', 'quinrel' ),
 			)
 		);
 	}
@@ -360,8 +360,8 @@ class CloudCredential {
 		$access = $exchanged['access_token'] ?? '';
 		if ( ! is_string( $access ) || ! $this->isCredentialShape( $access ) ) {
 			return new \WP_Error(
-				'holvek_not_verified',
-				__( 'Holvek did not return a site credential. Nothing was saved.', 'holvek' ),
+				'quinrel_not_verified',
+				__( 'Quinrel did not return a site credential. Nothing was saved.', 'quinrel' ),
 				array( 'status' => 502 )
 			);
 		}
@@ -373,8 +373,8 @@ class CloudCredential {
 
 		if ( ( $verified['active'] ?? null ) !== true ) {
 			return new \WP_Error(
-				'holvek_not_verified',
-				__( 'Holvek did not confirm this credential. Nothing was saved.', 'holvek' ),
+				'quinrel_not_verified',
+				__( 'Quinrel did not confirm this credential. Nothing was saved.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -398,8 +398,8 @@ class CloudCredential {
 			}
 
 			return new \WP_Error(
-				'holvek_encryption_failed',
-				__( 'Holvek could not store this credential. Nothing was saved.', 'holvek' ),
+				'quinrel_encryption_failed',
+				__( 'Quinrel could not store this credential. Nothing was saved.', 'quinrel' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -437,7 +437,7 @@ class CloudCredential {
 		$url     = ( new BackendApiClient() )->getApiUrl() . $path;
 		$headers = array(
 			'Accept'     => 'application/json',
-			'User-Agent' => 'Holvek-WP/' . ( defined( 'HOLVEK_VERSION' ) ? HOLVEK_VERSION : '1.0.1' ),
+			'User-Agent' => 'Quinrel-WP/' . ( defined( 'QUINREL_VERSION' ) ? QUINREL_VERSION : '1.0.1' ),
 		);
 		if ( $bearer !== '' ) {
 			$headers['Authorization'] = 'Bearer ' . $bearer;
@@ -474,7 +474,7 @@ class CloudCredential {
 
 			if ( $code < 200 || $code >= 300 ) {
 				return new \WP_Error(
-					'holvek_connection_failed',
+					'quinrel_connection_failed',
 					$this->failureMessage( $data ),
 					array( 'status' => 400 )
 				);
@@ -484,8 +484,8 @@ class CloudCredential {
 		}
 
 		return new \WP_Error(
-			'holvek_connection_failed',
-			__( 'Holvek could not be reached. This site keeps working without an account.', 'holvek' ),
+			'quinrel_connection_failed',
+			__( 'Quinrel could not be reached. This site keeps working without an account.', 'quinrel' ),
 			array( 'status' => 502 )
 		);
 	}
@@ -500,7 +500,7 @@ class CloudCredential {
 	private function failureMessage( array $data ): string {
 		$message = $data['message'] ?? '';
 		if ( ! is_string( $message ) || $message === '' ) {
-			return __( 'Holvek did not accept this credential. Nothing was saved.', 'holvek' );
+			return __( 'Quinrel did not accept this credential. Nothing was saved.', 'quinrel' );
 		}
 
 		$clean = sanitize_text_field( $message );
@@ -523,8 +523,8 @@ class CloudCredential {
 		$value = $params[ $field ] ?? '';
 		if ( ! is_string( $value ) || ! $this->isCredentialShape( trim( $value ) ) ) {
 			return new \WP_Error(
-				'holvek_invalid_credential',
-				__( 'Enter the site token or authorization code from Holvek. The settings screen cannot change the Holvek API host.', 'holvek' ),
+				'quinrel_invalid_credential',
+				__( 'Enter the site token or authorization code from Quinrel. The settings screen cannot change the Quinrel API host.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -561,15 +561,15 @@ class CloudCredential {
 	private function forbidden(): \WP_Error {
 		return new \WP_Error(
 			'rest_forbidden',
-			__( 'Sorry, you are not allowed to manage the Holvek connection.', 'holvek' ),
+			__( 'Sorry, you are not allowed to manage the Quinrel connection.', 'quinrel' ),
 			array( 'status' => 403 )
 		);
 	}
 
 	private function notConnected(): \WP_Error {
 		return new \WP_Error(
-			'holvek_not_connected',
-			__( 'This site is not connected to Holvek. You can keep using Holvek on this site.', 'holvek' ),
+			'quinrel_not_connected',
+			__( 'This site is not connected to Quinrel. You can keep using Quinrel on this site.', 'quinrel' ),
 			array( 'status' => 400 )
 		);
 	}

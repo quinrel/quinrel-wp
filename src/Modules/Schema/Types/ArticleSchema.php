@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema\Types;
+namespace Quinrel\WordPress\Modules\Schema\Types;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -24,7 +24,7 @@ class ArticleSchema {
 		$schemaType = 'Article';
 
 		// Check if News optimization is needed
-		$isNews = get_post_meta( $post->ID, '_holvek_is_news', true );
+		$isNews = get_post_meta( $post->ID, '_quinrel_is_news', true );
 		if ( $isNews === 'yes' ) {
 			$schemaType = 'NewsArticle';
 		}

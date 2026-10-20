@@ -1,24 +1,15 @@
 <?php return array(
     'root' => array(
-        'name' => 'ameverywhere/ameverywhere',
+        'name' => 'quinrel/quinrel',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '6302805eea8bb4684cc988e5671f19ee5cd07221',
+        'reference' => '8978858df9761a2c2410ad3492270ddbb69710ae',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
-        'ameverywhere/ameverywhere' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => '6302805eea8bb4684cc988e5671f19ee5cd07221',
-            'type' => 'wordpress-plugin',
-            'install_path' => __DIR__ . '/../../',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
         'dealerdirect/phpcodesniffer-composer-installer' => array(
             'pretty_version' => 'v1.2.1',
             'version' => '1.2.1.0',
@@ -135,6 +126,15 @@
             'install_path' => __DIR__ . '/../phpunit/phpunit',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'quinrel/quinrel' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '8978858df9761a2c2410ad3492270ddbb69710ae',
+            'type' => 'wordpress-plugin',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'sebastian/cli-parser' => array(
             'pretty_version' => '2.0.1',

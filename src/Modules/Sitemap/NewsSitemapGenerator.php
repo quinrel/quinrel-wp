@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Sitemap;
+namespace Quinrel\WordPress\Modules\Sitemap;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -49,7 +49,7 @@ class NewsSitemapGenerator {
 			}
 
 			$postId = (int) ( $post->ID ?? 0 );
-			if ( $postId < 1 || get_post_meta( $postId, '_holvek_noindex', true ) === 'yes' ) {
+			if ( $postId < 1 || get_post_meta( $postId, '_quinrel_noindex', true ) === 'yes' ) {
 				continue;
 			}
 

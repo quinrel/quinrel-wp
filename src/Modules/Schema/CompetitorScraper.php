@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema;
+namespace Quinrel\WordPress\Modules\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class CompetitorScraper {
 
 	/**
-	 * Scrapes a URL, extracts JSON-LD blocks, and maps them to Holvek schema structures.
+	 * Scrapes a URL, extracts JSON-LD blocks, and maps them to Quinrel schema structures.
 	 */
 	public static function scrapeUrl( string $url ): array {
 		return ( new self() )->fetch( $url );
@@ -26,7 +26,7 @@ class CompetitorScraper {
 		if ( null === $current ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid competitor URL supplied.', 'holvek' ),
+				'message' => __( 'Invalid competitor URL supplied.', 'quinrel' ),
 			);
 		}
 
@@ -35,7 +35,7 @@ class CompetitorScraper {
 			if ( ! $this->hostIsPublic( $current ) ) {
 				return array(
 					'success' => false,
-					'message' => __( 'That URL points at a private or local address, so it was not fetched.', 'holvek' ),
+					'message' => __( 'That URL points at a private or local address, so it was not fetched.', 'quinrel' ),
 				);
 			}
 
@@ -57,7 +57,7 @@ class CompetitorScraper {
 					'success' => false,
 					'message' => sprintf(
 						/* translators: %s: error message from the HTTP client. */
-						__( 'Failed to fetch URL: %s', 'holvek' ),
+						__( 'Failed to fetch URL: %s', 'quinrel' ),
 						$response->get_error_message()
 					),
 				);
@@ -71,7 +71,7 @@ class CompetitorScraper {
 			if ( 3 === $hop ) {
 				return array(
 					'success' => false,
-					'message' => __( 'The competitor URL redirected too many times.', 'holvek' ),
+					'message' => __( 'The competitor URL redirected too many times.', 'quinrel' ),
 				);
 			}
 
@@ -80,7 +80,7 @@ class CompetitorScraper {
 			if ( null === $next ) {
 				return array(
 					'success' => false,
-					'message' => __( 'Invalid competitor URL supplied.', 'holvek' ),
+					'message' => __( 'Invalid competitor URL supplied.', 'quinrel' ),
 				);
 			}
 			$current = $next;
@@ -92,7 +92,7 @@ class CompetitorScraper {
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %d: HTTP status code. */
-					__( 'Competitor URL returned status code %d.', 'holvek' ),
+					__( 'Competitor URL returned status code %d.', 'quinrel' ),
 					$code
 				),
 			);
@@ -102,7 +102,7 @@ class CompetitorScraper {
 		if ( empty( $html ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Competitor URL returned empty content.', 'holvek' ),
+				'message' => __( 'Competitor URL returned empty content.', 'quinrel' ),
 			);
 		}
 
@@ -110,7 +110,7 @@ class CompetitorScraper {
 		if ( ! preg_match_all( '/<script\b[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is', $html, $matches ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'No JSON-LD schemas found on the competitor page.', 'holvek' ),
+				'message' => __( 'No JSON-LD schemas found on the competitor page.', 'quinrel' ),
 			);
 		}
 
@@ -130,7 +130,7 @@ class CompetitorScraper {
 		if ( empty( $schemas ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Could not decode any valid JSON-LD graphs.', 'holvek' ),
+				'message' => __( 'Could not decode any valid JSON-LD graphs.', 'quinrel' ),
 			);
 		}
 
@@ -144,8 +144,8 @@ class CompetitorScraper {
 	}
 
 	private function userAgent(): string {
-		$version = defined( 'HOLVEK_VERSION' ) ? HOLVEK_VERSION : '1.0.1';
-		return 'Holvek-WP/' . $version . ' (' . home_url( '/' ) . ')';
+		$version = defined( 'QUINREL_VERSION' ) ? QUINREL_VERSION : '1.0.1';
+		return 'Quinrel-WP/' . $version . ' (' . home_url( '/' ) . ')';
 	}
 
 	private function normalizeRemoteUrl( string $url ): ?string {

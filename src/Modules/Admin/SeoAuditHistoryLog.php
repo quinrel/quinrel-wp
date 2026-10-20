@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -9,14 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * SeoAuditHistoryLog
  *
- * BL-042: Maintains a tamper-evident audit trail of all Holvek SEO setting
+ * BL-042: Maintains a tamper-evident audit trail of all Quinrel SEO setting
  * changes. Records who changed what, when, and what the previous value was.
  */
 class SeoAuditHistoryLog {
 
-	private const TABLE_NAME      = 'holvek_audit_log';
+	private const TABLE_NAME      = 'quinrel_audit_log';
 	private const LOG_MAX_ROWS    = 10000;
-	private const PRUNE_CRON_HOOK = 'holvek_prune_audit_log';
+	private const PRUNE_CRON_HOOK = 'quinrel_prune_audit_log';
 
 	public function register(): void {
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
@@ -43,14 +43,14 @@ class SeoAuditHistoryLog {
 
 		global $wpdb;
 
-		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_audit_log" );
+		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_audit_log" );
 		if ( $count <= self::LOG_MAX_ROWS ) {
 			return;
 		}
 
 		$deleteLimit = $count - self::LOG_MAX_ROWS;
 		$wpdb->query(
-			$wpdb->prepare( "DELETE FROM {$wpdb->prefix}holvek_audit_log ORDER BY id ASC LIMIT %d", $deleteLimit )
+			$wpdb->prepare( "DELETE FROM {$wpdb->prefix}quinrel_audit_log ORDER BY id ASC LIMIT %d", $deleteLimit )
 		);
 	}
 
@@ -85,24 +85,26 @@ class SeoAuditHistoryLog {
             KEY idx_created_at (created_at)
         ) {$charset};";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 	}
 
 	private function hookMetaChanges(): void {
-		// Track changes to all _holvek_* post meta
+		// Track changes to all _quinrel_* post meta
 		add_action( 'updated_post_meta', array( $this, 'onMetaUpdated' ), 10, 4 );
 		add_action( 'added_post_meta', array( $this, 'onMetaAdded' ), 10, 4 );
 		add_action( 'deleted_post_meta', array( $this, 'onMetaDeleted' ), 10, 4 );
 
-		// Track changes to holvek_ options
+		// Track changes to quinrel_ options
 		add_action( 'updated_option', array( $this, 'onOptionUpdated' ), 10, 3 );
 	}
 
 	// ── Hooks ─────────────────────────────────────────────────────────────────
 
 	public function onMetaUpdated( $metaId, int $postId, string $metaKey, $newValue ): void {
-		if ( strpos( $metaKey, '_holvek_' ) !== 0 ) {
+		if ( strpos( $metaKey, '_quinrel_' ) !== 0 ) {
 			return;
 		}
 
@@ -111,7 +113,7 @@ class SeoAuditHistoryLog {
 	}
 
 	public function onMetaAdded( $metaId, int $postId, string $metaKey, $metaValue ): void {
-		if ( strpos( $metaKey, '_holvek_' ) !== 0 ) {
+		if ( strpos( $metaKey, '_quinrel_' ) !== 0 ) {
 			return;
 		}
 
@@ -119,7 +121,7 @@ class SeoAuditHistoryLog {
 	}
 
 	public function onMetaDeleted( $metaIds, int $postId, string $metaKey, $metaValue ): void {
-		if ( strpos( $metaKey, '_holvek_' ) !== 0 ) {
+		if ( strpos( $metaKey, '_quinrel_' ) !== 0 ) {
 			return;
 		}
 
@@ -127,12 +129,12 @@ class SeoAuditHistoryLog {
 	}
 
 	public function onOptionUpdated( string $option, $oldValue, $newValue ): void {
-		if ( strpos( $option, 'holvek_' ) !== 0 ) {
+		if ( strpos( $option, 'quinrel_' ) !== 0 ) {
 			return;
 		}
 
 		// Skip high-frequency transients
-		if ( strpos( $option, 'holvek_audit_log' ) !== false ) {
+		if ( strpos( $option, 'quinrel_audit_log' ) !== false ) {
 			return;
 		}
 
@@ -145,7 +147,7 @@ class SeoAuditHistoryLog {
 		$adminCap = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/audit-log',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -169,7 +171,7 @@ class SeoAuditHistoryLog {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/audit-log/export',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -188,11 +190,11 @@ class SeoAuditHistoryLog {
 
 		if ( $postId > 0 ) {
 			$total = (int) $wpdb->get_var(
-				$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_audit_log WHERE post_id = %d", $postId )
+				$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_audit_log WHERE post_id = %d", $postId )
 			);
 			$rows  = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT id, user_id, post_id, action, field, old_value, new_value, context, created_at FROM {$wpdb->prefix}holvek_audit_log WHERE post_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d",
+					"SELECT id, user_id, post_id, action, field, old_value, new_value, context, created_at FROM {$wpdb->prefix}quinrel_audit_log WHERE post_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d",
 					$postId,
 					$perPage,
 					$offset
@@ -200,10 +202,10 @@ class SeoAuditHistoryLog {
 				ARRAY_A
 			);
 		} else {
-			$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_audit_log" );
+			$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_audit_log" );
 			$rows  = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT id, user_id, post_id, action, field, old_value, new_value, context, created_at FROM {$wpdb->prefix}holvek_audit_log ORDER BY created_at DESC LIMIT %d OFFSET %d",
+					"SELECT id, user_id, post_id, action, field, old_value, new_value, context, created_at FROM {$wpdb->prefix}quinrel_audit_log ORDER BY created_at DESC LIMIT %d OFFSET %d",
 					$perPage,
 					$offset
 				),
@@ -244,7 +246,7 @@ class SeoAuditHistoryLog {
 			$offset = ( $page - 1 ) * $perPage;
 			$rows   = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT id, user_id, post_id, action, field, old_value, new_value, context, created_at FROM {$wpdb->prefix}holvek_audit_log ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d",
+					"SELECT id, user_id, post_id, action, field, old_value, new_value, context, created_at FROM {$wpdb->prefix}quinrel_audit_log ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d",
 					$perPage,
 					$offset
 				),
@@ -262,7 +264,7 @@ class SeoAuditHistoryLog {
 
 		$response = rest_ensure_response( implode( "\n", $lines ) );
 		$response->header( 'Content-Type', 'text/csv; charset=utf-8' );
-		$response->header( 'Content-Disposition', 'attachment; filename=holvek-audit-log.csv' );
+		$response->header( 'Content-Disposition', 'attachment; filename=quinrel-audit-log.csv' );
 		return $response;
 	}
 
@@ -286,7 +288,7 @@ class SeoAuditHistoryLog {
 			)
 		);
 
-		// Pruning is handled by the daily cron job (holvek_prune_audit_log)
+		// Pruning is handled by the daily cron job (quinrel_prune_audit_log)
 		// to avoid expensive COUNT+DELETE queries on every meta write.
 	}
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Api;
+namespace Quinrel\WordPress\Modules\Api;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -10,9 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * HeadlessSeoEndpoints
  *
  * Provides clean REST endpoints for headless WordPress deployments:
- *   GET  /holvek/v1/seo/{post_id}  — all SEO meta for a post
- *   PUT  /holvek/v1/seo/{post_id}  — update SEO meta
- *   GET  /holvek/v1/seo/global     — site-wide SEO defaults
+ *   GET  /quinrel/v1/seo/{post_id}  — all SEO meta for a post
+ *   PUT  /quinrel/v1/seo/{post_id}  — update SEO meta
+ *   GET  /quinrel/v1/seo/global     — site-wide SEO defaults
  *
  * BL-027
  */
@@ -25,7 +25,7 @@ class HeadlessSeoEndpoints {
 	public function registerRoutes(): void {
 		// GET/PUT /seo/{post_id}
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/seo/(?P<post_id>\d+)',
 			array(
 				array(
@@ -50,7 +50,7 @@ class HeadlessSeoEndpoints {
 
 		// GET /seo/global
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/seo/global',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -67,7 +67,7 @@ class HeadlessSeoEndpoints {
 		$post   = get_post( $postId );
 
 		if ( ! $post || $post->post_status !== 'publish' ) {
-			return new \WP_Error( 'not_found', __( 'Post not found.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'not_found', __( 'Post not found.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		return rest_ensure_response( $this->buildPostSeoPayload( $postId ) );
@@ -75,28 +75,28 @@ class HeadlessSeoEndpoints {
 
 	private function buildPostSeoPayload( int $postId ): array {
 		$post   = get_post( $postId );
-		$schema = ( new \Holvek\WordPress\Modules\Schema\SchemaGenerator() )->getSchemaForPost( $postId );
+		$schema = ( new \Quinrel\WordPress\Modules\Schema\SchemaGenerator() )->getSchemaForPost( $postId );
 
 		return array(
 			'post_id'          => $postId,
 			'post_type'        => $post->post_type,
 			'url'              => get_permalink( $postId ),
-			'meta_title'       => (string) get_post_meta( $postId, '_holvek_meta_title', true ) ?: $post->post_title,
-			'meta_description' => (string) get_post_meta( $postId, '_holvek_meta_description', true ),
-			'canonical_url'    => (string) get_post_meta( $postId, '_holvek_canonical_url', true ) ?: get_permalink( $postId ),
+			'meta_title'       => (string) get_post_meta( $postId, '_quinrel_meta_title', true ) ?: $post->post_title,
+			'meta_description' => (string) get_post_meta( $postId, '_quinrel_meta_description', true ),
+			'canonical_url'    => (string) get_post_meta( $postId, '_quinrel_canonical_url', true ) ?: get_permalink( $postId ),
 			'robots'           => array(
-				'noindex'  => get_post_meta( $postId, '_holvek_noindex', true ) === 'yes',
-				'nofollow' => get_post_meta( $postId, '_holvek_nofollow', true ) === 'yes',
+				'noindex'  => get_post_meta( $postId, '_quinrel_noindex', true ) === 'yes',
+				'nofollow' => get_post_meta( $postId, '_quinrel_nofollow', true ) === 'yes',
 			),
 			'open_graph'       => array(
-				'title'       => (string) get_post_meta( $postId, '_holvek_og_title', true ),
-				'description' => (string) get_post_meta( $postId, '_holvek_og_description', true ),
-				'image'       => (string) get_post_meta( $postId, '_holvek_og_image', true ),
+				'title'       => (string) get_post_meta( $postId, '_quinrel_og_title', true ),
+				'description' => (string) get_post_meta( $postId, '_quinrel_og_description', true ),
+				'image'       => (string) get_post_meta( $postId, '_quinrel_og_image', true ),
 			),
 			'twitter_card'     => array(
-				'title'       => (string) get_post_meta( $postId, '_holvek_twitter_title', true ),
-				'description' => (string) get_post_meta( $postId, '_holvek_twitter_description', true ),
-				'image'       => (string) get_post_meta( $postId, '_holvek_twitter_image', true ),
+				'title'       => (string) get_post_meta( $postId, '_quinrel_twitter_title', true ),
+				'description' => (string) get_post_meta( $postId, '_quinrel_twitter_description', true ),
+				'image'       => (string) get_post_meta( $postId, '_quinrel_twitter_image', true ),
 			),
 			'structured_data'  => $schema ?: null,
 			'modified'         => $post->post_modified,
@@ -110,22 +110,23 @@ class HeadlessSeoEndpoints {
 		$post   = get_post( $postId );
 
 		if ( ! $post ) {
-			return new \WP_Error( 'not_found', __( 'Post not found.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'not_found', __( 'Post not found.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		if ( ! current_user_can( 'edit_post', $postId ) ) {
-			return new \WP_Error( 'forbidden', __( 'You do not have permission to edit this post.', 'holvek' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'forbidden', __( 'You do not have permission to edit this post.', 'quinrel' ), array( 'status' => 403 ) );
 		}
 
 		$params  = $request->get_json_params();
 		$updated = array();
 
 		$stringFields = array(
-			'meta_title'       => '_holvek_meta_title',
-			'meta_description' => '_holvek_meta_description',
-			'focus_keyword'    => '_holvek_focus_keyword',
-			'canonical_url'    => '_holvek_canonical_url',
-			'schema_type'      => '_holvek_schema_type',
+			'meta_title'       => '_quinrel_meta_title',
+			'meta_description' => '_quinrel_meta_description',
+			'focus_keyword'    => '_quinrel_focus_keyword',
+			'canonical_url'    => '_quinrel_canonical_url',
+			'schema_type'      => '_quinrel_primary_schema',
+			'primary_schema'   => '_quinrel_primary_schema',
 		);
 
 		foreach ( $stringFields as $param => $metaKey ) {
@@ -136,11 +137,11 @@ class HeadlessSeoEndpoints {
 		}
 
 		if ( isset( $params['robots']['noindex'] ) ) {
-			update_post_meta( $postId, '_holvek_noindex', $params['robots']['noindex'] ? 'yes' : 'no' );
+			update_post_meta( $postId, '_quinrel_noindex', $params['robots']['noindex'] ? 'yes' : 'no' );
 			$updated[] = 'robots.noindex';
 		}
 		if ( isset( $params['robots']['nofollow'] ) ) {
-			update_post_meta( $postId, '_holvek_nofollow', $params['robots']['nofollow'] ? 'yes' : 'no' );
+			update_post_meta( $postId, '_quinrel_nofollow', $params['robots']['nofollow'] ? 'yes' : 'no' );
 			$updated[] = 'robots.nofollow';
 		}
 
@@ -171,9 +172,9 @@ class HeadlessSeoEndpoints {
 					'author'       => get_bloginfo( 'name' ),
 					'publisher'    => get_bloginfo( 'name' ),
 					'logo'         => get_site_icon_url(),
-					'type_default' => get_option( 'holvek_default_schema_type', 'Article' ),
+					'type_default' => get_option( 'quinrel_default_schema_type', 'Article' ),
 				),
-				'version'          => HOLVEK_VERSION ?? '1.0.1',
+				'version'          => QUINREL_VERSION ?? '1.0.1',
 			)
 		);
 	}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Holvek — WordPress.org SVN Deploy Script
+# Quinrel — WordPress.org SVN Deploy Script
 # =============================================================================
 # Usage:
 #   chmod +x deploy-to-wporg.sh
@@ -14,14 +14,14 @@
 
 set -e
 
-PLUGIN_SLUG="holvek"
-WP_ORG_USER="${WP_ORG_USER:-holvekteam}"
+PLUGIN_SLUG="quinrel"
+WP_ORG_USER="${WP_ORG_USER:-quinrelteam}"
 VERSION=$(grep "Stable tag:" readme.txt | sed 's/Stable tag: //' | tr -d '[:space:]')
 SVN_URL="https://plugins.svn.wordpress.org/${PLUGIN_SLUG}"
 BUILD_DIR="$(pwd)/.svn-build"
 PLUGIN_DIR="$(pwd)"
 
-echo "==> Deploying Holvek v${VERSION} to WordPress.org"
+echo "==> Deploying Quinrel v${VERSION} to WordPress.org"
 echo "    SVN URL : ${SVN_URL}"
 echo "    WP User : ${WP_ORG_USER}"
 echo ""
@@ -127,5 +127,5 @@ cd "${PLUGIN_DIR}"
 composer install --quiet
 
 echo ""
-echo "✅ Holvek v${VERSION} deployed to WordPress.org"
+echo "✅ Quinrel v${VERSION} deployed to WordPress.org"
 echo "   View at: https://wordpress.org/plugins/${PLUGIN_SLUG}/"

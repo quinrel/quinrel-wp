@@ -1,17 +1,17 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Breadcrumbs;
+namespace Quinrel\WordPress\Modules\Breadcrumbs;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Modules\Schema\JsonLd;
+use Quinrel\WordPress\Modules\Schema\JsonLd;
 
 /**
  * Renders front-end breadcrumb navigation and registers:
- * - Shortcode: [holvek_breadcrumbs]
- * - PHP function: holvek_breadcrumbs()
+ * - Shortcode: [quinrel_breadcrumbs]
+ * - PHP function: quinrel_breadcrumbs()
  *
  * Also outputs BreadcrumbList JSON-LD schema automatically.
  */
@@ -21,18 +21,18 @@ class BreadcrumbRenderer {
 	private string $homeLabel;
 
 	public function __construct() {
-		$this->separator = get_option( 'holvek_breadcrumb_separator', '›' );
-		$this->homeLabel = get_option( 'holvek_breadcrumb_home_label', 'Home' );
+		$this->separator = get_option( 'quinrel_breadcrumb_separator', '›' );
+		$this->homeLabel = get_option( 'quinrel_breadcrumb_home_label', 'Home' );
 	}
 
 	/**
 	 * Register WordPress hooks.
 	 */
 	public function register(): void {
-		add_shortcode( 'holvek_breadcrumbs', array( $this, 'renderShortcode' ) );
+		add_shortcode( 'quinrel_breadcrumbs', array( $this, 'renderShortcode' ) );
 		add_action( 'wp_footer', array( $this, 'outputSchema' ) );
 
-		$autoInsert = get_option( 'holvek_breadcrumb_auto_insert', 'none' );
+		$autoInsert = get_option( 'quinrel_breadcrumb_auto_insert', 'none' );
 		if ( $autoInsert === 'before_content' ) {
 			add_filter( 'the_content', array( $this, 'autoInsertBeforeContent' ), 9 );
 		}
@@ -68,27 +68,27 @@ class BreadcrumbRenderer {
 			return '';
 		}
 
-		$sep   = '<span class="holvek-breadcrumb-sep" aria-hidden="true"> ' . esc_html( $this->separator ) . ' </span>';
+		$sep   = '<span class="quinrel-breadcrumb-sep" aria-hidden="true"> ' . esc_html( $this->separator ) . ' </span>';
 		$parts = array();
 
 		foreach ( $items as $i => $item ) {
 			$isLast = ( $i === count( $items ) - 1 );
 
 			if ( $isLast ) {
-				$parts[] = '<span class="holvek-breadcrumb-current" aria-current="page">' . esc_html( $item['name'] ) . '</span>';
+				$parts[] = '<span class="quinrel-breadcrumb-current" aria-current="page">' . esc_html( $item['name'] ) . '</span>';
 			} else {
-				$parts[] = '<a href="' . esc_url( $item['url'] ) . '" class="holvek-breadcrumb-link">' . esc_html( $item['name'] ) . '</a>';
+				$parts[] = '<a href="' . esc_url( $item['url'] ) . '" class="quinrel-breadcrumb-link">' . esc_html( $item['name'] ) . '</a>';
 			}
 		}
 
-		$html  = '<nav class="holvek-breadcrumbs" aria-label="Breadcrumb">';
-		$html .= '<ol class="holvek-breadcrumb-list">';
+		$html  = '<nav class="quinrel-breadcrumbs" aria-label="Breadcrumb">';
+		$html .= '<ol class="quinrel-breadcrumb-list">';
 		$html .= '<li>' . implode( '</li><li>' . $sep, $parts ) . '</li>';
 		$html .= '</ol>';
 		$html .= '</nav>';
 
 		// Inline minimal styles
-		$html .= '<style>.holvek-breadcrumbs{font-size:14px;line-height:1.4;margin:8px 0 16px;color:#64748b}.holvek-breadcrumb-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:0}.holvek-breadcrumb-list li{display:inline-flex;align-items:center}.holvek-breadcrumb-link{color:#3b82f6;text-decoration:none}.holvek-breadcrumb-link:hover{text-decoration:underline}.holvek-breadcrumb-sep{margin:0 6px;color:#94a3b8}.holvek-breadcrumb-current{color:#334155;font-weight:500}</style>';
+		$html .= '<style>.quinrel-breadcrumbs{font-size:14px;line-height:1.4;margin:8px 0 16px;color:#64748b}.quinrel-breadcrumb-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:0}.quinrel-breadcrumb-list li{display:inline-flex;align-items:center}.quinrel-breadcrumb-link{color:#3b82f6;text-decoration:none}.quinrel-breadcrumb-link:hover{text-decoration:underline}.quinrel-breadcrumb-sep{margin:0 6px;color:#94a3b8}.quinrel-breadcrumb-current{color:#334155;font-weight:500}</style>';
 
 		return $html;
 	}

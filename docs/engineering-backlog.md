@@ -1,6 +1,6 @@
-# Holvek engineering backlog
+# Quinrel engineering backlog
 
-Status date: 2026-10-09. Source commit: `101d608` on `main`. Tag `v1.0.0` points at that commit on `https://github.com/Skooriteltd/holvek-wp.git`.
+Status date: 2026-10-09. Source commit: `101d608` on `main`. Tag `v1.0.0` points at that commit on `https://github.com/Skooriteltd/quinrel-wp.git`.
 
 This is the remaining work. Tasks 1–33, 35, and 36, the release cleanup, the schema boot fix, and the readme compatibility update stay in `docs/production-readiness.md`. Do not reopen them and do not rewrite their done paragraphs.
 
@@ -12,7 +12,7 @@ This is the remaining work. Tasks 1–33, 35, and 36, the release cleanup, the s
 4. When an item is finished, add one newest-first paragraph at the top of the implementation status in `docs/production-readiness.md`. Leave every older paragraph unchanged.
 5. `v1.0.0` stays on `101d608`. Ship these fixes as `1.0.1`. Moving `v1.0.0` again requires a separate explicit request.
 6. `Tested up to` stays `7.1`. `Requires at least` stays `6.0`. `Requires PHP` stays `8.2`.
-7. The UAT site is `http://localhost/holvek-uat` on WordPress 7.1.3. Search engines are discouraged there, so `/sitemap.xml` answers 404 until indexing is allowed or the Holvek sitemap option is turned on.
+7. The UAT site is `http://localhost/quinrel-uat` on WordPress 7.1.3. Search engines are discouraged there, so `/sitemap.xml` answers 404 until indexing is allowed or the Quinrel sitemap option is turned on.
 
 ## Current evidence
 
@@ -34,7 +34,7 @@ Touch: `package-zip.sh` only.
 
 Leave unchanged: plugin behavior, readme version fields, and the `v1.0.0` tag.
 
-Done when: `unzip -l dist/holvek-1.0.1.zip` has no dotfiles, no `scripts/`, and no shell scripts. `holvek.php`, `build/index.js`, and `vendor/autoload.php` are present. PHP syntax check of every PHP file in the zip exits 0.
+Done when: `unzip -l dist/quinrel-1.0.1.zip` has no dotfiles, no `scripts/`, and no shell scripts. `quinrel.php`, `build/index.js`, and `vendor/autoload.php` are present. PHP syntax check of every PHP file in the zip exits 0.
 
 Verify: `./package-zip.sh` after the `1.0.1` tag exists. Until that tag exists, verify with a dry listing of the staged tree from the same exclude rules.
 
@@ -108,7 +108,7 @@ Done when: that code is absent. No query behavior test changes its expected SQL 
 
 Five `WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound` hits, including `$deleteData` in `uninstall.php`. Two `WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound` hits.
 
-Outcome: new global names start with `holvek_`. Dynamic hook names are built from a fixed prefix plus a validated suffix. The uninstall flag still means the same thing.
+Outcome: new global names start with `quinrel_`. Dynamic hook names are built from a fixed prefix plus a validated suffix. The uninstall flag still means the same thing.
 
 Done when: both codes are absent. Uninstall tests still cover the delete flag on and off.
 
@@ -116,7 +116,7 @@ Done when: both codes are absent. Uninstall tests still cover the delete flag on
 
 Two `Squiz.PHP.DiscouragedFunctions.Discouraged` hits and one `PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound` hit.
 
-Outcome: `ini_set` is not used to change runtime limits on a front-end request. `load_plugin_textdomain` follows the current WordPress loading pattern for a plugin that ships `languages/holvek.pot`. Redirect validation still applies its backtrack and recursion limits only around the save-time `preg_match`, then restores the previous values.
+Outcome: `ini_set` is not used to change runtime limits on a front-end request. `load_plugin_textdomain` follows the current WordPress loading pattern for a plugin that ships `languages/quinrel.pot`. Redirect validation still applies its backtrack and recursion limits only around the save-time `preg_match`, then restores the previous values.
 
 Done when: both codes are absent. `RedirectManagerTest` still rejects a pattern that does not compile.
 
@@ -174,19 +174,19 @@ Done when: the PHPCS job on the fix commit is green, or the stop is recorded bec
 
 `.github/workflows/wordpress-e2e.yml` failed in “Setup wp-env” for PHP 8.2 and PHP 8.3. Later steps, including activation and `tests/e2e-privacy.php`, did not run. The workflow writes `.wp-env.json` with core `WordPress/WordPress#latest` and the working tree as the plugin.
 
-Outcome: `wp-env start` completes, or the log gives a runner defect that is fixed in the workflow. The plugin folder activated by the later steps is the repository directory plus `holvek.php`.
+Outcome: `wp-env start` completes, or the log gives a runner defect that is fixed in the workflow. The plugin folder activated by the later steps is the repository directory plus `quinrel.php`.
 
 Leave unchanged: product code, unless the log shows a fatal during activation after wp-env is up. That fatal becomes a new item.
 
-Done when: one single-site PHP 8.2 leg activates Holvek, sees the `holvek_` tables, deactivates, and uninstalls. The multisite leg does the same with network activation.
+Done when: one single-site PHP 8.2 leg activates Quinrel, sees the `quinrel_` tables, deactivates, and uninstalls. The multisite leg does the same with network activation.
 
 ### EB-16. Release-package install
 
-`.github/workflows/release-package.yml` runs on tags. It builds with `package-zip.sh`, starts wp-env on `WordPress/WordPress#master`, activates `holvek`, and checks that `SHOW TABLES` contains `holvek`. The previous tag failed in “Test ZIP installation in temporary WordPress”. The run for `101d608` was still in progress at the last check.
+`.github/workflows/release-package.yml` runs on tags. It builds with `package-zip.sh`, starts wp-env on `WordPress/WordPress#master`, activates `quinrel`, and checks that `SHOW TABLES` contains `quinrel`. The previous tag failed in “Test ZIP installation in temporary WordPress”. The run for `101d608` was still in progress at the last check.
 
 Outcome: read that run first. A zip-install failure caused by EB-01 is closed by EB-01 and a new tag build. A `wp-env` startup failure is handled with EB-15’s fix.
 
-Done when: the workflow for the `1.0.1` tag uploads `holvek-1.0.1.zip` and the table check passes.
+Done when: the workflow for the `1.0.1` tag uploads `quinrel-1.0.1.zip` and the table check passes.
 
 ## Wave 5 — Directory submission
 
@@ -198,11 +198,11 @@ Outcome: new captures come from the UAT site or a clean site running the `1.0.1`
 
 Leave unchanged: generated images that are not captured from the product. Icons and banners stay unless their artwork shows the previous name.
 
-Done when: every screenshot file in `assets/wporg/` shows Holvek, and the readme section names those files.
+Done when: every screenshot file in `assets/wporg/` shows Quinrel, and the readme section names those files.
 
 ### EB-18. Run the integration script
 
-Depends on EB-15. `scripts/run-wordpress-integration-tests.sh` starts wp-env from `tests/wp-env.json`, activates `holvek-wp`, runs `tests/e2e-privacy.php` and `tests/e2e-image-optimization.php`, then uninstalls. Confirm the activated path is the real plugin file before treating a failure as a product defect.
+Depends on EB-15. `scripts/run-wordpress-integration-tests.sh` starts wp-env from `tests/wp-env.json`, activates `quinrel-wp`, runs `tests/e2e-privacy.php` and `tests/e2e-image-optimization.php`, then uninstalls. Confirm the activated path is the real plugin file before treating a failure as a product defect.
 
 Outcome: the script exits 0 against the release commit, or its first real failure is a new backlog item.
 
@@ -212,7 +212,7 @@ Done when: the command result and the WordPress and PHP versions are in the done
 
 Depends on Wave 1 and Wave 4. Wave 2, Wave 3, and EB-17 may land in the same release when they are already done. They do not block the tag when their remaining hits are warnings recorded in EB-05.
 
-Outcome: `readme.txt` stable tag and changelog are `1.0.1`. `HOLVEK_VERSION` and the plugin header match. `package-zip.sh` builds `dist/holvek-1.0.1.zip` from an annotated `v1.0.1` tag. `main` and `v1.0.1` are pushed. `v1.0.0` is left on `101d608`.
+Outcome: `readme.txt` stable tag and changelog are `1.0.1`. `QUINREL_VERSION` and the plugin header match. `package-zip.sh` builds `dist/quinrel-1.0.1.zip` from an annotated `v1.0.1` tag. `main` and `v1.0.1` are pushed. `v1.0.0` is left on `101d608`.
 
 Done when: `git ls-remote` shows `v1.0.1` peeled to that commit, and the zip’s `readme.txt` says `Stable tag: 1.0.1` and `Tested up to: 7.1`.
 
@@ -227,7 +227,7 @@ Outcome: a person submits the `1.0.1` zip. The checklist below is ticked from co
 - Quality, Coding Standards, Plugin Check, E2E, and Release package are green on that tag.
 - The zip has no tests, docs, node modules, development scripts, or dotfiles.
 - Readme external services match the code. No Discovery Scan, ranking, or compliance claim.
-- Screenshots show Holvek.
-- Uninstall with the delete flag removes Holvek tables and `holvek_` options and leaves other content.
+- Screenshots show Quinrel.
+- Uninstall with the delete flag removes Quinrel tables and `quinrel_` options and leaves other content.
 
 Done when: the submission URL or the reviewer’s requested changes are recorded. A review request for a code change becomes a new item. It is not fixed inside this item.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * CustomSeoUserRoles
  *
  * BL-034: Registers granular SEO capabilities and assigns them to user roles.
- * - manage_seo         → full access to all Holvek settings
+ * - manage_seo         → full access to all Quinrel settings
  * - view_seo_reports   → read-only access to analytics/audit reports
  * - manage_redirects   → create/edit/delete redirect rules
  * - edit_seo_meta      → edit SEO meta fields per-post
@@ -73,10 +73,10 @@ class CustomSeoUserRoles {
 
 		// One-time recovery: re-apply capabilities only when the plugin version changes.
 		// This avoids the previous pattern of writing to wp_options on every request.
-		$applied = get_option( 'holvek_caps_version', '' );
-		if ( $applied !== HOLVEK_VERSION ) {
+		$applied = get_option( 'quinrel_caps_version', '' );
+		if ( $applied !== QUINREL_VERSION ) {
 			self::addCapabilities();
-			update_option( 'holvek_caps_version', HOLVEK_VERSION, true );
+			update_option( 'quinrel_caps_version', QUINREL_VERSION, true );
 		}
 	}
 
@@ -84,7 +84,7 @@ class CustomSeoUserRoles {
 		$adminCap = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/roles/capabilities',
 			array(
 				array(

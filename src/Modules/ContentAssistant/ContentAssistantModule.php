@@ -1,14 +1,14 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ContentAssistant;
+namespace Quinrel\WordPress\Modules\ContentAssistant;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Core\Ai\AiGateway;
-use Holvek\WordPress\Modules\Schema\JsonLd;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Ai\AiGateway;
+use Quinrel\WordPress\Modules\Schema\JsonLd;
 
 class ContentAssistantModule {
 
@@ -48,66 +48,66 @@ class ContentAssistantModule {
 	 */
 	public static function editorMetaKeys(): array {
 		return array(
-			'_holvek_meta_title',
-			'_holvek_meta_description',
-			'_holvek_is_news',
-			'_holvek_noindex',
-			'_holvek_nofollow',
-			'_holvek_canonical_url',
-			'_holvek_is_cornerstone',
-			'_holvek_og_title',
-			'_holvek_og_description',
-			'_holvek_og_image',
-			'_holvek_twitter_title',
-			'_holvek_focus_keyword',
-			'_holvek_primary_schema',
-			'_holvek_schema_product_name',
-			'_holvek_schema_product_description',
-			'_holvek_schema_product_price',
-			'_holvek_schema_product_currency',
-			'_holvek_schema_product_rating',
-			'_holvek_schema_product_availability',
-			'_holvek_schema_faq_questions',
-			'_holvek_schema_howto_name',
-			'_holvek_schema_howto_description',
-			'_holvek_schema_howto_steps',
-			'_holvek_schema_howto_supplies',
-			'_holvek_schema_howto_tools',
-			'_holvek_schema_localbusiness_name',
-			'_holvek_schema_localbusiness_telephone',
-			'_holvek_schema_localbusiness_street',
-			'_holvek_schema_localbusiness_city',
-			'_holvek_schema_localbusiness_postal',
-			'_holvek_schema_localbusiness_country',
-			'_holvek_additional_keywords',
-			'_holvek_schema_stack',
-			'_holvek_is_pillar',
-			'_holvek_pagespeed_cache',
-			'_holvek_ranking_keywords',
-			'_holvek_ranking_keywords_at',
-			'_holvek_disable_social_share',
-			'_holvek_custom_schema_properties',
-			'_holvek_schema_custom_type',
-			'_holvek_schema_recipe_name',
-			'_holvek_schema_recipe_description',
-			'_holvek_schema_recipe_ingredients',
-			'_holvek_schema_recipe_instructions',
-			'_holvek_schema_recipe_prep_time',
-			'_holvek_schema_recipe_cook_time',
-			'_holvek_schema_recipe_calories',
-			'_holvek_schema_recipe_cuisine',
-			'_holvek_schema_recipe_yield',
-			'_holvek_schema_event_name',
-			'_holvek_schema_event_description',
-			'_holvek_schema_event_start_date',
-			'_holvek_schema_event_end_date',
-			'_holvek_schema_event_venue',
-			'_holvek_schema_event_address',
-			'_holvek_schema_event_organizer',
-			'_holvek_schema_event_performer',
-			'_holvek_schema_event_price',
-			'_holvek_schema_event_currency',
-			'_holvek_schema_event_status',
+			'_quinrel_meta_title',
+			'_quinrel_meta_description',
+			'_quinrel_is_news',
+			'_quinrel_noindex',
+			'_quinrel_nofollow',
+			'_quinrel_canonical_url',
+			'_quinrel_is_cornerstone',
+			'_quinrel_og_title',
+			'_quinrel_og_description',
+			'_quinrel_og_image',
+			'_quinrel_twitter_title',
+			'_quinrel_focus_keyword',
+			'_quinrel_primary_schema',
+			'_quinrel_schema_product_name',
+			'_quinrel_schema_product_description',
+			'_quinrel_schema_product_price',
+			'_quinrel_schema_product_currency',
+			'_quinrel_schema_product_rating',
+			'_quinrel_schema_product_availability',
+			'_quinrel_schema_faq_questions',
+			'_quinrel_schema_howto_name',
+			'_quinrel_schema_howto_description',
+			'_quinrel_schema_howto_steps',
+			'_quinrel_schema_howto_supplies',
+			'_quinrel_schema_howto_tools',
+			'_quinrel_schema_localbusiness_name',
+			'_quinrel_schema_localbusiness_telephone',
+			'_quinrel_schema_localbusiness_street',
+			'_quinrel_schema_localbusiness_city',
+			'_quinrel_schema_localbusiness_postal',
+			'_quinrel_schema_localbusiness_country',
+			'_quinrel_additional_keywords',
+			'_quinrel_schema_stack',
+			'_quinrel_is_pillar',
+			'_quinrel_pagespeed_cache',
+			'_quinrel_ranking_keywords',
+			'_quinrel_ranking_keywords_at',
+			'_quinrel_disable_social_share',
+			'_quinrel_custom_schema_properties',
+			'_quinrel_schema_custom_type',
+			'_quinrel_schema_recipe_name',
+			'_quinrel_schema_recipe_description',
+			'_quinrel_schema_recipe_ingredients',
+			'_quinrel_schema_recipe_instructions',
+			'_quinrel_schema_recipe_prep_time',
+			'_quinrel_schema_recipe_cook_time',
+			'_quinrel_schema_recipe_calories',
+			'_quinrel_schema_recipe_cuisine',
+			'_quinrel_schema_recipe_yield',
+			'_quinrel_schema_event_name',
+			'_quinrel_schema_event_description',
+			'_quinrel_schema_event_start_date',
+			'_quinrel_schema_event_end_date',
+			'_quinrel_schema_event_venue',
+			'_quinrel_schema_event_address',
+			'_quinrel_schema_event_organizer',
+			'_quinrel_schema_event_performer',
+			'_quinrel_schema_event_price',
+			'_quinrel_schema_event_currency',
+			'_quinrel_schema_event_status',
 		);
 	}
 
@@ -144,19 +144,19 @@ class ContentAssistantModule {
 	 * @return string|\WP_Error
 	 */
 	public static function sanitizeMetaValue( string $metaKey, $value ) {
-		if ( '_holvek_custom_schema_properties' === $metaKey ) {
+		if ( '_quinrel_custom_schema_properties' === $metaKey ) {
 			return JsonLd::sanitizeCustomMeta( is_string( $value ) ? $value : '' );
 		}
-		if ( '_holvek_schema_faq_questions' === $metaKey ) {
+		if ( '_quinrel_schema_faq_questions' === $metaKey ) {
 			return self::sanitizeFaqMeta( $value );
 		}
-		if ( in_array( $metaKey, array( '_holvek_canonical_url', '_holvek_og_image' ), true ) ) {
+		if ( in_array( $metaKey, array( '_quinrel_canonical_url', '_quinrel_og_image' ), true ) ) {
 			return self::sanitizeHttpUrl( $value );
 		}
-		if ( in_array( $metaKey, array( '_holvek_noindex', '_holvek_nofollow', '_holvek_is_news', '_holvek_is_cornerstone', '_holvek_is_pillar', '_holvek_disable_social_share' ), true ) ) {
+		if ( in_array( $metaKey, array( '_quinrel_noindex', '_quinrel_nofollow', '_quinrel_is_news', '_quinrel_is_cornerstone', '_quinrel_is_pillar', '_quinrel_disable_social_share' ), true ) ) {
 			return self::sanitizeYesNo( $value );
 		}
-		if ( in_array( $metaKey, array( '_holvek_meta_description', '_holvek_og_description', '_holvek_schema_product_description', '_holvek_schema_howto_description', '_holvek_schema_recipe_description', '_holvek_schema_event_description' ), true ) ) {
+		if ( in_array( $metaKey, array( '_quinrel_meta_description', '_quinrel_og_description', '_quinrel_schema_product_description', '_quinrel_schema_howto_description', '_quinrel_schema_recipe_description', '_quinrel_schema_event_description' ), true ) ) {
 			return sanitize_textarea_field( is_string( $value ) ? $value : '' );
 		}
 
@@ -230,7 +230,7 @@ class ContentAssistantModule {
 	}
 
 	public function enqueueEditorAssets(): void {
-		$assetFile = HOLVEK_PLUGIN_DIR . 'build/editor.asset.php';
+		$assetFile = QUINREL_PLUGIN_DIR . 'build/editor.asset.php';
 
 		if ( ! file_exists( $assetFile ) ) {
 			return;
@@ -244,26 +244,26 @@ class ContentAssistantModule {
 		);
 
 		wp_enqueue_script(
-			'holvek-editor-js',
-			HOLVEK_PLUGIN_URL . 'build/editor.js',
+			'quinrel-editor-js',
+			QUINREL_PLUGIN_URL . 'build/editor.js',
 			$dependencies,
 			$assets['version'],
 			true
 		);
 
 		$editorConfig = array(
-			'apiUrl'            => esc_url_raw( rest_url( 'holvek/v1' ) ),
+			'apiUrl'            => esc_url_raw( rest_url( 'quinrel/v1' ) ),
 			'nonce'             => wp_create_nonce( 'wp_rest' ),
-			'defaultShareImage' => esc_url_raw( get_option( 'holvek_default_share_image', '' ) ),
-			'cloudConfigured'   => \Holvek\WordPress\Core\Mode\OperatingMode::isCloudConfigured() ? '1' : '0',
+			'defaultShareImage' => esc_url_raw( get_option( 'quinrel_default_share_image', '' ) ),
+			'cloudConfigured'   => \Quinrel\WordPress\Core\Mode\OperatingMode::isCloudConfigured() ? '1' : '0',
 		);
 
-		wp_localize_script( 'holvek-editor-js', 'holvekEditorConfig', $editorConfig );
+		wp_localize_script( 'quinrel-editor-js', 'quinrelEditorConfig', $editorConfig );
 	}
 
 	public function registerRestRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/ai/generate',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -273,7 +273,7 @@ class ContentAssistantModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/content/internal-links',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -298,7 +298,7 @@ class ContentAssistantModule {
 		$focusKeyword = isset( $params['focus_keyword'] ) ? sanitize_text_field( $params['focus_keyword'] ) : '';
 
 		if ( empty( $action ) ) {
-			return new \WP_Error( 'missing_action', __( 'Action parameter is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_action', __( 'Action parameter is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$aiGateway    = new AiGateway();
@@ -323,7 +323,7 @@ class ContentAssistantModule {
 				break;
 
 			default:
-				return new \WP_Error( 'invalid_action', __( 'Invalid AI action.', 'holvek' ), array( 'status' => 400 ) );
+				return new \WP_Error( 'invalid_action', __( 'Invalid AI action.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$result = $aiGateway->queryModel( $prompt, $systemPrompt );
@@ -357,7 +357,7 @@ class ContentAssistantModule {
 		$content = isset( $params['content'] ) ? wp_kses_post( $params['content'] ) : '';
 
 		if ( ! $postId ) {
-			return new \WP_Error( 'missing_id', __( 'Post ID is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_id', __( 'Post ID is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$linkEngine      = new InternalLinkEngine();

@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema;
+namespace Quinrel\WordPress\Modules\Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -33,7 +33,7 @@ class WooCommerceProductSchema {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/schema/product',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -54,7 +54,7 @@ class WooCommerceProductSchema {
 		$schema = $this->buildProductSchema( $postId );
 
 		if ( $schema === null ) {
-			return new \WP_Error( 'not_found', __( 'Product not found or WooCommerce not active.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'not_found', __( 'Product not found or WooCommerce not active.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		return rest_ensure_response( array( 'schema' => $schema ) );

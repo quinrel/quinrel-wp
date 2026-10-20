@@ -1,15 +1,15 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Ai\OllamaEndpoint;
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Core\Security\KeyVault;
-use Holvek\WordPress\Modules\Indexing\BingIndexNowApi;
+use Quinrel\WordPress\Core\Ai\OllamaEndpoint;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Modules\Indexing\BingIndexNowApi;
 
 class AdminModule {
 
@@ -33,7 +33,7 @@ class AdminModule {
 
 	public function registerRestRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings',
 			array(
 				array(
@@ -50,7 +50,7 @@ class AdminModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/ai/test-connection',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -60,7 +60,7 @@ class AdminModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/index-url',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -71,7 +71,7 @@ class AdminModule {
 
 		// ── Phase 1 Backlog: PageSpeed per post ──────────────────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/pagespeed',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -89,7 +89,7 @@ class AdminModule {
 
 		// ── Phase 1 Backlog: GSC per-post ranking keywords ───────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/gsc/keywords',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -107,7 +107,7 @@ class AdminModule {
 
 		// ── Phase 2 Backlog: Site-wide GSC Dashboard ─────────────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/gsc/dashboard',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -118,7 +118,7 @@ class AdminModule {
 
 		// ── Phase 2 Backlog: Keyword Cannibalization Report ──────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/gsc/cannibalization',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -129,7 +129,7 @@ class AdminModule {
 
 		// ── Phase 2 Backlog: Orphan Pages Report ─────────────────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/links/orphans',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -150,7 +150,7 @@ class AdminModule {
 
 		// ── Phase 2 Backlog: Site-wide Link Statistics ───────────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/links/stats',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -161,7 +161,7 @@ class AdminModule {
 
 		// ── Phase 2 Backlog: GA4 Integration settings ────────────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/ga4',
 			array(
 				array(
@@ -179,7 +179,7 @@ class AdminModule {
 
 		// ── Phase 2 Backlog: GA4 Traffic Report ──────────────────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/ga4/report',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -190,7 +190,7 @@ class AdminModule {
 
 		// ── Phase 3: Import / Export settings ────────────────────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/export',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -200,7 +200,7 @@ class AdminModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/import',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -211,7 +211,7 @@ class AdminModule {
 
 		// ── Phase 3: HTML Sitemap ─────────────────────────────────────────────
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/html-sitemap',
 			array(
 				array(
@@ -228,7 +228,7 @@ class AdminModule {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/html-sitemap/preview',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -250,41 +250,41 @@ class AdminModule {
 	}
 
 	public function getSettings( \WP_REST_Request $request ): \WP_REST_Response {
-		$aiGateway = new \Holvek\WordPress\Core\Ai\AiGateway();
+		$aiGateway = new \Quinrel\WordPress\Core\Ai\AiGateway();
 
-		$openaiKeyStored = get_option( 'holvek_openai_key', '' );
+		$openaiKeyStored = get_option( 'quinrel_openai_key', '' );
 		$openaiKey       = ! empty( $openaiKeyStored ) ? '••••••••••••' : '';
 
-		$anthropicKeyStored = get_option( 'holvek_anthropic_key', '' );
+		$anthropicKeyStored = get_option( 'quinrel_anthropic_key', '' );
 		$anthropicKey       = ! empty( $anthropicKeyStored ) ? '••••••••••••' : '';
-		$rawGoogleKey       = (string) get_option( 'holvek_google_indexing_key', '' );
+		$rawGoogleKey       = (string) get_option( 'quinrel_google_indexing_key', '' );
 
 		return rest_ensure_response(
 			array(
 				'google_indexing_configured' => $rawGoogleKey !== '',
-				'indexnow_configured'        => (string) get_option( 'holvek_indexnow_key', '' ) !== '',
-				'auto_index'                 => get_option( 'holvek_auto_index', 'no' ) === 'yes',
-				'enable_google_indexing_api' => get_option( 'holvek_enable_google_indexing_api', 'no' ) === 'yes',
-				'delete_data_on_uninstall'   => get_option( 'holvek_delete_data_on_uninstall', 'no' ) === 'yes',
-				'google_verify'              => get_option( 'holvek_google_verify', '' ),
-				'bing_verify'                => get_option( 'holvek_bing_verify', '' ),
-				'yandex_verify'              => get_option( 'holvek_yandex_verify', '' ),
-				'pinterest_verify'           => get_option( 'holvek_pinterest_verify', '' ),
-				'rss_before_content'         => get_option( 'holvek_rss_before_content', '' ),
-				'rss_after_content'          => get_option( 'holvek_rss_after_content', '' ),
-				'breadcrumb_separator'       => get_option( 'holvek_breadcrumb_separator', '›' ),
-				'breadcrumb_home_label'      => get_option( 'holvek_breadcrumb_home_label', 'Home' ),
-				'breadcrumb_auto_insert'     => get_option( 'holvek_breadcrumb_auto_insert', 'none' ),
-				'sitemap_exclude_post_types' => get_option( 'holvek_sitemap_exclude_post_types', '' ),
-				'sitemap_exclude_posts'      => get_option( 'holvek_sitemap_exclude_posts', '' ),
+				'indexnow_configured'        => (string) get_option( 'quinrel_indexnow_key', '' ) !== '',
+				'auto_index'                 => get_option( 'quinrel_auto_index', 'no' ) === 'yes',
+				'enable_google_indexing_api' => get_option( 'quinrel_enable_google_indexing_api', 'no' ) === 'yes',
+				'delete_data_on_uninstall'   => get_option( 'quinrel_delete_data_on_uninstall', 'no' ) === 'yes',
+				'google_verify'              => get_option( 'quinrel_google_verify', '' ),
+				'bing_verify'                => get_option( 'quinrel_bing_verify', '' ),
+				'yandex_verify'              => get_option( 'quinrel_yandex_verify', '' ),
+				'pinterest_verify'           => get_option( 'quinrel_pinterest_verify', '' ),
+				'rss_before_content'         => get_option( 'quinrel_rss_before_content', '' ),
+				'rss_after_content'          => get_option( 'quinrel_rss_after_content', '' ),
+				'breadcrumb_separator'       => get_option( 'quinrel_breadcrumb_separator', '›' ),
+				'breadcrumb_home_label'      => get_option( 'quinrel_breadcrumb_home_label', 'Home' ),
+				'breadcrumb_auto_insert'     => get_option( 'quinrel_breadcrumb_auto_insert', 'none' ),
+				'sitemap_exclude_post_types' => get_option( 'quinrel_sitemap_exclude_post_types', '' ),
+				'sitemap_exclude_posts'      => get_option( 'quinrel_sitemap_exclude_posts', '' ),
 
 				// Secure AI Vault settings
-				'ai_provider'                => get_option( 'holvek_ai_provider', 'openai' ),
+				'ai_provider'                => get_option( 'quinrel_ai_provider', 'openai' ),
 				'openai_key'                 => $openaiKey,
 				'anthropic_key'              => $anthropicKey,
 				'ollama_url'                 => OllamaEndpoint::displayUrl(),
 				'ollama_remote_ack'          => OllamaEndpoint::remoteIsConfirmed( OllamaEndpoint::displayUrl() ),
-				'default_share_image'        => get_option( 'holvek_default_share_image', '' ),
+				'default_share_image'        => get_option( 'quinrel_default_share_image', '' ),
 			)
 		);
 	}
@@ -299,7 +299,7 @@ class AdminModule {
 			if ( ! is_string( $params['indexnow_key'] ) ) {
 				return new \WP_Error(
 					'invalid_indexnow_key',
-					__( 'The IndexNow key must be 8 to 128 letters, numbers, or dashes. Holvek does not create one for you.', 'holvek' ),
+					__( 'The IndexNow key must be 8 to 128 letters, numbers, or dashes. Quinrel does not create one for you.', 'quinrel' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -308,7 +308,7 @@ class AdminModule {
 			if ( ! BingIndexNowApi::isValidKey( $indexNowKey ) ) {
 				return new \WP_Error(
 					'invalid_indexnow_key',
-					__( 'The IndexNow key must be 8 to 128 letters, numbers, or dashes. Holvek does not create one for you.', 'holvek' ),
+					__( 'The IndexNow key must be 8 to 128 letters, numbers, or dashes. Quinrel does not create one for you.', 'quinrel' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -324,7 +324,7 @@ class AdminModule {
 		if ( ! empty( $params['google_indexing_key'] ) ) {
 			$jsonValue = wp_unslash( $params['google_indexing_key'] );
 			if ( json_decode( $jsonValue ) !== null ) {
-				$stored = $this->storeSecret( 'holvek_google_indexing_key', $jsonValue );
+				$stored = $this->storeSecret( 'quinrel_google_indexing_key', $jsonValue );
 				if ( is_wp_error( $stored ) ) {
 					return $stored;
 				}
@@ -332,74 +332,74 @@ class AdminModule {
 		}
 
 		if ( ! empty( $params['indexnow_key'] ) && is_string( $params['indexnow_key'] ) ) {
-			update_option( 'holvek_indexnow_key', sanitize_text_field( wp_unslash( $params['indexnow_key'] ) ), false );
+			update_option( 'quinrel_indexnow_key', sanitize_text_field( wp_unslash( $params['indexnow_key'] ) ), false );
 		}
 
 		if ( isset( $params['auto_index'] ) ) {
-			update_option( 'holvek_auto_index', $params['auto_index'] ? 'yes' : 'no', true );
+			update_option( 'quinrel_auto_index', $params['auto_index'] ? 'yes' : 'no', true );
 		}
 
 		if ( isset( $params['enable_google_indexing_api'] ) ) {
-			update_option( 'holvek_enable_google_indexing_api', $params['enable_google_indexing_api'] ? 'yes' : 'no' );
+			update_option( 'quinrel_enable_google_indexing_api', $params['enable_google_indexing_api'] ? 'yes' : 'no' );
 		}
 
 		if ( isset( $params['delete_data_on_uninstall'] ) ) {
-			update_option( 'holvek_delete_data_on_uninstall', $params['delete_data_on_uninstall'] ? 'yes' : 'no' );
+			update_option( 'quinrel_delete_data_on_uninstall', $params['delete_data_on_uninstall'] ? 'yes' : 'no' );
 		}
 
 		if ( isset( $params['google_verify'] ) ) {
-			update_option( 'holvek_google_verify', sanitize_text_field( $params['google_verify'] ) );
+			update_option( 'quinrel_google_verify', sanitize_text_field( $params['google_verify'] ) );
 		}
 
 		if ( isset( $params['bing_verify'] ) ) {
-			update_option( 'holvek_bing_verify', sanitize_text_field( $params['bing_verify'] ) );
+			update_option( 'quinrel_bing_verify', sanitize_text_field( $params['bing_verify'] ) );
 		}
 
 		if ( isset( $params['yandex_verify'] ) ) {
-			update_option( 'holvek_yandex_verify', sanitize_text_field( $params['yandex_verify'] ) );
+			update_option( 'quinrel_yandex_verify', sanitize_text_field( $params['yandex_verify'] ) );
 		}
 
 		if ( isset( $params['pinterest_verify'] ) ) {
-			update_option( 'holvek_pinterest_verify', sanitize_text_field( $params['pinterest_verify'] ) );
+			update_option( 'quinrel_pinterest_verify', sanitize_text_field( $params['pinterest_verify'] ) );
 		}
 
 		if ( isset( $params['rss_before_content'] ) ) {
-			update_option( 'holvek_rss_before_content', wp_kses_post( $params['rss_before_content'] ) );
+			update_option( 'quinrel_rss_before_content', wp_kses_post( $params['rss_before_content'] ) );
 		}
 
 		if ( isset( $params['rss_after_content'] ) ) {
-			update_option( 'holvek_rss_after_content', wp_kses_post( $params['rss_after_content'] ) );
+			update_option( 'quinrel_rss_after_content', wp_kses_post( $params['rss_after_content'] ) );
 		}
 
 		if ( isset( $params['breadcrumb_separator'] ) ) {
-			update_option( 'holvek_breadcrumb_separator', sanitize_text_field( $params['breadcrumb_separator'] ) );
+			update_option( 'quinrel_breadcrumb_separator', sanitize_text_field( $params['breadcrumb_separator'] ) );
 		}
 
 		if ( isset( $params['breadcrumb_home_label'] ) ) {
-			update_option( 'holvek_breadcrumb_home_label', sanitize_text_field( $params['breadcrumb_home_label'] ) );
+			update_option( 'quinrel_breadcrumb_home_label', sanitize_text_field( $params['breadcrumb_home_label'] ) );
 		}
 
 		if ( isset( $params['breadcrumb_auto_insert'] ) ) {
-			update_option( 'holvek_breadcrumb_auto_insert', sanitize_text_field( $params['breadcrumb_auto_insert'] ) );
+			update_option( 'quinrel_breadcrumb_auto_insert', sanitize_text_field( $params['breadcrumb_auto_insert'] ) );
 		}
 
 		if ( isset( $params['sitemap_exclude_post_types'] ) ) {
-			update_option( 'holvek_sitemap_exclude_post_types', sanitize_text_field( $params['sitemap_exclude_post_types'] ) );
+			update_option( 'quinrel_sitemap_exclude_post_types', sanitize_text_field( $params['sitemap_exclude_post_types'] ) );
 		}
 
 		if ( isset( $params['sitemap_exclude_posts'] ) ) {
-			update_option( 'holvek_sitemap_exclude_posts', sanitize_text_field( $params['sitemap_exclude_posts'] ) );
+			update_option( 'quinrel_sitemap_exclude_posts', sanitize_text_field( $params['sitemap_exclude_posts'] ) );
 		}
 
 		// Save secure AI parameters
 		if ( isset( $params['ai_provider'] ) ) {
-			update_option( 'holvek_ai_provider', sanitize_text_field( $params['ai_provider'] ) );
+			update_option( 'quinrel_ai_provider', sanitize_text_field( $params['ai_provider'] ) );
 		}
 
 		if ( isset( $params['openai_key'] ) ) {
 			$val = $params['openai_key'];
 			if ( $val !== '••••••••••••' ) {
-				$stored = $this->storeSecret( 'holvek_openai_key', empty( $val ) ? '' : (string) $val );
+				$stored = $this->storeSecret( 'quinrel_openai_key', empty( $val ) ? '' : (string) $val );
 				if ( is_wp_error( $stored ) ) {
 					return $stored;
 				}
@@ -409,7 +409,7 @@ class AdminModule {
 		if ( isset( $params['anthropic_key'] ) ) {
 			$val = $params['anthropic_key'];
 			if ( $val !== '••••••••••••' ) {
-				$stored = $this->storeSecret( 'holvek_anthropic_key', empty( $val ) ? '' : (string) $val );
+				$stored = $this->storeSecret( 'quinrel_anthropic_key', empty( $val ) ? '' : (string) $val );
 				if ( is_wp_error( $stored ) ) {
 					return $stored;
 				}
@@ -417,7 +417,7 @@ class AdminModule {
 		}
 
 		if ( isset( $params['default_share_image'] ) ) {
-			update_option( 'holvek_default_share_image', esc_url_raw( $params['default_share_image'] ) );
+			update_option( 'quinrel_default_share_image', esc_url_raw( $params['default_share_image'] ) );
 		}
 
 		return rest_ensure_response( array( 'success' => true ) );
@@ -440,22 +440,22 @@ class AdminModule {
 		}
 
 		$provider  = isset( $params['ai_provider'] ) ? sanitize_text_field( $params['ai_provider'] ) : 'openai';
-		$aiGateway = new \Holvek\WordPress\Core\Ai\AiGateway();
+		$aiGateway = new \Quinrel\WordPress\Core\Ai\AiGateway();
 
 		// Temporarily override parameters for connection test if updated in the UI
 		if ( isset( $params['openai_key'] ) && $params['openai_key'] !== '••••••••••••' ) {
-			$stored = $this->storeSecret( 'holvek_openai_key', empty( $params['openai_key'] ) ? '' : (string) $params['openai_key'] );
+			$stored = $this->storeSecret( 'quinrel_openai_key', empty( $params['openai_key'] ) ? '' : (string) $params['openai_key'] );
 			if ( is_wp_error( $stored ) ) {
 				return $stored;
 			}
 		}
 		if ( isset( $params['anthropic_key'] ) && $params['anthropic_key'] !== '••••••••••••' ) {
-			$stored = $this->storeSecret( 'holvek_anthropic_key', empty( $params['anthropic_key'] ) ? '' : (string) $params['anthropic_key'] );
+			$stored = $this->storeSecret( 'quinrel_anthropic_key', empty( $params['anthropic_key'] ) ? '' : (string) $params['anthropic_key'] );
 			if ( is_wp_error( $stored ) ) {
 				return $stored;
 			}
 		}
-		update_option( 'holvek_ai_provider', $provider );
+		update_option( 'quinrel_ai_provider', $provider );
 
 		// Ping the provider with a short prompt
 		$result = $aiGateway->queryModel( 'Return exactly the word "SUCCESS" and nothing else.', 'System test.' );
@@ -464,35 +464,35 @@ class AdminModule {
 			return rest_ensure_response(
 				array(
 					'success' => true,
-					'message' => __( 'Connection test passed successfully!', 'holvek' ),
+					'message' => __( 'Connection test passed successfully!', 'quinrel' ),
 				)
 			);
 		}
 
-		$msg = isset( $result['message'] ) ? $result['message'] : __( 'Failed to connect to the selected AI provider.', 'holvek' );
+		$msg = isset( $result['message'] ) ? $result['message'] : __( 'Failed to connect to the selected AI provider.', 'quinrel' );
 		return new \WP_Error( 'ai_conn_fail', $msg, array( 'status' => 400 ) );
 	}
 
 	public function manualIndexUrl( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$postId = $request->get_param( 'post_id' );
 		if ( ! $postId ) {
-			return new \WP_Error( 'missing_param', __( 'Post ID is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_param', __( 'Post ID is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! current_user_can( 'edit_post', $postId ) ) {
-			return new \WP_Error( 'forbidden_post', __( 'You cannot submit this post for indexing.', 'holvek' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'forbidden_post', __( 'You cannot submit this post for indexing.', 'quinrel' ), array( 'status' => 403 ) );
 		}
 
 		$url = get_permalink( $postId );
 		if ( ! is_string( $url ) || '' === $url ) {
-			return new \WP_Error( 'invalid_post', __( 'Invalid Post ID.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_post', __( 'Invalid Post ID.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$indexNow = new BingIndexNowApi();
 		if ( ! $indexNow->isEnabled() ) {
 			return new \WP_Error(
 				'indexnow_disabled',
-				__( 'Turn on IndexNow and save a key before submitting a URL. Holvek does not create a key.', 'holvek' ),
+				__( 'Turn on IndexNow and save a key before submitting a URL. Quinrel does not create a key.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -500,7 +500,7 @@ class AdminModule {
 		if ( ! $indexNow->enqueueUrl( $url ) ) {
 			return new \WP_Error(
 				'indexnow_not_queued',
-				__( 'That URL could not be queued for IndexNow.', 'holvek' ),
+				__( 'That URL could not be queued for IndexNow.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -508,17 +508,17 @@ class AdminModule {
 		return rest_ensure_response(
 			array(
 				'success' => true,
-				'message' => __( 'IndexNow notification queued. Google Indexing API submission is limited to eligible JobPosting and livestream pages.', 'holvek' ),
+				'message' => __( 'IndexNow notification queued. Google Indexing API submission is limited to eligible JobPosting and livestream pages.', 'quinrel' ),
 			)
 		);
 	}
 
 	/**
-	 * GET /holvek/v1/pagespeed?post_id=N
+	 * GET /quinrel/v1/pagespeed?post_id=N
 	 *
 	 * Fetches mobile and desktop PageSpeed Insights scores for the post URL.
-	 * Results are cached in post-meta (_holvek_pagespeed_cache) for 7 days.
-	 * Requires HOLVEK_PSI_KEY constant or holvek_psi_key option to be set
+	 * Results are cached in post-meta (_quinrel_pagespeed_cache) for 7 days.
+	 * Requires QUINREL_PSI_KEY constant or quinrel_psi_key option to be set
 	 * (PageSpeed Insights API key). Without a key the public API rate-limit applies.
 	 */
 	public function getPageSpeed( \WP_REST_Request $request ): \WP_REST_Response {
@@ -526,11 +526,11 @@ class AdminModule {
 		$url    = get_permalink( $postId );
 
 		if ( ! $url ) {
-			return new \WP_Error( 'invalid_post', __( 'Could not resolve post URL.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'invalid_post', __( 'Could not resolve post URL.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		// 7-day cache: return stored result unless older than a week
-		$cached = get_post_meta( $postId, '_holvek_pagespeed_cache', true );
+		$cached = get_post_meta( $postId, '_quinrel_pagespeed_cache', true );
 		if ( $cached ) {
 			$data = json_decode( $cached, true );
 			if ( isset( $data['fetched_at'] ) && ( time() - $data['fetched_at'] ) < WEEK_IN_SECONDS ) {
@@ -544,9 +544,9 @@ class AdminModule {
 			}
 		}
 
-		$apiKey   = defined( 'HOLVEK_PSI_KEY' )
-			? HOLVEK_PSI_KEY
-			: get_option( 'holvek_psi_key', '' );
+		$apiKey   = defined( 'QUINREL_PSI_KEY' )
+			? QUINREL_PSI_KEY
+			: get_option( 'quinrel_psi_key', '' );
 		$keyParam = $apiKey ? '&key=' . rawurlencode( $apiKey ) : '';
 
 		$scores = array( 'fetched_at' => time() );
@@ -561,7 +561,7 @@ class AdminModule {
 				$endpoint,
 				array(
 					'timeout'    => 30,
-					'user-agent' => 'Holvek/' . HOLVEK_VERSION,
+					'user-agent' => 'Quinrel/' . QUINREL_VERSION,
 				)
 			);
 
@@ -586,7 +586,7 @@ class AdminModule {
 		}
 
 		// Persist to post-meta so the editor sidebar can display cached values
-		update_post_meta( $postId, '_holvek_pagespeed_cache', wp_json_encode( $scores ) );
+		update_post_meta( $postId, '_quinrel_pagespeed_cache', wp_json_encode( $scores ) );
 
 		return rest_ensure_response(
 			array(
@@ -598,27 +598,27 @@ class AdminModule {
 	}
 
 	/**
-	 * GET /holvek/v1/gsc/keywords?post_id=N
+	 * GET /quinrel/v1/gsc/keywords?post_id=N
 	 *
 	 * Returns the top 25 Google Search Console queries driving traffic to this
 	 * specific post URL, ordered by clicks desc. Results are cached in post-meta
-	 * (_holvek_ranking_keywords) for 24 hours.
+	 * (_quinrel_ranking_keywords) for 24 hours.
 	 *
 	 * Requires the Google Search Console OAuth token to be present
-	 * (same credential used by the Indexing API — holvek_google_indexing_key).
+	 * (same credential used by the Indexing API — quinrel_google_indexing_key).
 	 */
 	public function getGscKeywords( \WP_REST_Request $request ): \WP_REST_Response {
 		$postId = $request->get_param( 'post_id' );
 		$url    = get_permalink( $postId );
 
 		if ( ! $url ) {
-			return new \WP_Error( 'invalid_post', __( 'Could not resolve post URL.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'invalid_post', __( 'Could not resolve post URL.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		// 24-hour in-memory cache via post-meta
-		$cachedAt = (int) get_post_meta( $postId, '_holvek_ranking_keywords_at', true );
+		$cachedAt = (int) get_post_meta( $postId, '_quinrel_ranking_keywords_at', true );
 		if ( $cachedAt && ( time() - $cachedAt ) < DAY_IN_SECONDS ) {
-			$cached = get_post_meta( $postId, '_holvek_ranking_keywords', true );
+			$cached = get_post_meta( $postId, '_quinrel_ranking_keywords', true );
 			if ( $cached ) {
 				return rest_ensure_response(
 					array(
@@ -632,13 +632,13 @@ class AdminModule {
 
 		// Obtain a fresh access token via the same Google service-account JSON
 		// that powers the Indexing API (GoogleIndexingApi::getAccessToken).
-		$api         = new \Holvek\WordPress\Modules\Indexing\GoogleIndexingApi();
+		$api         = new \Quinrel\WordPress\Modules\Indexing\GoogleIndexingApi();
 		$accessToken = $api->getAccessToken();
 
 		if ( ! $accessToken ) {
 			return new \WP_Error(
 				'gsc_no_token',
-				__( 'Google Search Console is not connected. Please add your Service Account JSON under Holvek → Settings → Indexing.', 'holvek' ),
+				__( 'Google Search Console is not connected. Please add your Service Account JSON under Quinrel → Settings → Indexing.', 'quinrel' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -692,8 +692,8 @@ class AdminModule {
 
 		if ( empty( $data['rows'] ) ) {
 			// No data yet — could mean no traffic or GSC hasn't indexed the page yet
-			update_post_meta( $postId, '_holvek_ranking_keywords', wp_json_encode( array() ) );
-			update_post_meta( $postId, '_holvek_ranking_keywords_at', time() );
+			update_post_meta( $postId, '_quinrel_ranking_keywords', wp_json_encode( array() ) );
+			update_post_meta( $postId, '_quinrel_ranking_keywords_at', time() );
 			return rest_ensure_response(
 				array(
 					'success'  => true,
@@ -716,8 +716,8 @@ class AdminModule {
 			$data['rows']
 		);
 
-		update_post_meta( $postId, '_holvek_ranking_keywords', wp_json_encode( $keywords ) );
-		update_post_meta( $postId, '_holvek_ranking_keywords_at', time() );
+		update_post_meta( $postId, '_quinrel_ranking_keywords', wp_json_encode( $keywords ) );
+		update_post_meta( $postId, '_quinrel_ranking_keywords_at', time() );
 
 		return rest_ensure_response(
 			array(
@@ -733,25 +733,25 @@ class AdminModule {
 	// ══════════════════════════════════════════════════════════════════════════
 
 	/**
-	 * GET /holvek/v1/gsc/dashboard
+	 * GET /quinrel/v1/gsc/dashboard
 	 *
 	 * Returns site-wide Google Search Console data for the last 28 days.
 	 * Cached in a site-wide transient for 6 hours.
 	 */
 	public function getGscDashboard( \WP_REST_Request $request ): \WP_REST_Response {
-		$cacheKey = 'holvek_gsc_dashboard_v1';
+		$cacheKey = 'quinrel_gsc_dashboard_v1';
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return rest_ensure_response( array_merge( $cached, array( 'cached' => true ) ) );
 		}
 
-		$api         = new \Holvek\WordPress\Modules\Indexing\GoogleIndexingApi();
+		$api         = new \Quinrel\WordPress\Modules\Indexing\GoogleIndexingApi();
 		$accessToken = $api->getAccessToken();
 
 		if ( ! $accessToken ) {
 			return new \WP_Error(
 				'gsc_not_connected',
-				__( 'Google Search Console is not connected. Add your Service Account JSON under Holvek → Settings → Indexing.', 'holvek' ),
+				__( 'Google Search Console is not connected. Add your Service Account JSON under Quinrel → Settings → Indexing.', 'quinrel' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -900,23 +900,23 @@ class AdminModule {
 	// ══════════════════════════════════════════════════════════════════════════
 
 	/**
-	 * GET /holvek/v1/gsc/cannibalization
+	 * GET /quinrel/v1/gsc/cannibalization
 	 *
 	 * Groups GSC queries where two or more distinct pages both have clicks,
 	 * indicating posts competing for the same keyword. Cached 6 hours.
 	 */
 	public function getKeywordCannibalization( \WP_REST_Request $request ): \WP_REST_Response {
-		$cacheKey = 'holvek_cannibalization_v1';
+		$cacheKey = 'quinrel_cannibalization_v1';
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return rest_ensure_response( array_merge( $cached, array( 'cached' => true ) ) );
 		}
 
-		$api         = new \Holvek\WordPress\Modules\Indexing\GoogleIndexingApi();
+		$api         = new \Quinrel\WordPress\Modules\Indexing\GoogleIndexingApi();
 		$accessToken = $api->getAccessToken();
 
 		if ( ! $accessToken ) {
-			return new \WP_Error( 'gsc_not_connected', __( 'Google Search Console not connected.', 'holvek' ), array( 'status' => 401 ) );
+			return new \WP_Error( 'gsc_not_connected', __( 'Google Search Console not connected.', 'quinrel' ), array( 'status' => 401 ) );
 		}
 
 		$siteUrl = trailingslashit( get_option( 'siteurl' ) );
@@ -1011,10 +1011,10 @@ class AdminModule {
 	// ══════════════════════════════════════════════════════════════════════════
 
 	/**
-	 * GET /holvek/v1/links/orphans
+	 * GET /quinrel/v1/links/orphans
 	 *
 	 * Returns all published posts/pages that have zero incoming internal links
-	 * according to the wp_holvek_links index table. Results cached 1 hour.
+	 * according to the wp_quinrel_links index table. Results cached 1 hour.
 	 */
 	public function getOrphanPages( \WP_REST_Request $request ): \WP_REST_Response {
 		$page    = max( 1, absint( $request->get_param( 'page' ) ) );
@@ -1024,7 +1024,7 @@ class AdminModule {
 		}
 		$perPage = min( 100, $perPage );
 
-		$cacheKey = "holvek_orphan_pages_v2_{$page}_{$perPage}";
+		$cacheKey = "quinrel_orphan_pages_v2_{$page}_{$perPage}";
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return rest_ensure_response(
@@ -1039,7 +1039,7 @@ class AdminModule {
 		}
 
 		global $wpdb;
-		$linksTable = $wpdb->prefix . 'holvek_links';
+		$linksTable = $wpdb->prefix . 'quinrel_links';
 
 		// Check if table exists using prepared statement
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $linksTable ) ) !== $linksTable ) {
@@ -1090,7 +1090,7 @@ class AdminModule {
 			$placeholders = implode( ',', array_fill( 0, count( $urls ), '%s' ) );
 			// $placeholders is only a list of %s. The URL values are the prepare arguments.
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$linkedSql = "SELECT DISTINCT target_url FROM {$wpdb->prefix}holvek_links WHERE target_url IN ($placeholders)";
+			$linkedSql = "SELECT DISTINCT target_url FROM {$wpdb->prefix}quinrel_links WHERE target_url IN ($placeholders)";
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$linkedUrls = $wpdb->get_col( $wpdb->prepare( $linkedSql, ...$urls ) );
 		}
@@ -1114,7 +1114,7 @@ class AdminModule {
 					'url'       => $permalink,
 					'post_type' => get_post_type( $postId ),
 					'modified'  => get_the_modified_date( 'Y-m-d', $postId ),
-					'seo_score' => (int) get_post_meta( $postId, '_holvek_seo_score', true ),
+					'seo_score' => (int) get_post_meta( $postId, '_quinrel_seo_score', true ),
 					'edit_url'  => get_edit_post_link( $postId, 'raw' ),
 				);
 			} else {
@@ -1148,7 +1148,7 @@ class AdminModule {
 	}
 
 	/**
-	 * GET /holvek/v1/links/stats
+	 * GET /quinrel/v1/links/stats
 	 *
 	 * Returns site-wide internal link statistics:
 	 *   - Total indexed links
@@ -1157,7 +1157,7 @@ class AdminModule {
 	 *   - Posts with the most outgoing links
 	 */
 	public function getLinkStats( \WP_REST_Request $request ): \WP_REST_Response {
-		$cacheKey = 'holvek_link_stats_v1';
+		$cacheKey = 'quinrel_link_stats_v1';
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return rest_ensure_response(
@@ -1172,24 +1172,24 @@ class AdminModule {
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'holvek_links';
+		$table = $wpdb->prefix . 'quinrel_links';
 
 		// Check if table exists
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
 			return rest_ensure_response(
 				array(
 					'success' => true,
-					'message' => __( 'Link index table not found. Save a post to initialize it.', 'holvek' ),
+					'message' => __( 'Link index table not found. Save a post to initialize it.', 'quinrel' ),
 					'stats'   => null,
 				)
 			);
 		}
 
-		$totalLinks = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_links" );
+		$totalLinks = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_links" );
 
 		// Top 10 most linked-to pages
 		$topTargets = $wpdb->get_results(
-			"SELECT target_url, COUNT(*) as link_count FROM {$wpdb->prefix}holvek_links
+			"SELECT target_url, COUNT(*) as link_count FROM {$wpdb->prefix}quinrel_links
              GROUP BY target_url ORDER BY link_count DESC LIMIT 10",
 			ARRAY_A
 		) ?? array();
@@ -1207,7 +1207,7 @@ class AdminModule {
 
 		// Top 10 posts by outgoing link count
 		$topSources = $wpdb->get_results(
-			"SELECT post_id, COUNT(*) as link_count FROM {$wpdb->prefix}holvek_links
+			"SELECT post_id, COUNT(*) as link_count FROM {$wpdb->prefix}quinrel_links
              GROUP BY post_id ORDER BY link_count DESC LIMIT 10",
 			ARRAY_A
 		) ?? array();
@@ -1244,14 +1244,14 @@ class AdminModule {
 	// ══════════════════════════════════════════════════════════════════════════
 
 	/**
-	 * GET /holvek/v1/settings/ga4
+	 * GET /quinrel/v1/settings/ga4
 	 *
 	 * Returns the current GA4 configuration (measurement ID and status).
 	 */
 	public function getGa4Settings( \WP_REST_Request $request ): \WP_REST_Response {
-		$measurementId = get_option( 'holvek_ga4_measurement_id', '' );
-		$propertyId    = get_option( 'holvek_ga4_property_id', '' );
-		$credentialSet = ! empty( get_option( 'holvek_ga4_credentials', '' ) );
+		$measurementId = get_option( 'quinrel_ga4_measurement_id', '' );
+		$propertyId    = get_option( 'quinrel_ga4_property_id', '' );
+		$credentialSet = ! empty( get_option( 'quinrel_ga4_credentials', '' ) );
 
 		return rest_ensure_response(
 			array(
@@ -1263,7 +1263,7 @@ class AdminModule {
 	}
 
 	/**
-	 * POST /holvek/v1/settings/ga4
+	 * POST /quinrel/v1/settings/ga4
 	 *
 	 * Saves GA4 configuration: Measurement ID (for the frontend snippet injection),
 	 * Property ID (for the Data API), and the Service Account JSON credentials.
@@ -1272,11 +1272,19 @@ class AdminModule {
 		$params = $request->get_json_params();
 
 		if ( isset( $params['measurement_id'] ) ) {
-			update_option( 'holvek_ga4_measurement_id', sanitize_text_field( $params['measurement_id'] ) );
+			$measurementId = strtoupper( trim( sanitize_text_field( (string) $params['measurement_id'] ) ) );
+			if ( $measurementId !== '' && preg_match( '/^G-[A-Z0-9]{4,20}$/', $measurementId ) !== 1 ) {
+				return new \WP_Error(
+					'invalid_measurement_id',
+					__( 'Invalid GA4 Measurement ID. Expected format: G-XXXXXXXXXX.', 'quinrel' ),
+					array( 'status' => 422 )
+				);
+			}
+			update_option( 'quinrel_ga4_measurement_id', $measurementId );
 		}
 
 		if ( isset( $params['property_id'] ) ) {
-			update_option( 'holvek_ga4_property_id', sanitize_text_field( $params['property_id'] ) );
+			update_option( 'quinrel_ga4_property_id', sanitize_text_field( $params['property_id'] ) );
 		}
 
 		if ( isset( $params['credentials'] ) && ! empty( $params['credentials'] ) ) {
@@ -1284,26 +1292,26 @@ class AdminModule {
 			// Validate that it's a valid JSON service-account credential
 			$decoded = json_decode( $jsonValue, true );
 			if ( $decoded && isset( $decoded['private_key'], $decoded['client_email'] ) ) {
-				$stored = $this->storeSecret( 'holvek_ga4_credentials', $jsonValue );
+				$stored = $this->storeSecret( 'quinrel_ga4_credentials', $jsonValue );
 				if ( is_wp_error( $stored ) ) {
 					return $stored;
 				}
 				// Clear cached report on credential change
-				delete_transient( 'holvek_ga4_report_v1' );
+				delete_transient( 'quinrel_ga4_report_v1' );
 			} else {
-				return new \WP_Error( 'invalid_credentials', __( 'The provided credentials JSON is not a valid Google Service Account file.', 'holvek' ), array( 'status' => 422 ) );
+				return new \WP_Error( 'invalid_credentials', __( 'The provided credentials JSON is not a valid Google Service Account file.', 'quinrel' ), array( 'status' => 422 ) );
 			}
 		}
 
 		// Inject the gtag snippet into wp_head if a Measurement ID is provided
 		// (This is toggled by saving settings — the actual inject hook is in SeoModule boot)
-		delete_transient( 'holvek_ga4_report_v1' );
+		delete_transient( 'quinrel_ga4_report_v1' );
 
 		return rest_ensure_response( array( 'success' => true ) );
 	}
 
 	/**
-	 * GET /holvek/v1/ga4/report
+	 * GET /quinrel/v1/ga4/report
 	 *
 	 * Fetches a GA4 traffic report via the Google Analytics Data API v1beta.
 	 * Returns:
@@ -1312,24 +1320,24 @@ class AdminModule {
 	 *   - Top 10 pages by sessions
 	 *   - Traffic channels breakdown
 	 *
-	 * Requires: holvek_ga4_property_id and holvek_ga4_credentials options.
+	 * Requires: quinrel_ga4_property_id and quinrel_ga4_credentials options.
 	 * Cached for 4 hours.
 	 */
 	public function getGa4Report( \WP_REST_Request $request ): \WP_REST_Response {
-		$cacheKey = 'holvek_ga4_report_v1';
+		$cacheKey = 'quinrel_ga4_report_v1';
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return rest_ensure_response( array_merge( $cached, array( 'cached' => true ) ) );
 		}
 
-		$propertyId  = get_option( 'holvek_ga4_property_id', '' );
-		$rawCredJson = (string) get_option( 'holvek_ga4_credentials', '' );
+		$propertyId  = get_option( 'quinrel_ga4_property_id', '' );
+		$rawCredJson = (string) get_option( 'quinrel_ga4_credentials', '' );
 		$credJson    = KeyVault::decrypt( $rawCredJson );
 
 		if ( empty( $propertyId ) || empty( $credJson ) ) {
 			return new \WP_Error(
 				'ga4_not_configured',
-				__( 'GA4 Property ID and Service Account credentials are required. Configure them under Holvek → Analytics.', 'holvek' ),
+				__( 'GA4 Property ID and Service Account credentials are required. Configure them under Quinrel → Analytics.', 'quinrel' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -1337,13 +1345,13 @@ class AdminModule {
 		// Get OAuth2 token using the GA4 service account credentials
 		$credentials = json_decode( $credJson, true );
 		if ( ! $credentials || ! isset( $credentials['private_key'], $credentials['client_email'] ) ) {
-			return new \WP_Error( 'ga4_invalid_credentials', __( 'Invalid GA4 credentials.', 'holvek' ), array( 'status' => 422 ) );
+			return new \WP_Error( 'ga4_invalid_credentials', __( 'Invalid GA4 credentials.', 'quinrel' ), array( 'status' => 422 ) );
 		}
 
 		// Build JWT for GA4 Data API scope
 		$accessToken = $this->getGa4AccessToken( $credentials );
 		if ( ! $accessToken ) {
-			return new \WP_Error( 'ga4_auth_failed', __( 'Failed to obtain GA4 access token. Check your Service Account credentials.', 'holvek' ), array( 'status' => 401 ) );
+			return new \WP_Error( 'ga4_auth_failed', __( 'Failed to obtain GA4 access token. Check your Service Account credentials.', 'quinrel' ), array( 'status' => 401 ) );
 		}
 
 		$endDate   = gmdate( 'Y-m-d' );
@@ -1524,7 +1532,7 @@ class AdminModule {
 	 * Reuses a 55-minute transient to avoid signing a new JWT on every request.
 	 */
 	private function getGa4AccessToken( array $credentials ): ?string {
-		$transientKey = 'holvek_ga4_token';
+		$transientKey = 'quinrel_ga4_token';
 		$token        = get_transient( $transientKey );
 		if ( $token ) {
 			return $token;
@@ -1614,8 +1622,8 @@ class AdminModule {
 
 		if ( ! is_string( $encrypted ) || ! KeyVault::isCiphertext( $encrypted ) ) {
 			return new \WP_Error(
-				'holvek_encryption_failed',
-				__( 'Holvek could not encrypt this secret. The value was not saved.', 'holvek' ),
+				'quinrel_encryption_failed',
+				__( 'Quinrel could not encrypt this secret. The value was not saved.', 'quinrel' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -1625,7 +1633,7 @@ class AdminModule {
 	}
 
 	/**
-	 * GET /holvek/v1/settings/export
+	 * GET /quinrel/v1/settings/export
 	 *
 	 * Public settings only. Secrets are named in `_redacted` and their values
 	 * are omitted. A full database copy can still decrypt stored secrets.
@@ -1640,7 +1648,7 @@ class AdminModule {
 	}
 
 	/**
-	 * POST /holvek/v1/settings/import
+	 * POST /quinrel/v1/settings/import
 	 *
 	 * Writes allow-listed settings after each value is checked.
 	 * Unknown keys reject the file before anything is saved.
@@ -1665,54 +1673,54 @@ class AdminModule {
 	// ══════════════════════════════════════════════════════════════════════════
 
 	/**
-	 * GET /holvek/v1/html-sitemap
+	 * GET /quinrel/v1/html-sitemap
 	 * Returns current HTML sitemap configuration.
 	 */
 	public function getHtmlSitemapSettings( \WP_REST_Request $request ): \WP_REST_Response {
 		return rest_ensure_response(
 			array(
-				'post_types'  => get_option( 'holvek_html_sitemap_post_types', 'post,page' ),
-				'exclude_ids' => get_option( 'holvek_html_sitemap_exclude_ids', '' ),
-				'depth'       => (int) get_option( 'holvek_html_sitemap_depth', 0 ),
-				'order'       => get_option( 'holvek_html_sitemap_order', 'menu_order' ),
-				'show_count'  => get_option( 'holvek_html_sitemap_show_count', 'no' ) === 'yes',
-				'shortcode'   => '[holvek_sitemap]',
+				'post_types'  => get_option( 'quinrel_html_sitemap_post_types', 'post,page' ),
+				'exclude_ids' => get_option( 'quinrel_html_sitemap_exclude_ids', '' ),
+				'depth'       => (int) get_option( 'quinrel_html_sitemap_depth', 0 ),
+				'order'       => get_option( 'quinrel_html_sitemap_order', 'menu_order' ),
+				'show_count'  => get_option( 'quinrel_html_sitemap_show_count', 'no' ) === 'yes',
+				'shortcode'   => '[quinrel_sitemap]',
 			)
 		);
 	}
 
 	/**
-	 * POST /holvek/v1/html-sitemap
+	 * POST /quinrel/v1/html-sitemap
 	 * Save HTML sitemap configuration.
 	 */
 	public function saveHtmlSitemapSettings( \WP_REST_Request $request ): \WP_REST_Response {
 		$params = $request->get_json_params();
 
-		update_option( 'holvek_html_sitemap_post_types', sanitize_text_field( $params['post_types'] ?? 'post,page' ) );
-		update_option( 'holvek_html_sitemap_exclude_ids', sanitize_text_field( $params['exclude_ids'] ?? '' ) );
-		update_option( 'holvek_html_sitemap_depth', absint( $params['depth'] ?? 0 ) );
-		update_option( 'holvek_html_sitemap_order', sanitize_key( $params['order'] ?? 'menu_order' ) );
-		update_option( 'holvek_html_sitemap_show_count', ! empty( $params['show_count'] ) ? 'yes' : 'no' );
+		update_option( 'quinrel_html_sitemap_post_types', sanitize_text_field( $params['post_types'] ?? 'post,page' ) );
+		update_option( 'quinrel_html_sitemap_exclude_ids', sanitize_text_field( $params['exclude_ids'] ?? '' ) );
+		update_option( 'quinrel_html_sitemap_depth', absint( $params['depth'] ?? 0 ) );
+		update_option( 'quinrel_html_sitemap_order', sanitize_key( $params['order'] ?? 'menu_order' ) );
+		update_option( 'quinrel_html_sitemap_show_count', ! empty( $params['show_count'] ) ? 'yes' : 'no' );
 
 		return rest_ensure_response( array( 'success' => true ) );
 	}
 
 	/**
-	 * GET /holvek/v1/html-sitemap/preview
+	 * GET /quinrel/v1/html-sitemap/preview
 	 *
 	 * Returns a structured tree of published posts grouped by post type
 	 * according to the current HTML sitemap configuration.
-	 * Used by the admin UI preview and also powers the [holvek_sitemap] shortcode.
+	 * Used by the admin UI preview and also powers the [quinrel_sitemap] shortcode.
 	 */
 	public function previewHtmlSitemap( \WP_REST_Request $request ): \WP_REST_Response {
-		$postTypesRaw = get_option( 'holvek_html_sitemap_post_types', 'post,page' );
+		$postTypesRaw = get_option( 'quinrel_html_sitemap_post_types', 'post,page' );
 		$excludeIds   = array_slice(
-			array_values( array_filter( array_map( 'absint', explode( ',', (string) get_option( 'holvek_html_sitemap_exclude_ids', '' ) ) ) ) ),
+			array_values( array_filter( array_map( 'absint', explode( ',', (string) get_option( 'quinrel_html_sitemap_exclude_ids', '' ) ) ) ) ),
 			0,
 			500
 		);
-		$order        = get_option( 'holvek_html_sitemap_order', 'menu_order' );
-		$showCount    = get_option( 'holvek_html_sitemap_show_count', 'no' ) === 'yes';
+		$order        = get_option( 'quinrel_html_sitemap_order', 'menu_order' );
+		$showCount    = get_option( 'quinrel_html_sitemap_show_count', 'no' ) === 'yes';
 
 		$postTypes = array_filter( array_map( 'trim', explode( ',', $postTypesRaw ) ) );
 		if ( empty( $postTypes ) ) {

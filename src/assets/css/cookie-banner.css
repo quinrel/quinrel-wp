@@ -1,5 +1,5 @@
-/* Holvek Cookie Consent Banner */
-.holvek-cookie-banner {
+/* Quinrel Cookie Consent Banner */
+.quinrel-cookie-banner {
 	position: fixed;
 	bottom: 0;
 	left: 0;
@@ -13,7 +13,7 @@
 	line-height: 1.5;
 }
 
-.holvek-cookie-banner__inner {
+.quinrel-cookie-banner__inner {
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 14px 20px;
@@ -23,24 +23,24 @@
 	flex-wrap: wrap;
 }
 
-.holvek-cookie-banner__text {
+.quinrel-cookie-banner__text {
 	margin: 0;
 	flex: 1 1 300px;
 	color: #cbd5e1;
 }
 
-.holvek-cookie-banner__text a {
+.quinrel-cookie-banner__text a {
 	color: #93c5fd;
 	text-decoration: underline;
 }
 
-.holvek-cookie-banner__actions {
+.quinrel-cookie-banner__actions {
 	display: flex;
 	gap: 8px;
 	flex-shrink: 0;
 }
 
-.holvek-cookie-btn {
+.quinrel-cookie-btn {
 	padding: 8px 18px;
 	border: none;
 	border-radius: 6px;
@@ -50,30 +50,30 @@
 	transition: opacity .15s;
 }
 
-.holvek-cookie-btn:hover {
+.quinrel-cookie-btn:hover {
 	opacity: .85;
 }
 
-.holvek-cookie-btn--accept {
+.quinrel-cookie-btn--accept {
 	background: #3b82f6;
 	color: #fff;
 }
 
-.holvek-cookie-btn--decline {
+.quinrel-cookie-btn--decline {
 	background: transparent;
 	color: #94a3b8;
 	border: 1px solid #475569;
 }
 
 @media (max-width: 600px) {
-	.holvek-cookie-banner__inner {
+	.quinrel-cookie-banner__inner {
 		flex-direction: column;
 		align-items: flex-start;
 	}
-	.holvek-cookie-banner__actions {
+	.quinrel-cookie-banner__actions {
 		width: 100%;
 	}
-	.holvek-cookie-btn {
+	.quinrel-cookie-btn {
 		flex: 1;
 	}
 }

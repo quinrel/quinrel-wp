@@ -1,17 +1,17 @@
 {
-    "name": "holvek/holvek",
-    "description": "Technical SEO, structured data, sitemaps, redirects, and indexing tools for WordPress.",
+    "name": "quinrel/quinrel",
+    "description": "Visibility & Discovery Intelligence for WordPress, with technical SEO included.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "authors": [
         {
             "name": "Skoorite Limited",
-            "email": "hello@holvek.com"
+            "email": "hello@quinrel.com"
         }
     ],
     "autoload": {
         "psr-4": {
-            "Holvek\\WordPress\\": "src/"
+            "Quinrel\\WordPress\\": "src/"
         }
     },
     "require": {

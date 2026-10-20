@@ -1,6 +1,6 @@
-# Holvek Product Roadmap
+# Quinrel Product Roadmap
 
-This document outlines planned and upcoming features for Holvek that are not yet implemented in the current plugin release.
+This document outlines planned and upcoming features for Quinrel that are not yet implemented in the current plugin release.
 
 ---
 

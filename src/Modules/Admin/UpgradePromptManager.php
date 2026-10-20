@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -10,18 +10,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Lists features this install already provides.
  *
  * Search Console, redirects, the technical audit, rank checks, the writing
- * assistant, content gap, and competitor schema import run without a Holvek
+ * assistant, content gap, and competitor schema import run without a Quinrel
  * account. Names that are not implemented are omitted so they are not offered
  * as a locked upgrade.
  */
 class UpgradePromptManager {
 
-	private const DISMISSED_META = 'holvek_upgrade_banner_dismissed';
+	private const DISMISSED_META = 'quinrel_upgrade_banner_dismissed';
 
 	public function boot(): void {
 		add_action( 'admin_notices', array( $this, 'showUpgradeBannerNotice' ) );
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
-		add_action( 'wp_ajax_holvek_dismiss_upgrade_banner', array( $this, 'handleDismissAjax' ) );
+		add_action( 'wp_ajax_quinrel_dismiss_upgrade_banner', array( $this, 'handleDismissAjax' ) );
 	}
 
 	/**
@@ -32,7 +32,7 @@ class UpgradePromptManager {
 	}
 
 	public function handleDismissAjax(): void {
-		check_ajax_referer( 'holvek_dismiss_banner' );
+		check_ajax_referer( 'quinrel_dismiss_banner' );
 		update_user_meta( get_current_user_id(), self::DISMISSED_META, true );
 		wp_die();
 	}
@@ -45,7 +45,7 @@ class UpgradePromptManager {
 		( new StandaloneDashboard() )->registerRoutes();
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/upgrade/features',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -55,7 +55,7 @@ class UpgradePromptManager {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/upgrade/dismiss-banner',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -65,7 +65,7 @@ class UpgradePromptManager {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/upgrade/check-feature',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -76,7 +76,7 @@ class UpgradePromptManager {
 	}
 
 	public function listFeatures( \WP_REST_Request $request ): \WP_REST_Response {
-		$currentTier = \Holvek\WordPress\Core\Api\CloudCredential::cachedTier();
+		$currentTier = \Quinrel\WordPress\Core\Api\CloudCredential::cachedTier();
 		$features    = array();
 
 		foreach ( $this->localFeatures() as $key => $name ) {
@@ -110,7 +110,7 @@ class UpgradePromptManager {
 		$key    = sanitize_text_field( $params['feature_key'] ?? '' );
 
 		if ( ! $this->isFeatureAvailable( $key ) ) {
-			return new \WP_Error( 'unknown_feature', __( 'Unknown feature key.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'unknown_feature', __( 'Unknown feature key.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		return rest_ensure_response(
@@ -130,13 +130,13 @@ class UpgradePromptManager {
 	 */
 	private function localFeatures(): array {
 		return array(
-			'writing_assistant'  => __( 'AI Writing Assistant', 'holvek' ),
-			'content_gap'        => __( 'Content Gap Analysis', 'holvek' ),
-			'rank_tracker'       => __( 'Keyword Rank Tracker', 'holvek' ),
-			'schema_aggregation' => __( 'Schema Competitor Import', 'holvek' ),
-			'gsc_integration'    => __( 'Google Search Console', 'holvek' ),
-			'technical_audit'    => __( 'Full Technical SEO Audit', 'holvek' ),
-			'bulk_csv_redirects' => __( 'Bulk CSV Redirects', 'holvek' ),
+			'writing_assistant'  => __( 'AI Writing Assistant', 'quinrel' ),
+			'content_gap'        => __( 'Content Gap Analysis', 'quinrel' ),
+			'rank_tracker'       => __( 'Keyword Rank Tracker', 'quinrel' ),
+			'schema_aggregation' => __( 'Schema Competitor Import', 'quinrel' ),
+			'gsc_integration'    => __( 'Google Search Console', 'quinrel' ),
+			'technical_audit'    => __( 'Full Technical SEO Audit', 'quinrel' ),
+			'bulk_csv_redirects' => __( 'Bulk CSV Redirects', 'quinrel' ),
 		);
 	}
 

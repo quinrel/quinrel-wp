@@ -18,8 +18,8 @@ if (!defined('ABSPATH')) {
 if (!defined('WP_CONTENT_DIR')) {
     define('WP_CONTENT_DIR', dirname(__DIR__) . '/wp-content');
 }
-if (!defined('HOLVEK_VERSION')) {
-    define('HOLVEK_VERSION', '1.0.1');
+if (!defined('QUINREL_VERSION')) {
+    define('QUINREL_VERSION', '1.0.1');
 }
 if (!defined('SECURE_AUTH_KEY')) {
     define('SECURE_AUTH_KEY', 'test_secure_auth_key_1234567890abcdef');
@@ -695,6 +695,7 @@ if (!function_exists('wp_register_script')) {
 
 if (!function_exists('wp_enqueue_script')) {
     function wp_enqueue_script(string $handle, string $src = '', array $deps = array(), $ver = false, bool $in_footer = false): void {
+        $GLOBALS['mock_enqueued_scripts'][$handle] = $src;
     }
 }
 
@@ -867,8 +868,8 @@ if (!function_exists('get_the_title')) {
 if (!function_exists('get_bloginfo')) {
     function get_bloginfo(string $show = 'name'): string {
         if ($show === 'name') {
-            $name = $GLOBALS['mock_blogname'] ?? 'Holvek Test Site';
-            return is_string($name) ? $name : 'Holvek Test Site';
+            $name = $GLOBALS['mock_blogname'] ?? 'Quinrel Test Site';
+            return is_string($name) ? $name : 'Quinrel Test Site';
         }
         if ($show === 'description') {
             return 'AI Powered SEO Plugin';
@@ -879,7 +880,10 @@ if (!function_exists('get_bloginfo')) {
 
 if (!function_exists('get_permalink')) {
     function get_permalink($post = 0): string {
-        $id = is_numeric($post) && $post > 0 ? (int) $post : get_the_ID();
+        if (is_object($post) && !empty($post->post_name)) {
+            return "https://example.com/{$post->post_name}/";
+        }
+        $id = is_numeric($post) && $post > 0 ? (int) $post : (is_object($post) && isset($post->ID) ? $post->ID : get_the_ID());
         return "https://example.com/post-{$id}/";
     }
 }
@@ -1133,6 +1137,13 @@ if (!function_exists('flush_rewrite_rules')) {
 if (!function_exists('add_action')) {
     function add_action(string $hook_name, callable $callback, int $priority = 10, int $accepted_args = 1): true {
         $GLOBALS['mock_hooks'][] = array( 'action', $hook_name );
+        return true;
+    }
+}
+
+if (!function_exists('remove_action')) {
+    function remove_action(string $hook_name, callable|string|array $callback, int $priority = 10): bool {
+        $GLOBALS['mock_removed_actions'][] = array( $hook_name, $callback, $priority );
         return true;
     }
 }

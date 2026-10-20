@@ -1,16 +1,16 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Social;
+namespace Quinrel\WordPress\Modules\Social;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Core\Security\KeyVault;
 
 class SocialAccountManager {
 
-	private const OPTION_KEY = 'holvek_social_accounts';
+	private const OPTION_KEY = 'quinrel_social_accounts';
 
 	public function getAccounts(): array {
 		$accounts = get_option( self::OPTION_KEY, array() );
@@ -45,8 +45,8 @@ class SocialAccountManager {
 					return $encrypted;
 				}
 				return new \WP_Error(
-					'holvek_encryption_failed',
-					__( 'Holvek could not encrypt this secret. The value was not saved.', 'holvek' ),
+					'quinrel_encryption_failed',
+					__( 'Quinrel could not encrypt this secret. The value was not saved.', 'quinrel' ),
 					array( 'status' => 500 )
 				);
 			}

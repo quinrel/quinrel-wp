@@ -1,27 +1,27 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Core\Security\KeyVault;
-use Holvek\WordPress\Modules\Admin\AdminMenu;
-use Holvek\WordPress\Modules\Admin\AdminModule;
-use Holvek\WordPress\Modules\Admin\SeoAuditHistoryLog;
-use Holvek\WordPress\Modules\Ai\UsageMeteringManager;
-use Holvek\WordPress\Modules\Analytics\BingWebmasterIntegration;
-use Holvek\WordPress\Modules\Analytics\KeywordRankTracker;
-use Holvek\WordPress\Modules\Compliance\CcpaPrivacyTools;
-use Holvek\WordPress\Modules\Compliance\CookieBannerModule;
-use Holvek\WordPress\Modules\ContentAssistant\AuditScheduler;
-use Holvek\WordPress\Modules\ContentAssistant\StaleCornerStoneDetector;
-use Holvek\WordPress\Modules\ImageSeo\ImageFilenameEnforcer;
-use Holvek\WordPress\Modules\Sitemap\HtmlSitemapShortcode;
-use Holvek\WordPress\Modules\Social\SocialAccountManager;
-use Holvek\WordPress\Modules\Social\SocialModule;
-use Holvek\WordPress\Modules\TechnicalSeo\ErrorMonitor;
-use Holvek\WordPress\Modules\TechnicalSeo\RedirectManager;
-use Holvek\WordPress\Modules\TechnicalSeo\RobotsTxtEditor;
-use Holvek\WordPress\Plugin;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Modules\Admin\AdminMenu;
+use Quinrel\WordPress\Modules\Admin\AdminModule;
+use Quinrel\WordPress\Modules\Admin\SeoAuditHistoryLog;
+use Quinrel\WordPress\Modules\Ai\UsageMeteringManager;
+use Quinrel\WordPress\Modules\Analytics\BingWebmasterIntegration;
+use Quinrel\WordPress\Modules\Analytics\KeywordRankTracker;
+use Quinrel\WordPress\Modules\Compliance\CcpaPrivacyTools;
+use Quinrel\WordPress\Modules\Compliance\CookieBannerModule;
+use Quinrel\WordPress\Modules\ContentAssistant\AuditScheduler;
+use Quinrel\WordPress\Modules\ContentAssistant\StaleCornerStoneDetector;
+use Quinrel\WordPress\Modules\ImageSeo\ImageFilenameEnforcer;
+use Quinrel\WordPress\Modules\Sitemap\HtmlSitemapShortcode;
+use Quinrel\WordPress\Modules\Social\SocialAccountManager;
+use Quinrel\WordPress\Modules\Social\SocialModule;
+use Quinrel\WordPress\Modules\TechnicalSeo\ErrorMonitor;
+use Quinrel\WordPress\Modules\TechnicalSeo\RedirectManager;
+use Quinrel\WordPress\Modules\TechnicalSeo\RobotsTxtEditor;
+use Quinrel\WordPress\Plugin;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use WP_REST_Request;
@@ -50,10 +50,10 @@ class AssetQueryTest extends TestCase {
 			$GLOBALS['mock_wpdb_col'],
 			$GLOBALS['mock_get_posts'],
 			$GLOBALS['mock_get_posts_args'],
-			$GLOBALS['mock_wp_options']['holvek_redirect_counts'],
-			$GLOBALS['mock_wp_options']['holvek_redirects'],
-			$GLOBALS['mock_wp_options']['holvek_404_logs'],
-			$GLOBALS['mock_wp_options']['holvek_404_table_exists']
+			$GLOBALS['mock_wp_options']['quinrel_redirect_counts'],
+			$GLOBALS['mock_wp_options']['quinrel_redirects'],
+			$GLOBALS['mock_wp_options']['quinrel_404_logs'],
+			$GLOBALS['mock_wp_options']['quinrel_404_table_exists']
 		);
 	}
 
@@ -81,23 +81,23 @@ class AssetQueryTest extends TestCase {
 		$sitemap->register();
 
 		$this->assertSame( $before, array_column( $GLOBALS['mock_hooks'] ?? array(), 1 ) );
-		$this->assertSame( array( 'holvek_sitemap' ), $GLOBALS['mock_shortcodes'] );
+		$this->assertSame( array( 'quinrel_sitemap' ), $GLOBALS['mock_shortcodes'] );
 
 		$first = $sitemap->render();
-		$this->assertStringContainsString( 'id="holvek-sitemap-css"', $first );
-		$this->assertStringContainsString( '<nav class="holvek-sitemap"', $first );
+		$this->assertStringContainsString( 'id="quinrel-sitemap-css"', $first );
+		$this->assertStringContainsString( '<nav class="quinrel-sitemap"', $first );
 
 		$second = $sitemap->render();
-		$this->assertStringNotContainsString( 'id="holvek-sitemap-css"', $second );
-		$this->assertStringContainsString( '<nav class="holvek-sitemap"', $second );
+		$this->assertStringNotContainsString( 'id="quinrel-sitemap-css"', $second );
+		$this->assertStringContainsString( '<nav class="quinrel-sitemap"', $second );
 	}
 
 	public function testBootDoesNotScheduleAndWorkersRestoreAMissingEvent(): void {
-		update_option( 'holvek_db_version', HOLVEK_VERSION );
+		update_option( 'quinrel_db_version', QUINREL_VERSION );
 		$this->bootPlugin( false, false );
 		$this->assertSame( array(), $GLOBALS['mock_recurring_events'] );
 
-		update_option( 'holvek_caps_version', HOLVEK_VERSION );
+		update_option( 'quinrel_caps_version', QUINREL_VERSION );
 		$this->bootPlugin( true, true );
 		$this->assertSame( array(), $GLOBALS['mock_recurring_events'] );
 
@@ -117,61 +117,61 @@ class AssetQueryTest extends TestCase {
 
 		$this->assertSame(
 			array(
-				'holvek_flush_404_buffer'            => 'hourly',
-				'holvek_404_cleanup'                 => 'daily',
-				'holvek_rank_check'                  => 'daily',
-				'holvek_apply_retention'            => 'daily',
-				'holvek_weekly_usage_email'         => 'weekly',
-				'holvek_cornerstone_staleness_check' => 'weekly',
-				'holvek_prune_audit_log'            => 'daily',
-				'holvek_scheduled_audit'            => 'weekly',
+				'quinrel_flush_404_buffer'            => 'hourly',
+				'quinrel_404_cleanup'                 => 'daily',
+				'quinrel_rank_check'                  => 'daily',
+				'quinrel_apply_retention'            => 'daily',
+				'quinrel_weekly_usage_email'         => 'weekly',
+				'quinrel_cornerstone_staleness_check' => 'weekly',
+				'quinrel_prune_audit_log'            => 'daily',
+				'quinrel_scheduled_audit'            => 'weekly',
 			),
 			$this->recurrences()
 		);
 
-		$this->dropHook( 'holvek_rank_check' );
+		$this->dropHook( 'quinrel_rank_check' );
 		( new KeywordRankTracker() )->checkAllKeywords();
-		$this->assertCount( 1, $this->eventsFor( 'holvek_rank_check' ) );
+		$this->assertCount( 1, $this->eventsFor( 'quinrel_rank_check' ) );
 
-		$this->dropHook( 'holvek_flush_404_buffer' );
+		$this->dropHook( 'quinrel_flush_404_buffer' );
 		( new ErrorMonitor() )->flushBufferToDatabase();
-		$this->assertCount( 1, $this->eventsFor( 'holvek_flush_404_buffer' ) );
+		$this->assertCount( 1, $this->eventsFor( 'quinrel_flush_404_buffer' ) );
 
-		$this->dropHook( 'holvek_404_cleanup' );
+		$this->dropHook( 'quinrel_404_cleanup' );
 		$queriesBefore = count( $this->db->queries );
 		( new ErrorMonitor() )->purgeExpiredLogs();
-		$this->assertCount( 1, $this->eventsFor( 'holvek_404_cleanup' ) );
+		$this->assertCount( 1, $this->eventsFor( 'quinrel_404_cleanup' ) );
 		$this->assertSame( array(), array_slice( $this->db->queries, $queriesBefore ) );
 
-		update_option( 'holvek_404_table_exists', 'yes', false );
+		update_option( 'quinrel_404_table_exists', 'yes', false );
 		$this->db->queries = array();
 		( new ErrorMonitor() )->purgeExpiredLogs();
-		$purge = $this->sqlContaining( 'holvek_404_logs' );
+		$purge = $this->sqlContaining( 'quinrel_404_logs' );
 		$this->assertStringContainsString( 'INTERVAL 90 DAY', $purge );
 
-		$this->dropHook( 'holvek_prune_audit_log' );
+		$this->dropHook( 'quinrel_prune_audit_log' );
 		( new SeoAuditHistoryLog() )->pruneOldEntries();
-		$this->assertCount( 1, $this->eventsFor( 'holvek_prune_audit_log' ) );
+		$this->assertCount( 1, $this->eventsFor( 'quinrel_prune_audit_log' ) );
 
-		$this->dropHook( 'holvek_apply_retention' );
+		$this->dropHook( 'quinrel_apply_retention' );
 		( new CcpaPrivacyTools() )->applyRetentionPolicy();
-		$this->assertCount( 1, $this->eventsFor( 'holvek_apply_retention' ) );
+		$this->assertCount( 1, $this->eventsFor( 'quinrel_apply_retention' ) );
 
-		$this->dropHook( 'holvek_weekly_usage_email' );
+		$this->dropHook( 'quinrel_weekly_usage_email' );
 		( new UsageMeteringManager() )->sendWeeklySummary();
-		$this->assertCount( 1, $this->eventsFor( 'holvek_weekly_usage_email' ) );
+		$this->assertCount( 1, $this->eventsFor( 'quinrel_weekly_usage_email' ) );
 		$this->assertNotEmpty( $GLOBALS['mock_mail'] );
 
-		$this->dropHook( 'holvek_cornerstone_staleness_check' );
+		$this->dropHook( 'quinrel_cornerstone_staleness_check' );
 		( new StaleCornerStoneDetector() )->checkStaleness();
-		$this->assertCount( 1, $this->eventsFor( 'holvek_cornerstone_staleness_check' ) );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_stale_cornerstone_ids'] );
+		$this->assertCount( 1, $this->eventsFor( 'quinrel_cornerstone_staleness_check' ) );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_stale_cornerstone_ids'] );
 
-		$this->dropHook( 'holvek_scheduled_audit' );
+		$this->dropHook( 'quinrel_scheduled_audit' );
 		( new AuditScheduler() )->runScheduledAudit();
-		$this->assertCount( 1, $this->eventsFor( 'holvek_scheduled_audit' ) );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_last_audit_results'] );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_audit_history'] );
+		$this->assertCount( 1, $this->eventsFor( 'quinrel_scheduled_audit' ) );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_last_audit_results'] );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_audit_history'] );
 	}
 
 	public function testAdminReadsArePaged(): void {
@@ -192,7 +192,7 @@ class AssetQueryTest extends TestCase {
 		$this->assertStringNotContainsString( 'SELECT *', $exportSql );
 		$this->assertStringNotContainsString( 'LIMIT 5000', $exportSql );
 
-		update_option( 'holvek_404_table_exists', 'yes' );
+		update_option( 'quinrel_404_table_exists', 'yes' );
 		$errors = new ErrorMonitor();
 		$logs   = new WP_REST_Request();
 		$logs->set_param( 'per_page', 5000 );
@@ -209,7 +209,7 @@ class AssetQueryTest extends TestCase {
 		$this->db->queries = array();
 		$audit = ( new SeoAuditHistoryLog() )->exportCsv( new WP_REST_Request() );
 		$this->assertIsString( $audit->get_data() );
-		$auditSql = $this->sqlContaining( 'FROM wp_holvek_audit_log' );
+		$auditSql = $this->sqlContaining( 'FROM wp_quinrel_audit_log' );
 		$this->assertStringContainsString( 'SELECT id, user_id, post_id, action, field, old_value, new_value, context, created_at', $auditSql );
 		$this->assertStringContainsString( 'LIMIT 200', $auditSql );
 		$this->assertStringNotContainsString( 'SELECT *', $auditSql );
@@ -218,7 +218,7 @@ class AssetQueryTest extends TestCase {
 		$admin = new AdminModule( new EventManager(), new AdminMenu() );
 		$GLOBALS['mock_wpdb_var'] = static function ( $query ) {
 			if ( is_string( $query ) && str_contains( $query, 'SHOW TABLES' ) ) {
-				return 'wp_holvek_links';
+				return 'wp_quinrel_links';
 			}
 			if ( is_string( $query ) && str_contains( $query, 'COUNT' ) ) {
 				return 3;
@@ -274,7 +274,7 @@ class AssetQueryTest extends TestCase {
 		$robots->updateRobotsTxt( $request );
 		$robots->updateAiBots( $this->jsonRequest( array( 'custom_bots' => array( 'GPTBot' ) ) ) );
 		$robots->registerRoutes();
-		$this->invokeRoute( 'holvek/v1/ai-training-optout', 1, array( 'enabled' => true ) );
+		$this->invokeRoute( 'quinrel/v1/ai-training-optout', 1, array( 'enabled' => true ) );
 
 		( new BingWebmasterIntegration() )->saveSettings( $this->paramRequest( 'api_key', 'bing-key' ) );
 
@@ -289,15 +289,15 @@ class AssetQueryTest extends TestCase {
 		);
 		$store = ( new ReflectionClass( AdminModule::class ) )->getMethod( 'storeSecret' );
 		$store->setAccessible( true );
-		$this->assertTrue( $store->invoke( $admin, 'holvek_openai_key', '' ) );
+		$this->assertTrue( $store->invoke( $admin, 'quinrel_openai_key', '' ) );
 		KeyVault::ensureSaltExists();
-		$this->assertTrue( $store->invoke( $admin, 'holvek_ga4_credentials', 'secret-value' ) );
-		$this->assertStringStartsWith( 'holvek_enc::', (string) get_option( 'holvek_ga4_credentials' ) );
+		$this->assertTrue( $store->invoke( $admin, 'quinrel_ga4_credentials', 'secret-value' ) );
+		$this->assertStringStartsWith( 'quinrel_enc::', (string) get_option( 'quinrel_ga4_credentials' ) );
 
 		( new CookieBannerModule() )->saveSettings( $this->jsonRequest( array( 'enabled' => true ) ) );
 		( new ImageFilenameEnforcer() )->saveSettings( $this->jsonRequest( array( 'enforce' => true ) ) );
 		( new CcpaPrivacyTools() )->registerRoutes();
-		$this->invokeRoute( 'holvek/v1/privacy/gpc-settings', 1, array( 'honour_gpc' => true ) );
+		$this->invokeRoute( 'quinrel/v1/privacy/gpc-settings', 1, array( 'honour_gpc' => true ) );
 
 		$saved = ( new SocialAccountManager() )->saveAccount(
 			array(
@@ -308,7 +308,7 @@ class AssetQueryTest extends TestCase {
 			)
 		);
 		$this->assertTrue( $saved );
-		$this->assertStringStartsWith( 'holvek_enc::', (string) get_option( 'holvek_social_accounts' )[0]['access_token'] );
+		$this->assertStringStartsWith( 'quinrel_enc::', (string) get_option( 'quinrel_social_accounts' )[0]['access_token'] );
 
 		$social = ( new SocialModule( new EventManager() ) )->saveSocialSettings(
 			$this->jsonRequest(
@@ -334,33 +334,33 @@ class AssetQueryTest extends TestCase {
 		);
 		$this->assertInstanceOf( \WP_REST_Response::class, $created );
 
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_robots_txt_replaces_generated'] );
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_block_ai_bots'] );
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_custom_ai_bots'] );
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_ai_training_optout'] );
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_auto_index'] );
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_cookie_banner'] );
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_filename_enforce'] );
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_honour_gpc'] );
-		$this->assertTrue( $GLOBALS['mock_option_autoload']['holvek_redirect_counts'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_robots_txt_replaces_generated'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_block_ai_bots'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_custom_ai_bots'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_ai_training_optout'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_auto_index'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_cookie_banner'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_filename_enforce'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_honour_gpc'] );
+		$this->assertTrue( $GLOBALS['mock_option_autoload']['quinrel_redirect_counts'] );
 
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_robots_txt'] );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_bing_api_key'] );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_indexnow_key'] );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_openai_key'] );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_ga4_credentials'] );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_social_accounts'] );
-		$this->assertFalse( $GLOBALS['mock_option_autoload']['holvek_social_apps'] );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_robots_txt'] );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_bing_api_key'] );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_indexnow_key'] );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_openai_key'] );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_ga4_credentials'] );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_social_accounts'] );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_social_apps'] );
 
 		$this->db->queries = array();
 		$enforce = ( new ReflectionClass( Plugin::class ) )->getMethod( 'enforceOptionAutoload' );
 		$enforce->setAccessible( true );
 		$enforce->invoke( null );
-		$quiet = $this->sqlContaining( 'holvek_license_key' );
+		$quiet = $this->sqlContaining( 'quinrel_license_key' );
 		$this->assertStringContainsString( "autoload = 'no'", $quiet );
-		$counts = $this->sqlContaining( 'holvek_redirect_counts' );
+		$counts = $this->sqlContaining( 'quinrel_redirect_counts' );
 		$this->assertStringContainsString( "autoload = 'yes'", $counts );
-		$bots = $this->sqlContaining( 'holvek_block_ai_bots' );
+		$bots = $this->sqlContaining( 'quinrel_block_ai_bots' );
 		$this->assertStringContainsString( "autoload = 'yes'", $bots );
 	}
 

@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Sitemap;
+namespace Quinrel\WordPress\Modules\Sitemap;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Modules\Indexing\BingIndexNowApi;
+use Quinrel\WordPress\Modules\Indexing\BingIndexNowApi;
 
 /**
  * Manages rewrite rules and virtual endpoint interception for XML sitemaps and IndexNow keys.
@@ -39,30 +39,30 @@ class SitemapRouteManager {
 	public function addRewriteRules(): void {
 		if ( SitemapSettings::get( 'enable_index_sitemap', 'no' ) === 'yes' ) {
 			// Main sitemap index
-			add_rewrite_rule( '^sitemap\.xml$', 'index.php?holvek_sitemap=index', 'top' );
+			add_rewrite_rule( '^sitemap\.xml$', 'index.php?quinrel_sitemap=index', 'top' );
 
 			// Date-based sub-sitemap chunks: sitemap-posts-2024-05.xml and sitemap-posts-2024-05-2.xml
 			add_rewrite_rule(
 				'^sitemap-posts-(\d{4}-\d{2})(?:-([2-9]|[1-9]\d+))?\.xml$',
-				'index.php?holvek_sitemap=chunk&holvek_sitemap_period=$matches[1]&holvek_sitemap_page=$matches[2]',
+				'index.php?quinrel_sitemap=chunk&quinrel_sitemap_period=$matches[1]&quinrel_sitemap_page=$matches[2]',
 				'top'
 			);
 		}
 
 		if ( SitemapSettings::get( 'enable_news_sitemap', 'no' ) === 'yes' ) {
 			// Primary news sitemap route
-			add_rewrite_rule( '^sitemap-news\.xml$', 'index.php?holvek_sitemap=news', 'top' );
+			add_rewrite_rule( '^sitemap-news\.xml$', 'index.php?quinrel_sitemap=news', 'top' );
 			// Legacy alias for backward compatibility
-			add_rewrite_rule( '^news-sitemap\.xml$', 'index.php?holvek_sitemap=news', 'top' );
+			add_rewrite_rule( '^news-sitemap\.xml$', 'index.php?quinrel_sitemap=news', 'top' );
 		}
 
 		if ( SitemapSettings::get( 'enable_video_sitemap', 'no' ) === 'yes' ) {
-			add_rewrite_rule( '^video-sitemap\.xml$', 'index.php?holvek_sitemap=video', 'top' );
+			add_rewrite_rule( '^video-sitemap\.xml$', 'index.php?quinrel_sitemap=video', 'top' );
 		}
 
-		$bingKey = (string) get_option( 'holvek_indexnow_key', '' );
+		$bingKey = (string) get_option( 'quinrel_indexnow_key', '' );
 		if ( BingIndexNowApi::isValidKey( $bingKey ) ) {
-			add_rewrite_rule( '^' . preg_quote( $bingKey, '/' ) . '\.txt$', 'index.php?holvek_bing_key=1', 'top' );
+			add_rewrite_rule( '^' . preg_quote( $bingKey, '/' ) . '\.txt$', 'index.php?quinrel_bing_key=1', 'top' );
 		}
 	}
 
@@ -70,25 +70,25 @@ class SitemapRouteManager {
 	 * Register custom query vars so WordPress passes them through.
 	 */
 	public function registerQueryVars( array $vars ): array {
-		$vars[] = 'holvek_sitemap';
-		$vars[] = 'holvek_sitemap_period';
-		$vars[] = 'holvek_sitemap_page';
-		$vars[] = 'holvek_bing_key';
+		$vars[] = 'quinrel_sitemap';
+		$vars[] = 'quinrel_sitemap_period';
+		$vars[] = 'quinrel_sitemap_page';
+		$vars[] = 'quinrel_bing_key';
 		return $vars;
 	}
 
 	public function handleSitemapRequests(): void {
 		$type = '';
 		if ( function_exists( 'get_query_var' ) ) {
-			$queried = get_query_var( 'holvek_sitemap' );
+			$queried = get_query_var( 'quinrel_sitemap' );
 			if ( is_string( $queried ) ) {
 				$type = $queried;
 			}
 		}
 
 		if ( $type !== '' ) {
-			$period = (string) get_query_var( 'holvek_sitemap_period' );
-			$page   = (int) get_query_var( 'holvek_sitemap_page' );
+			$period = (string) get_query_var( 'quinrel_sitemap_period' );
+			$page   = (int) get_query_var( 'quinrel_sitemap_page' );
 			$this->dispatch( $type, $period, $page > 0 ? $page : 1 );
 			return;
 		}
@@ -126,7 +126,7 @@ class SitemapRouteManager {
 		}
 
 		// IndexNow verification file. Match the home path, not a substring.
-		$bingKey = (string) get_option( 'holvek_indexnow_key', '' );
+		$bingKey = (string) get_option( 'quinrel_indexnow_key', '' );
 		if ( BingIndexNowApi::keyFilePathMatches( $uri, home_url(), $bingKey ) ) {
 			BingIndexNowApi::sendKeyFile( $bingKey );
 		}
@@ -198,7 +198,7 @@ class SitemapRouteManager {
 					str_starts_with( $pattern, '^sitemap-news\\.xml$' ) ||
 					str_starts_with( $pattern, '^news-sitemap\\.xml$' ) ||
 					str_starts_with( $pattern, '^video-sitemap\\.xml$' ) ||
-					str_contains( (string) $wp_rewrite->extra_rules_top[ $pattern ], 'holvek_' )
+					str_contains( (string) $wp_rewrite->extra_rules_top[ $pattern ], 'quinrel_' )
 				) {
 					unset( $wp_rewrite->extra_rules_top[ $pattern ] );
 				}

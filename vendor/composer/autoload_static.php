@@ -12,14 +12,14 @@ class ComposerStaticInit049b1e5a9d003021bcc6cac5aaa93292
     );
 
     public static $prefixLengthsPsr4 = array (
+        'Q' => 
+        array (
+            'Quinrel\\WordPress\\' => 18,
+        ),
         'P' => 
         array (
             'PhpParser\\' => 10,
             'PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 57,
-        ),
-        'H' => 
-        array (
-            'Holvek\\WordPress\\' => 17,
         ),
         'D' => 
         array (
@@ -28,6 +28,10 @@ class ComposerStaticInit049b1e5a9d003021bcc6cac5aaa93292
     );
 
     public static $prefixDirsPsr4 = array (
+        'Quinrel\\WordPress\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src',
+        ),
         'PhpParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
@@ -35,10 +39,6 @@ class ComposerStaticInit049b1e5a9d003021bcc6cac5aaa93292
         'PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 
         array (
             0 => __DIR__ . '/..' . '/dealerdirect/phpcodesniffer-composer-installer/src',
-        ),
-        'Holvek\\WordPress\\' => 
-        array (
-            0 => __DIR__ . '/../..' . '/src',
         ),
         'DeepCopy\\' => 
         array (

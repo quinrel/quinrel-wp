@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -15,11 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class FaviconAudit {
 
-	private const DISMISSED_OPTION = 'holvek_favicon_notice_dismissed';
+	private const DISMISSED_OPTION = 'quinrel_favicon_notice_dismissed';
 
 	public function register(): void {
 		add_action( 'admin_notices', array( $this, 'maybeShowNotice' ) );
-		add_action( 'wp_ajax_holvek_dismiss_favicon_notice', array( $this, 'dismissNotice' ) );
+		add_action( 'wp_ajax_quinrel_dismiss_favicon_notice', array( $this, 'dismissNotice' ) );
 		// Auto-clear the dismissed flag if a site icon gets set
 		add_action( 'update_option_site_icon', array( $this, 'clearDismissed' ) );
 	}
@@ -34,7 +34,7 @@ class FaviconAudit {
 		if ( get_option( self::DISMISSED_OPTION ) ) {
 			return;
 		}
-		if ( ! $this->isHolvekScreen() ) {
+		if ( ! $this->isQuinrelScreen() ) {
 			return;
 		}
 		if ( ! empty( get_site_icon_url( 32 ) ) ) {
@@ -42,19 +42,19 @@ class FaviconAudit {
 		}
 
 		$customizerUrl = admin_url( 'customize.php?autofocus[control]=site_icon' );
-		$nonce         = wp_create_nonce( 'holvek_dismiss_favicon_notice' );
+		$nonce         = wp_create_nonce( 'quinrel_dismiss_favicon_notice' );
 
 		printf(
-			'<div class="notice notice-warning is-dismissible holvek-favicon-notice" data-nonce="%1$s"><p>%2$s <a href="%3$s">%4$s</a></p></div>
+			'<div class="notice notice-warning is-dismissible quinrel-favicon-notice" data-nonce="%1$s"><p>%2$s <a href="%3$s">%4$s</a></p></div>
             <script>
             (function(){
                 document.addEventListener("DOMContentLoaded", function(){
-                    var n = document.querySelector(".holvek-favicon-notice");
+                    var n = document.querySelector(".quinrel-favicon-notice");
                     if (!n) return;
                     n.addEventListener("click", function(e){
                         if (!e.target.classList.contains("notice-dismiss")) return;
                         var fd = new FormData();
-                        fd.append("action", "holvek_dismiss_favicon_notice");
+                        fd.append("action", "quinrel_dismiss_favicon_notice");
                         fd.append("nonce", n.dataset.nonce);
                         fetch(ajaxurl, { method: "POST", body: fd });
                     });
@@ -62,27 +62,27 @@ class FaviconAudit {
             })();
             </script>',
 			esc_attr( $nonce ),
-			esc_html__( 'Holvek: no favicon is set for this site. A favicon is shown in browser tabs and bookmarks.', 'holvek' ),
+			esc_html__( 'Quinrel: no favicon is set for this site. A favicon is shown in browser tabs and bookmarks.', 'quinrel' ),
 			esc_url( $customizerUrl ),
-			esc_html__( 'Set your favicon in the Customizer.', 'holvek' )
+			esc_html__( 'Set your favicon in the Customizer.', 'quinrel' )
 		);
 	}
 
-	private function isHolvekScreen(): bool {
+	private function isQuinrelScreen(): bool {
 		if ( ! function_exists( 'get_current_screen' ) ) {
 			return false;
 		}
 		$screen = get_current_screen();
-		return is_object( $screen ) && isset( $screen->id ) && str_contains( (string) $screen->id, 'holvek' );
+		return is_object( $screen ) && isset( $screen->id ) && str_contains( (string) $screen->id, 'quinrel' );
 	}
 
 	/**
 	 * AJAX: persist the dismissal so the notice does not reappear.
 	 */
 	public function dismissNotice(): void {
-		check_ajax_referer( 'holvek_dismiss_favicon_notice', 'nonce' );
+		check_ajax_referer( 'quinrel_dismiss_favicon_notice', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Sorry, you are not allowed to do that.', 'holvek' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Sorry, you are not allowed to do that.', 'quinrel' ) ), 403 );
 		}
 		update_option( self::DISMISSED_OPTION, true, false );
 		wp_send_json_success();

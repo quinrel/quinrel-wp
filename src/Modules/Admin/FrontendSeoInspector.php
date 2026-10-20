@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,7 +23,7 @@ class FrontendSeoInspector {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/inspector/audit',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -65,7 +65,7 @@ class FrontendSeoInspector {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new \WP_Error(
 				'forbidden',
-				__( 'You do not have permission to inspect posts.', 'holvek' ),
+				__( 'You do not have permission to inspect posts.', 'quinrel' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -73,7 +73,7 @@ class FrontendSeoInspector {
 		if ( $postId < 1 ) {
 			return new \WP_Error(
 				'missing_post_id',
-				__( 'A post ID is required.', 'holvek' ),
+				__( 'A post ID is required.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -82,7 +82,7 @@ class FrontendSeoInspector {
 		if ( ! $post ) {
 			return new \WP_Error(
 				'not_found',
-				__( 'Post not found.', 'holvek' ),
+				__( 'Post not found.', 'quinrel' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -90,7 +90,7 @@ class FrontendSeoInspector {
 		if ( ! current_user_can( 'edit_post', $postId ) ) {
 			return new \WP_Error(
 				'forbidden',
-				__( 'You do not have permission to inspect this post.', 'holvek' ),
+				__( 'You do not have permission to inspect this post.', 'quinrel' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -124,64 +124,66 @@ class FrontendSeoInspector {
 
 		$results = array();
 
-		$metaTitle = (string) get_post_meta( $postId, '_holvek_meta_title', true );
-		$metaDesc  = (string) get_post_meta( $postId, '_holvek_meta_description', true );
-		$focusKw   = (string) get_post_meta( $postId, '_holvek_focus_keyword', true );
-		$canonical = (string) get_post_meta( $postId, '_holvek_canonical_url', true );
-		$noindex   = get_post_meta( $postId, '_holvek_noindex', true ) === 'yes';
-		$thumbnail = has_post_thumbnail( $postId );
-		$content   = wp_strip_all_tags( (string) $post->post_content );
-		$wordCount = str_word_count( $content );
+		$rawMetaTitle = (string) get_post_meta( $postId, '_quinrel_meta_title', true );
+		$rawMetaDesc  = (string) get_post_meta( $postId, '_quinrel_meta_description', true );
+		$metaTitle    = '' !== $rawMetaTitle ? \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $rawMetaTitle, $postId ) : '';
+		$metaDesc     = '' !== $rawMetaDesc ? \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $rawMetaDesc, $postId ) : '';
+		$focusKw      = (string) get_post_meta( $postId, '_quinrel_focus_keyword', true );
+		$canonical    = (string) get_post_meta( $postId, '_quinrel_canonical_url', true );
+		$noindex      = get_post_meta( $postId, '_quinrel_noindex', true ) === 'yes';
+		$thumbnail    = has_post_thumbnail( $postId );
+		$content      = wp_strip_all_tags( (string) $post->post_content );
+		$wordCount    = str_word_count( $content );
 
 		// Meta title
 		$titleLen              = mb_strlen( $metaTitle );
 		$results['meta_title'] = array(
 			'status'  => empty( $metaTitle ) ? 'fail' : ( $titleLen < 10 || $titleLen > 70 ? 'warn' : 'pass' ),
-			'value'   => $metaTitle ?: __( 'Not set', 'holvek' ),
-			'message' => empty( $metaTitle ) ? __( 'Meta title is missing.', 'holvek' ) : ( $titleLen > 70 ? __( 'Title exceeds 70 characters.', 'holvek' ) : __( 'OK', 'holvek' ) ),
+			'value'   => $metaTitle ?: __( 'Not set', 'quinrel' ),
+			'message' => empty( $metaTitle ) ? __( 'Meta title is missing.', 'quinrel' ) : ( $titleLen > 70 ? __( 'Title exceeds 70 characters.', 'quinrel' ) : __( 'OK', 'quinrel' ) ),
 		);
 
 		// Meta description
 		$descLen                     = mb_strlen( $metaDesc );
 		$results['meta_description'] = array(
 			'status'  => empty( $metaDesc ) ? 'fail' : ( $descLen < 50 || $descLen > 165 ? 'warn' : 'pass' ),
-			'value'   => $metaDesc ?: __( 'Not set', 'holvek' ),
-			'message' => empty( $metaDesc ) ? __( 'Meta description is missing.', 'holvek' ) : ( $descLen > 165 ? __( 'Description exceeds 165 characters.', 'holvek' ) : __( 'OK', 'holvek' ) ),
+			'value'   => $metaDesc ?: __( 'Not set', 'quinrel' ),
+			'message' => empty( $metaDesc ) ? __( 'Meta description is missing.', 'quinrel' ) : ( $descLen > 165 ? __( 'Description exceeds 165 characters.', 'quinrel' ) : __( 'OK', 'quinrel' ) ),
 		);
 
 		// Focus keyword
 		$results['focus_keyword'] = array(
 			'status'  => empty( $focusKw ) ? 'warn' : 'pass',
-			'value'   => $focusKw ?: __( 'Not set', 'holvek' ),
-			'message' => empty( $focusKw ) ? __( 'No focus keyword set.', 'holvek' ) : __( 'OK', 'holvek' ),
+			'value'   => $focusKw ?: __( 'Not set', 'quinrel' ),
+			'message' => empty( $focusKw ) ? __( 'No focus keyword set.', 'quinrel' ) : __( 'OK', 'quinrel' ),
 		);
 
 		// Canonical URL
 		$results['canonical'] = array(
 			'status'  => empty( $canonical ) ? 'warn' : 'pass',
 			'value'   => $canonical ?: get_permalink( $postId ),
-			'message' => __( 'OK', 'holvek' ),
+			'message' => __( 'OK', 'quinrel' ),
 		);
 
 		// Robots — noindex should not be set unless intentional
 		$results['robots'] = array(
 			'status'  => $noindex ? 'warn' : 'pass',
 			'value'   => $noindex ? 'noindex' : 'index',
-			'message' => $noindex ? __( 'Post is set to noindex. Verify this is intentional.', 'holvek' ) : __( 'OK', 'holvek' ),
+			'message' => $noindex ? __( 'Post is set to noindex. Verify this is intentional.', 'quinrel' ) : __( 'OK', 'quinrel' ),
 		);
 
 		// Featured image
 		$results['featured_image'] = array(
 			'status'  => $thumbnail ? 'pass' : 'warn',
-			'value'   => $thumbnail ? __( 'Present', 'holvek' ) : __( 'Missing', 'holvek' ),
-			'message' => $thumbnail ? __( 'OK', 'holvek' ) : __( 'No featured image. Add one for OG/Twitter cards.', 'holvek' ),
+			'value'   => $thumbnail ? __( 'Present', 'quinrel' ) : __( 'Missing', 'quinrel' ),
+			'message' => $thumbnail ? __( 'OK', 'quinrel' ) : __( 'No featured image. Add one for OG/Twitter cards.', 'quinrel' ),
 		);
 
 		// Word count
 		$results['word_count'] = array(
 			'status'  => $wordCount < 300 ? 'warn' : 'pass',
 			'value'   => $wordCount,
-			'message' => $wordCount < 300 ? __( 'Content is too thin (under 300 words).', 'holvek' ) : __( 'OK', 'holvek' ),
+			'message' => $wordCount < 300 ? __( 'Content is too thin (under 300 words).', 'quinrel' ) : __( 'OK', 'quinrel' ),
 		);
 
 		// Summary
@@ -196,7 +198,7 @@ class FrontendSeoInspector {
 				'pass'  => $pass,
 				'warn'  => $warns,
 				'fail'  => $fails,
-				'score' => (int) round( ( $pass / count( $results ) ) * 100 ),
+				'score' => \Quinrel\WordPress\Modules\Seo\SeoScoreCalculator::calculateForPost( $postId ),
 			),
 		);
 	}
@@ -210,10 +212,10 @@ class FrontendSeoInspector {
 			return;
 		}
 
-		$apiBase = rest_url( 'holvek/v1' );
+		$apiBase = rest_url( 'quinrel/v1' );
 		$nonce   = wp_create_nonce( 'wp_rest' );
 		?>
-		<div id="holvek-inspector-host" style="position:fixed;bottom:20px;right:20px;z-index:2147483647;font-family:sans-serif"></div>
+		<div id="quinrel-inspector-host" style="position:fixed;bottom:20px;right:20px;z-index:2147483647;font-family:sans-serif"></div>
 		<?php
 		// Pass data safely via wp_json_encode instead of inline PHP-in-JS
 		$inspector_data = wp_json_encode(
@@ -221,20 +223,20 @@ class FrontendSeoInspector {
 				'apiBase' => $apiBase,
 				'nonce'   => $nonce,
 				'postId'  => (int) $postId,
-				'title'   => __( 'Holvek Inspector', 'holvek' ),
-				'toggle'  => __( 'SEO', 'holvek' ),
-				'label'   => __( 'SEO Inspector', 'holvek' ),
-				'error'   => __( 'Error loading audit.', 'holvek' ),
+				'title'   => __( 'Quinrel Inspector', 'quinrel' ),
+				'toggle'  => __( 'SEO', 'quinrel' ),
+				'label'   => __( 'SEO Inspector', 'quinrel' ),
+				'error'   => __( 'Error loading audit.', 'quinrel' ),
 			)
 		);
 
 		$js = str_replace(
-			'__HOLVEK_INSPECTOR_CONFIG__',
+			'__QUINREL_INSPECTOR_CONFIG__',
 			$inspector_data,
 			'(function(){
 	\'use strict\';
-	var cfg = __HOLVEK_INSPECTOR_CONFIG__;
-	var host = document.getElementById(\'holvek-inspector-host\');
+	var cfg = __QUINREL_INSPECTOR_CONFIG__;
+	var host = document.getElementById(\'quinrel-inspector-host\');
 	if (!host || !host.attachShadow) return;
 	var shadow = host.attachShadow({mode:\'open\'});
 

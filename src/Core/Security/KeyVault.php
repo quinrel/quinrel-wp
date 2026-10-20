@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Core\Security;
+namespace Quinrel\WordPress\Core\Security;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -10,22 +10,19 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Encrypts secrets stored in wp_options with AES-256-CBC and an HMAC.
  *
  * The key comes only from the site-specific salt in the option
- * `holvek_encryption_salt`. There is no fallback key. Settings export omits
+ * `quinrel_encryption_salt`. There is no fallback key. Settings export omits
  * that option. A full database copy still includes the salt and the
  * ciphertext, so that copy can be decrypted. Encryption protects a leaked
  * settings export, not a stolen database.
  *
- * New ciphertext uses the prefix `holvek_enc::`. Decrypt still accepts the
- * previous prefix `aew_enc::`. Ciphertext written before a salt existed used
- * a fallback key and can no longer be decrypted.
+ * Ciphertext uses the prefix `quinrel_enc::`.
  */
 class KeyVault {
 
-	private const CIPHER        = 'aes-256-cbc';
-	private const PREFIX        = 'holvek_enc::';
-	private const LEGACY_PREFIX = 'aew_enc::';
-	private const SALT_OPTION   = 'holvek_encryption_salt';
-	private const HMAC_LENGTH   = 32;
+	private const CIPHER      = 'aes-256-cbc';
+	private const PREFIX      = 'quinrel_enc::';
+	private const SALT_OPTION = 'quinrel_encryption_salt';
+	private const HMAC_LENGTH = 32;
 
 	/**
 	 * Test seam. PHPUnit cannot unload the OpenSSL extension.
@@ -75,9 +72,9 @@ class KeyVault {
 	/**
 	 * Encrypt a secret for storage.
 	 *
-	 * An empty string stays empty. A value that already uses the current or
-	 * legacy prefix is returned unchanged. Any other failure returns
-	 * WP_Error. Callers must not persist that error or the original plaintext.
+	 * An empty string stays empty. A value that already uses the current prefix
+	 * is returned unchanged. Any other failure returns WP_Error.
+	 * Callers must not persist that error or the original plaintext.
 	 *
 	 * @return string|\WP_Error
 	 */
@@ -92,31 +89,31 @@ class KeyVault {
 
 		if ( ! self::cipherAvailable() ) {
 			return self::encryptionError(
-				'holvek_cipher_unavailable',
-				__( 'Holvek cannot store this secret because the PHP OpenSSL extension is unavailable. The value was not saved.', 'holvek' )
+				'quinrel_cipher_unavailable',
+				__( 'Quinrel cannot store this secret because the PHP OpenSSL extension is unavailable. The value was not saved.', 'quinrel' )
 			);
 		}
 
 		if ( ! self::ensureSaltExists() ) {
 			return self::encryptionError(
-				'holvek_salt_missing',
-				__( 'Holvek cannot store this secret because the encryption salt is missing. The value was not saved.', 'holvek' )
+				'quinrel_salt_missing',
+				__( 'Quinrel cannot store this secret because the encryption salt is missing. The value was not saved.', 'quinrel' )
 			);
 		}
 
 		$key = self::deriveMasterKey();
 		if ( $key === '' ) {
 			return self::encryptionError(
-				'holvek_salt_missing',
-				__( 'Holvek cannot store this secret because the encryption salt is missing. The value was not saved.', 'holvek' )
+				'quinrel_salt_missing',
+				__( 'Quinrel cannot store this secret because the encryption salt is missing. The value was not saved.', 'quinrel' )
 			);
 		}
 
 		$ivLength = openssl_cipher_iv_length( self::CIPHER );
 		if ( ! is_int( $ivLength ) || $ivLength < 1 ) {
 			return self::encryptionError(
-				'holvek_encryption_failed',
-				__( 'Holvek could not encrypt this secret. The value was not saved.', 'holvek' )
+				'quinrel_encryption_failed',
+				__( 'Quinrel could not encrypt this secret. The value was not saved.', 'quinrel' )
 			);
 		}
 
@@ -124,16 +121,16 @@ class KeyVault {
 			$iv = random_bytes( $ivLength );
 		} catch ( \Throwable ) {
 			return self::encryptionError(
-				'holvek_encryption_failed',
-				__( 'Holvek could not encrypt this secret. The value was not saved.', 'holvek' )
+				'quinrel_encryption_failed',
+				__( 'Quinrel could not encrypt this secret. The value was not saved.', 'quinrel' )
 			);
 		}
 
 		$cipherRaw = openssl_encrypt( $plaintext, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv );
 		if ( ! is_string( $cipherRaw ) || $cipherRaw === '' ) {
 			return self::encryptionError(
-				'holvek_encryption_failed',
-				__( 'Holvek could not encrypt this secret. The value was not saved.', 'holvek' )
+				'quinrel_encryption_failed',
+				__( 'Quinrel could not encrypt this secret. The value was not saved.', 'quinrel' )
 			);
 		}
 
@@ -146,7 +143,7 @@ class KeyVault {
 	/**
 	 * Decrypt a stored secret.
 	 *
-	 * Values without a Holvek prefix are returned unchanged so older plaintext
+	 * Values without a Quinrel prefix are returned unchanged so older plaintext
 	 * keys keep working. Ciphertext cannot be decrypted without the salt and
 	 * OpenSSL, and then the result is an empty string.
 	 */
@@ -254,7 +251,7 @@ class KeyVault {
 	}
 
 	/**
-	 * Whether a value is already Holvek ciphertext.
+	 * Whether a value is already Quinrel ciphertext.
 	 */
 	public static function isCiphertext( string $value ): bool {
 		return self::matchedPrefix( $value ) !== '';
@@ -265,19 +262,19 @@ class KeyVault {
 	 */
 	public static function registerAdminNotice(): void {
 		add_action( 'admin_notices', array( self::class, 'renderMissingCipherNotice' ) );
-		add_action( 'wp_ajax_holvek_dismiss_cipher_notice', array( self::class, 'dismissMissingCipherNotice' ) );
+		add_action( 'wp_ajax_quinrel_dismiss_cipher_notice', array( self::class, 'dismissMissingCipherNotice' ) );
 	}
 
 	/**
 	 * Tell administrators that secret storage is off until OpenSSL is available.
 	 *
-	 * The notice is limited to Holvek screens when the current screen is known.
+	 * The notice is limited to Quinrel screens when the current screen is known.
 	 */
 	public static function renderMissingCipherNotice(): void {
 		if ( self::cipherAvailable() || ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		if ( get_user_meta( get_current_user_id(), 'holvek_cipher_notice_dismissed', true ) ) {
+		if ( get_user_meta( get_current_user_id(), 'quinrel_cipher_notice_dismissed', true ) ) {
 			return;
 		}
 		if ( ! function_exists( 'get_current_screen' ) ) {
@@ -285,33 +282,33 @@ class KeyVault {
 		}
 
 		$screen = get_current_screen();
-		if ( ! is_object( $screen ) || ! isset( $screen->id ) || ! str_contains( (string) $screen->id, 'holvek' ) ) {
+		if ( ! is_object( $screen ) || ! isset( $screen->id ) || ! str_contains( (string) $screen->id, 'quinrel' ) ) {
 			return;
 		}
 
-		$nonce = wp_create_nonce( 'holvek_dismiss_cipher_notice' );
+		$nonce = wp_create_nonce( 'quinrel_dismiss_cipher_notice' );
 		printf(
-			'<div class="notice notice-error is-dismissible holvek-cipher-notice" data-nonce="%1$s"><p>%2$s</p></div>',
+			'<div class="notice notice-error is-dismissible quinrel-cipher-notice" data-nonce="%1$s"><p>%2$s</p></div>',
 			esc_attr( $nonce ),
 			esc_html(
-				__( 'Holvek cannot encrypt API keys or access tokens because the PHP OpenSSL extension is missing. Saving those secrets is turned off until OpenSSL is enabled. The rest of the plugin keeps working.', 'holvek' )
+				__( 'Quinrel cannot encrypt API keys or access tokens because the PHP OpenSSL extension is missing. Saving those secrets is turned off until OpenSSL is enabled. The rest of the plugin keeps working.', 'quinrel' )
 			)
 		);
-		echo '<script>document.addEventListener("DOMContentLoaded",function(){var el=document.querySelector(".holvek-cipher-notice");if(!el){return;}el.addEventListener("click",function(e){if(!e.target.classList.contains("notice-dismiss")){return;}var body=new FormData();body.append("action","holvek_dismiss_cipher_notice");body.append("_ajax_nonce",el.dataset.nonce);fetch(window.ajaxurl,{method:"POST",body:body});});});</script>';
+		echo '<script>document.addEventListener("DOMContentLoaded",function(){var el=document.querySelector(".quinrel-cipher-notice");if(!el){return;}el.addEventListener("click",function(e){if(!e.target.classList.contains("notice-dismiss")){return;}var body=new FormData();body.append("action","quinrel_dismiss_cipher_notice");body.append("_ajax_nonce",el.dataset.nonce);fetch(window.ajaxurl,{method:"POST",body:body});});});</script>';
 	}
 
 	/**
 	 * Remember that this administrator dismissed the OpenSSL notice.
 	 */
 	public static function dismissMissingCipherNotice(): void {
-		check_ajax_referer( 'holvek_dismiss_cipher_notice' );
+		check_ajax_referer( 'quinrel_dismiss_cipher_notice' );
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Sorry, you are not allowed to do that.', 'holvek' ) ),
+				array( 'message' => __( 'Sorry, you are not allowed to do that.', 'quinrel' ) ),
 				403
 			);
 		}
-		update_user_meta( get_current_user_id(), 'holvek_cipher_notice_dismissed', '1' );
+		update_user_meta( get_current_user_id(), 'quinrel_cipher_notice_dismissed', '1' );
 		wp_send_json_success();
 	}
 
@@ -330,16 +327,16 @@ class KeyVault {
 	 */
 	private static function sensitiveKeys(): array {
 		return array(
-			'holvek_api_key',
+			'quinrel_api_key',
 			'openai_api_key',
 			'anthropic_api_key',
 			'gsc_api_key',
 			'bing_api_key',
-			'holvek_google_indexing_key',
-			'holvek_ga4_credentials',
+			'quinrel_google_indexing_key',
+			'quinrel_ga4_credentials',
 			'google_indexing_key',
 			'ga4_credentials',
-			'holvek_license_key',
+			'quinrel_license_key',
 		);
 	}
 
@@ -360,10 +357,6 @@ class KeyVault {
 	private static function matchedPrefix( string $value ): string {
 		if ( str_starts_with( $value, self::PREFIX ) ) {
 			return self::PREFIX;
-		}
-
-		if ( str_starts_with( $value, self::LEGACY_PREFIX ) ) {
-			return self::LEGACY_PREFIX;
 		}
 
 		return '';

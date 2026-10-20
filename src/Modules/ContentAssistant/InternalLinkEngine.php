@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ContentAssistant;
+namespace Quinrel\WordPress\Modules\ContentAssistant;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Internal link recommendation engine with indexed orphan detection.
  *
  * Architecture:
- *   - Link Index Table (wp_holvek_links): Populated on post save by parsing
+ *   - Link Index Table (wp_quinrel_links): Populated on post save by parsing
  *     HTML content and extracting internal links. Columns: post_id, target_url, anchor_text.
  *   - Orphan Detection: Finding incoming links is now a lightning-fast indexed
  *     SELECT COUNT(*) WHERE target_url = %s, instead of the old LIKE '%url%' full-table scan.
@@ -62,7 +62,7 @@ class InternalLinkEngine {
 					'title'   => $title,
 					'url'     => get_permalink( $p->ID ),
 					'anchor'  => $matchedAnchor,
-					'reason'  => sprintf( /* translators: %s: Post title */ __( 'Matches the exact title of "%s"', 'holvek' ), $title ),
+					'reason'  => sprintf( /* translators: %s: Post title */ __( 'Matches the exact title of "%s"', 'quinrel' ), $title ),
 				);
 			}
 		}
@@ -106,8 +106,8 @@ class InternalLinkEngine {
 						'post_id' => $op->ID,
 						'title'   => $op->post_title,
 						'url'     => get_permalink( $op->ID ),
-						'anchor'  => __( 'related content', 'holvek' ),
-						'reason'  => __( 'Shares matching categories or tags.', 'holvek' ),
+						'anchor'  => __( 'related content', 'quinrel' ),
+						'reason'  => __( 'Shares matching categories or tags.', 'quinrel' ),
 					);
 				}
 			}
@@ -119,7 +119,7 @@ class InternalLinkEngine {
 	/**
 	 * Verify if the current post is an "Orphan" (has zero incoming internal links).
 	 *
-	 * Uses the indexed wp_holvek_links table for O(1) lookup instead of
+	 * Uses the indexed wp_quinrel_links table for O(1) lookup instead of
 	 * the previous LIKE '%url%' full-table scan on wp_posts.
 	 */
 	public function checkOrphanStatus( int $postId ): array {
@@ -138,7 +138,7 @@ class InternalLinkEngine {
 		// Lightning-fast indexed query against the link index table
 		$incomingCount = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}holvek_links WHERE target_url = %s OR target_url = %s",
+				"SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_links WHERE target_url = %s OR target_url = %s",
 				$permalink,
 				$path
 			)
@@ -169,7 +169,7 @@ class InternalLinkEngine {
 		}
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'holvek_links';
+		$table = $wpdb->prefix . 'quinrel_links';
 
 		// Clear existing links for this post — full re-index on each save
 		$wpdb->delete( $table, array( 'post_id' => $postId ), array( '%d' ) );
@@ -224,7 +224,7 @@ class InternalLinkEngine {
 	 */
 	public function removePostLinks( int $postId ): void {
 		global $wpdb;
-		$table = $wpdb->prefix . 'holvek_links';
+		$table = $wpdb->prefix . 'quinrel_links';
 		$wpdb->delete( $table, array( 'post_id' => $postId ), array( '%d' ) );
 	}
 

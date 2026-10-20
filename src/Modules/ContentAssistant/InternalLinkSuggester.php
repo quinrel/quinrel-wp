@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ContentAssistant;
+namespace Quinrel\WordPress\Modules\ContentAssistant;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -25,7 +25,7 @@ class InternalLinkSuggester {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/content/internal-link-suggestions',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -44,7 +44,7 @@ class InternalLinkSuggester {
 	public function getSuggestions( \WP_REST_Request $request ): \WP_REST_Response {
 		$postId = (int) $request->get_param( 'post_id' );
 
-		$cacheKey = 'holvek_link_suggestions_' . $postId;
+		$cacheKey = 'quinrel_link_suggestions_' . $postId;
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return rest_ensure_response( $cached );
@@ -52,11 +52,11 @@ class InternalLinkSuggester {
 
 		$sourcePost = get_post( $postId );
 		if ( ! $sourcePost ) {
-			return new \WP_Error( 'post_not_found', __( 'Post not found.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'post_not_found', __( 'Post not found.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		// Get focus keywords
-		$keywordRaw = (string) get_post_meta( $postId, '_holvek_focus_keyword', true );
+		$keywordRaw = (string) get_post_meta( $postId, '_quinrel_focus_keyword', true );
 		$keywords   = array_filter( array_map( 'trim', explode( ',', $keywordRaw ) ) );
 
 		// Find candidate posts
@@ -76,8 +76,8 @@ class InternalLinkSuggester {
 				continue;
 			}
 
-			$candidateKeyword = get_post_meta( $candidate->ID, '_holvek_focus_keyword', true );
-			$inboundLinks     = (int) get_post_meta( $candidate->ID, '_holvek_inbound_links', true );
+			$candidateKeyword = get_post_meta( $candidate->ID, '_quinrel_focus_keyword', true );
+			$inboundLinks     = (int) get_post_meta( $candidate->ID, '_quinrel_inbound_links', true );
 
 			$suggestions[] = array(
 				'id'                    => $candidate->ID,
@@ -126,7 +126,7 @@ class InternalLinkSuggester {
 		$metaQueries = array( 'relation' => 'OR' );
 		foreach ( $keywords as $kw ) {
 			$metaQueries[] = array(
-				'key'     => '_holvek_focus_keyword',
+				'key'     => '_quinrel_focus_keyword',
 				'value'   => $kw,
 				'compare' => 'LIKE',
 			);

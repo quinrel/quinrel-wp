@@ -1,4 +1,4 @@
-# Holvek Plugin — Security, Performance, Compliance & UX Audit Plan
+# Quinrel Plugin — Security, Performance, Compliance & UX Audit Plan
 
 > **Created:** 2026-09-24
 > **Scope:** Full codebase audit — 29 issues across security, performance, compliance, data integrity, and UX.
@@ -23,14 +23,14 @@
 | Field | Value |
 |-------|-------|
 | **Severity** | CRITICAL |
-| **File** | `holvek.php` · Line 91 |
+| **File** | `quinrel.php` · Line 91 |
 | **Root Cause** | `echo $renderer->render()` outputs HTML containing user-controlled data (post titles, term names) without escaping. |
 
 **Current code:**
 
 ```php
-function holvek_breadcrumbs(): void {
-    $renderer = new \Holvek\Modules\Breadcrumbs\BreadcrumbRenderer();
+function quinrel_breadcrumbs(): void {
+    $renderer = new \Quinrel\Modules\Breadcrumbs\BreadcrumbRenderer();
     echo $renderer->render();
 }
 ```
@@ -40,8 +40,8 @@ function holvek_breadcrumbs(): void {
 Ensure every dynamic value inside `BreadcrumbRenderer::render()` is escaped at render time. The outer call should use `wp_kses_post()` as a defense-in-depth layer:
 
 ```php
-function holvek_breadcrumbs(): void {
-    $renderer = new \Holvek\Modules\Breadcrumbs\BreadcrumbRenderer();
+function quinrel_breadcrumbs(): void {
+    $renderer = new \Quinrel\Modules\Breadcrumbs\BreadcrumbRenderer();
     echo wp_kses_post( $renderer->render() );
 }
 ```
@@ -50,10 +50,10 @@ Additionally, audit `BreadcrumbRenderer::render()` and verify every post title, 
 
 **Acceptance criteria:**
 
-- [ ] `holvek_breadcrumbs()` wraps output in `wp_kses_post()`.
+- [ ] `quinrel_breadcrumbs()` wraps output in `wp_kses_post()`.
 - [ ] Inside `BreadcrumbRenderer::render()`, every `$title` / `$name` uses `esc_html()`, every `$url` / `$href` uses `esc_url()`.
-- [ ] Create a post with the title `<img src=x onerror=alert(1)>`, call `holvek_breadcrumbs()` on the frontend, and confirm the XSS payload is rendered as harmless escaped text — not as an HTML tag.
-- [ ] `composer run phpcs -- src/Modules/Breadcrumbs/BreadcrumbRenderer.php holvek.php` passes with no escaping violations.
+- [ ] Create a post with the title `<img src=x onerror=alert(1)>`, call `quinrel_breadcrumbs()` on the frontend, and confirm the XSS payload is rendered as harmless escaped text — not as an HTML tag.
+- [ ] `composer run phpcs -- src/Modules/Breadcrumbs/BreadcrumbRenderer.php quinrel.php` passes with no escaping violations.
 
 ---
 
@@ -99,7 +99,7 @@ public function injectColumnStyles(): void {
     if ( ! $screen || ! in_array( $screen->id, array( 'edit-post', 'edit-page' ), true ) ) {
         return;
     }
-    wp_add_inline_style( 'list-tables', '.column-holvek_seo { width: 60px; text-align: center; }' );
+    wp_add_inline_style( 'list-tables', '.column-quinrel_seo { width: 60px; text-align: center; }' );
 }
 ```
 
@@ -155,7 +155,7 @@ ini_set( 'pcre.backtrack_limit', $previousLimit );
 
 if ( $result === false ) {
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-        error_log( '[Holvek] Invalid redirect regex: ' . $pattern );
+        error_log( '[Quinrel] Invalid redirect regex: ' . $pattern );
     }
     continue;
 }
@@ -206,7 +206,7 @@ Add target validation before inserting:
 ```php
 $redirectManager = new RedirectManager();
 if ( ! $redirectManager->isSafeTarget( $target, false ) ) {
-    return new \WP_Error( 'unsafe_target', __( 'Redirect target must be a local path or URL on this site.', 'holvek' ), array( 'status' => 400 ) );
+    return new \WP_Error( 'unsafe_target', __( 'Redirect target must be a local path or URL on this site.', 'quinrel' ), array( 'status' => 400 ) );
 }
 ```
 
@@ -227,23 +227,23 @@ Note: `isSafeTarget` is currently `private`. Change it to `public` or extract a 
 |-------|-------|
 | **Severity** | MEDIUM |
 | **File** | `src/Modules/Admin/AdminModule.php` · Lines 1489–1520 |
-| **Root Cause** | The `$optionKeys` array includes `holvek_openai_key`, `holvek_anthropic_key`, and `holvek_psi_key` despite the inline comment stating they are excluded. |
+| **Root Cause** | The `$optionKeys` array includes `quinrel_openai_key`, `quinrel_anthropic_key`, and `quinrel_psi_key` despite the inline comment stating they are excluded. |
 
 **Required fix:**
 
 Remove these three keys from the `$optionKeys` array in `exportSettings()`:
 
 ```diff
-- 'holvek_openai_key',
-- 'holvek_anthropic_key',
+- 'quinrel_openai_key',
+- 'quinrel_anthropic_key',
   ...
-- 'holvek_psi_key',
+- 'quinrel_psi_key',
 ```
 
 **Acceptance criteria:**
 
-- [ ] `GET /holvek/v1/settings/export` response does not contain `holvek_openai_key`, `holvek_anthropic_key`, or `holvek_psi_key` fields.
-- [ ] Non-sensitive settings (e.g., `holvek_breadcrumb_separator`) are still present in the export.
+- [ ] `GET /quinrel/v1/settings/export` response does not contain `quinrel_openai_key`, `quinrel_anthropic_key`, or `quinrel_psi_key` fields.
+- [ ] Non-sensitive settings (e.g., `quinrel_breadcrumb_separator`) are still present in the export.
 - [ ] The import endpoint still functions correctly (these keys were already excluded from the import whitelist).
 
 ---
@@ -267,10 +267,10 @@ public function register(): void {
     add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
 
     // One-time recovery: re-apply capabilities if the stored version is stale.
-    $applied = get_option( 'holvek_caps_version', '' );
-    if ( $applied !== HOLVEK_VERSION ) {
+    $applied = get_option( 'quinrel_caps_version', '' );
+    if ( $applied !== QUINREL_VERSION ) {
         self::addCapabilities();
-        update_option( 'holvek_caps_version', HOLVEK_VERSION, true );
+        update_option( 'quinrel_caps_version', QUINREL_VERSION, true );
     }
 }
 ```
@@ -280,7 +280,7 @@ public function register(): void {
 - [ ] The line `add_action( 'init', array( static::class, 'addCapabilities' ) )` is removed.
 - [ ] After activating the plugin on a fresh site, the administrator role has all 4 SEO capabilities.
 - [ ] Loading the homepage 10 times in a row does NOT produce 10 `UPDATE wp_options SET option_value = ... WHERE option_name = 'wp_user_roles'` queries. Verify with Query Monitor plugin or `$wpdb->queries`.
-- [ ] After upgrading `HOLVEK_VERSION`, capabilities are re-applied once automatically.
+- [ ] After upgrading `QUINREL_VERSION`, capabilities are re-applied once automatically.
 
 ---
 
@@ -367,7 +367,7 @@ Add `page` and `per_page` parameters to the REST endpoint with defaults of 1 and
 
 **Acceptance criteria:**
 
-- [ ] `GET /holvek/v1/redirects` accepts `page` and `per_page` query params.
+- [ ] `GET /quinrel/v1/redirects` accepts `page` and `per_page` query params.
 - [ ] Default returns at most 100 rows.
 - [ ] Response includes `total` and `total_pages` fields.
 - [ ] Legacy migration from `wp_options` still triggers on first load when the table is empty.
@@ -392,10 +392,10 @@ public function register(): void {
     $this->hookMetaChanges();
 
     // Schedule daily pruning instead of per-write pruning
-    if ( ! wp_next_scheduled( 'holvek_prune_audit_log' ) ) {
-        wp_schedule_event( time(), 'daily', 'holvek_prune_audit_log' );
+    if ( ! wp_next_scheduled( 'quinrel_prune_audit_log' ) ) {
+        wp_schedule_event( time(), 'daily', 'quinrel_prune_audit_log' );
     }
-    add_action( 'holvek_prune_audit_log', array( $this, 'pruneOldEntries' ) );
+    add_action( 'quinrel_prune_audit_log', array( $this, 'pruneOldEntries' ) );
 }
 ```
 
@@ -404,8 +404,8 @@ Remove the COUNT+DELETE block from the `log()` method.
 **Acceptance criteria:**
 
 - [ ] The `log()` method no longer contains `SELECT COUNT(*)` or `DELETE` queries.
-- [ ] A cron hook `holvek_prune_audit_log` is scheduled daily.
-- [ ] After saving 25 posts via BulkMetaEditor, Query Monitor shows zero `SELECT COUNT(*) FROM wp_holvek_audit_log` queries during the request.
+- [ ] A cron hook `quinrel_prune_audit_log` is scheduled daily.
+- [ ] After saving 25 posts via BulkMetaEditor, Query Monitor shows zero `SELECT COUNT(*) FROM wp_quinrel_audit_log` queries during the request.
 - [ ] The audit log table does not grow unboundedly — after the daily cron runs, rows exceeding `LOG_MAX_ROWS` are removed.
 - [ ] The cron hook is cleared on deactivation (add to `clearScheduledWork()`).
 
@@ -430,7 +430,7 @@ Also apply to `PROGRESS_OPTION` on line 458.
 **Acceptance criteria:**
 
 - [ ] Both `update_option` calls pass `false` as the third argument.
-- [ ] After running an audit, `SELECT autoload FROM wp_options WHERE option_name = 'holvek_audit_results'` returns `no`.
+- [ ] After running an audit, `SELECT autoload FROM wp_options WHERE option_name = 'quinrel_audit_results'` returns `no`.
 - [ ] The audit results REST endpoint still returns data correctly.
 
 ---
@@ -452,7 +452,7 @@ Wrap each format string in `__()`:
 ```php
 /* translators: 1: term name, 2: taxonomy label, 3: site name */
 return sprintf(
-    __( 'Browse all posts in the "%1$s" %2$s on %3$s.', 'holvek' ),
+    __( 'Browse all posts in the "%1$s" %2$s on %3$s.', 'quinrel' ),
     $term->name,
     $term->taxonomy,
     get_bloginfo( 'name' )
@@ -463,9 +463,9 @@ Apply to all five instances (lines 100, 117, 132, 144, 161).
 
 **Acceptance criteria:**
 
-- [ ] All five `sprintf()` calls use `__( '...', 'holvek' )` for the format string.
+- [ ] All five `sprintf()` calls use `__( '...', 'quinrel' )` for the format string.
 - [ ] Each has a `/* translators: ... */` comment above it.
-- [ ] `wp i18n make-pot . languages/holvek.pot` (or `composer run makepot`) includes all five new strings.
+- [ ] `wp i18n make-pot . languages/quinrel.pot` (or `composer run makepot`) includes all five new strings.
 - [ ] Meta descriptions still render correctly on category, author, post-type, search, and date archive pages.
 
 ---
@@ -485,14 +485,14 @@ Use `printf` with escaped translatable strings:
 ```php
 printf(
     '<p style="margin:0;font-size:15px;font-weight:600;color:#0f172a;">%s</p>',
-    esc_html__( 'Welcome to Holvek!', 'holvek' )
+    esc_html__( 'Welcome to Quinrel!', 'quinrel' )
 );
 printf(
     '<p style="margin:4px 0 0;color:#475569;">%s <a href="%s" style="color:#3b82f6;font-weight:500;">%s</a> %s</p>',
-    esc_html__( 'Your SEO is already working with smart defaults.', 'holvek' ),
+    esc_html__( 'Your SEO is already working with smart defaults.', 'quinrel' ),
     esc_url( $setupUrl ),
-    esc_html__( 'Complete the 30-second setup', 'holvek' ),
-    esc_html__( 'to customize site type and import existing SEO data.', 'holvek' )
+    esc_html__( 'Complete the 30-second setup', 'quinrel' ),
+    esc_html__( 'to customize site type and import existing SEO data.', 'quinrel' )
 );
 ```
 
@@ -518,7 +518,7 @@ printf(
 ```php
 'message' => sprintf(
     /* translators: %d: number of imported settings */
-    __( 'Imported %d settings successfully. API keys and credentials are excluded from import for security.', 'holvek' ),
+    __( 'Imported %d settings successfully. API keys and credentials are excluded from import for security.', 'quinrel' ),
     $imported
 ),
 ```
@@ -526,7 +526,7 @@ printf(
 **Acceptance criteria:**
 
 - [ ] The string uses `sprintf( __( ... ) )` with a translators comment.
-- [ ] POST to `/holvek/v1/settings/import` returns the translatable message.
+- [ ] POST to `/quinrel/v1/settings/import` returns the translatable message.
 
 ---
 
@@ -539,7 +539,7 @@ printf(
 
 **Required fix:**
 
-Wrap each error string in `__( '...', 'holvek' )`.
+Wrap each error string in `__( '...', 'quinrel' )`.
 
 **Acceptance criteria:**
 
@@ -559,16 +559,16 @@ Wrap each error string in `__( '...', 'holvek' )`.
 **Required fix:**
 
 Add the missing hooks to `uninstall.php`:
-- `holvek_flush_404_buffer`
-- `holvek_cornerstone_staleness_check`
-- `holvek_weekly_usage_email`
+- `quinrel_flush_404_buffer`
+- `quinrel_cornerstone_staleness_check`
+- `quinrel_weekly_usage_email`
 
-Also add the new `holvek_prune_audit_log` hook (from PERF-05 fix).
+Also add the new `quinrel_prune_audit_log` hook (from PERF-05 fix).
 
 **Acceptance criteria:**
 
 - [ ] The cron hook arrays in `uninstall.php` and `Plugin::clearScheduledWork()` contain the same set of hooks.
-- [ ] After uninstalling the plugin, `wp_get_scheduled_event('holvek_flush_404_buffer')` returns `false`.
+- [ ] After uninstalling the plugin, `wp_get_scheduled_event('quinrel_flush_404_buffer')` returns `false`.
 
 ---
 
@@ -722,10 +722,10 @@ Use a single minimum capability for menu visibility. Pass all user capabilities 
 ```php
 public function registerMenu(): void {
     add_menu_page(
-        'Holvek SEO',
-        'Holvek',
+        'Quinrel SEO',
+        'Quinrel',
         'edit_seo_meta', // Minimum capability to see the menu
-        'holvek',
+        'quinrel',
         array( $this, 'renderAdminPage' ),
         'dashicons-chart-area',
         85
@@ -750,7 +750,7 @@ $adminConfig['capabilities'] = array(
 - [ ] A user with only `edit_seo_meta` can see the menu item but does NOT see the Settings tab in the SPA (enforced by the frontend React app reading `capabilities.manage_seo`).
 - [ ] A user with `manage_seo` sees all tabs.
 - [ ] A user with no SEO capabilities does NOT see the menu item at all.
-- [ ] The `holvekAdminConfig` JS object includes a `capabilities` map.
+- [ ] The `quinrelAdminConfig` JS object includes a `capabilities` map.
 
 ---
 
@@ -847,23 +847,23 @@ Add version tracking after successful installation:
 public function install(): void {
     // ... existing dbDelta calls ...
 
-    update_option( 'holvek_db_version', HOLVEK_VERSION, false );
+    update_option( 'quinrel_db_version', QUINREL_VERSION, false );
 }
 ```
 
 In `Plugin::boot()`, add an upgrade check:
 
 ```php
-$dbVersion = get_option( 'holvek_db_version', '0' );
-if ( version_compare( $dbVersion, HOLVEK_VERSION, '<' ) ) {
-    $installer = new \Holvek\Core\Database\Installer();
+$dbVersion = get_option( 'quinrel_db_version', '0' );
+if ( version_compare( $dbVersion, QUINREL_VERSION, '<' ) ) {
+    $installer = new \Quinrel\Core\Database\Installer();
     $installer->install();
 }
 ```
 
 **Acceptance criteria:**
 
-- [ ] After activation, `get_option('holvek_db_version')` returns the current plugin version.
+- [ ] After activation, `get_option('quinrel_db_version')` returns the current plugin version.
 - [ ] After updating the plugin to a newer version, the installer runs automatically on the next request.
 - [ ] The option has `autoload = false` (not needed on frontend requests).
 - [ ] Existing tables are not dropped or recreated — `dbDelta()` is non-destructive by design.
@@ -883,5 +883,5 @@ Run after ALL fixes are applied:
 - [ ] Uninstall with `delete_data_on_uninstall = no` — only cron hooks cleared, data preserved
 - [ ] Load the homepage 10 times — Query Monitor shows no `UPDATE wp_options ... wp_user_roles` queries
 - [ ] Load the admin dashboard — no PHP `Notice` or `Warning` messages
-- [ ] Run `wp i18n make-pot . languages/holvek.pot` — all new strings present
+- [ ] Run `wp i18n make-pot . languages/quinrel.pot` — all new strings present
 - [ ] Test with WordPress 6.0 minimum version — no fatal errors from unsupported PHP/WP APIs

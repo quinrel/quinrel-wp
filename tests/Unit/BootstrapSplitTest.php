@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Plugin;
+use Quinrel\WordPress\Plugin;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -11,12 +11,12 @@ class BootstrapSplitTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		update_option( 'holvek_db_version', HOLVEK_VERSION );
+		update_option( 'quinrel_db_version', QUINREL_VERSION );
 		unset(
-			$GLOBALS['mock_wp_options']['holvek_filename_enforce'],
-			$GLOBALS['mock_wp_options']['holvek_cookie_banner'],
-			$GLOBALS['mock_wp_options']['holvek_htaccess_web_backups_retired'],
-			$GLOBALS['mock_wp_options']['holvek_enable_index_sitemap']
+			$GLOBALS['mock_wp_options']['quinrel_filename_enforce'],
+			$GLOBALS['mock_wp_options']['quinrel_cookie_banner'],
+			$GLOBALS['mock_wp_options']['quinrel_htaccess_web_backups_retired'],
+			$GLOBALS['mock_wp_options']['quinrel_enable_index_sitemap']
 		);
 		unset( $GLOBALS['mock_is_user_logged_in'], $_GET['rest_route'] );
 		$GLOBALS['mock_is_admin'] = false;
@@ -44,17 +44,17 @@ class BootstrapSplitTest extends TestCase {
 		$this->assertNotContains( 'admin_enqueue_scripts', $this->hookNames() );
 		$this->assertNotContains( 'admin_notices', $this->hookNames() );
 		$this->assertNotContains( 'enqueue_block_editor_assets', $this->hookNames() );
-		$this->assertNotContains( 'holvek_process_job', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_process_job', $this->hookNames() );
 		$this->assertNotContains( 'transition_post_status', $this->hookNames() );
-		$this->assertNotContains( 'holvek_flush_404_buffer', $this->hookNames() );
-		$this->assertNotContains( 'holvek_404_cleanup', $this->hookNames() );
-		$this->assertNotContains( 'holvek_apply_retention', $this->hookNames() );
-		$this->assertNotContains( 'holvek_weekly_usage_email', $this->hookNames() );
-		$this->assertNotContains( 'holvek_indexnow_flush', $this->hookNames() );
-		$this->assertNotContains( 'holvek_rank_check', $this->hookNames() );
-		$this->assertNotContains( 'holvek_blc_scan_batch', $this->hookNames() );
-		$this->assertNotContains( 'holvek_scan_orphaned', $this->hookNames() );
-		$this->assertNotContains( 'holvek_run_technical_audit', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_flush_404_buffer', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_404_cleanup', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_apply_retention', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_weekly_usage_email', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_indexnow_flush', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_rank_check', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_blc_scan_batch', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_scan_orphaned', $this->hookNames() );
+		$this->assertNotContains( 'quinrel_run_technical_audit', $this->hookNames() );
 		$this->assertNotContains( 'wp_enqueue_scripts', $this->hookNames() );
 		$this->assertSame( array(), $GLOBALS['mock_rest_routes'] );
 
@@ -93,14 +93,14 @@ class BootstrapSplitTest extends TestCase {
 	}
 
 	public function testFilenameFilterStaysOffWhenDisabled(): void {
-		update_option( 'holvek_filename_enforce', 'no' );
+		update_option( 'quinrel_filename_enforce', 'no' );
 		$this->bootAt( '/hello', false, false );
 
 		$this->assertNotContains( 'wp_handle_upload_prefilter', $this->hookNames() );
 	}
 
 	public function testCookieBannerBootsOnlyWhenEnabled(): void {
-		update_option( 'holvek_cookie_banner', array( 'enabled' => true ) );
+		update_option( 'quinrel_cookie_banner', array( 'enabled' => true ) );
 		$plugin = $this->bootAt( '/hello', false, false );
 
 		$this->assertTrue( $this->hasService( $plugin, 'cookie_banner_module' ) );
@@ -108,36 +108,36 @@ class BootstrapSplitTest extends TestCase {
 	}
 
 	public function testAdminBootKeepsMenusQueueAndPublishHooks(): void {
-		update_option( 'holvek_caps_version', HOLVEK_VERSION );
+		update_option( 'quinrel_caps_version', QUINREL_VERSION );
 		$this->bootAt( '/wp-admin/index.php', true, true );
 
 		$this->assertContains( 'admin_menu', $this->hookNames() );
 		$this->assertContains( 'admin_enqueue_scripts', $this->hookNames() );
 		$this->assertContains( 'admin_notices', $this->hookNames() );
 		$this->assertContains( 'transition_post_status', $this->hookNames() );
-		$this->assertContains( 'holvek_process_job', $this->hookNames() );
+		$this->assertContains( 'quinrel_process_job', $this->hookNames() );
 		$this->assertContains( 'enqueue_block_editor_assets', $this->hookNames() );
-		$this->assertContains( 'holvek_indexnow_flush', $this->hookNames() );
-		$this->assertContains( 'holvek_rank_check', $this->hookNames() );
-		$this->assertContains( 'holvek_blc_scan_batch', $this->hookNames() );
-		$this->assertContains( 'holvek_scan_orphaned', $this->hookNames() );
-		$this->assertContains( 'holvek_run_technical_audit', $this->hookNames() );
-		$this->assertContains( 'holvek_404_cleanup', $this->hookNames() );
+		$this->assertContains( 'quinrel_indexnow_flush', $this->hookNames() );
+		$this->assertContains( 'quinrel_rank_check', $this->hookNames() );
+		$this->assertContains( 'quinrel_blc_scan_batch', $this->hookNames() );
+		$this->assertContains( 'quinrel_scan_orphaned', $this->hookNames() );
+		$this->assertContains( 'quinrel_run_technical_audit', $this->hookNames() );
+		$this->assertContains( 'quinrel_404_cleanup', $this->hookNames() );
 	}
 
 	public function testRestRequestUsesOperationalBoot(): void {
-		$this->bootAt( '/wp-json/holvek/v1/settings', false, false );
+		$this->bootAt( '/wp-json/quinrel/v1/settings', false, false );
 
 		$this->assertContains( 'rest_api_init', $this->hookNames() );
 		$this->assertContains( 'transition_post_status', $this->hookNames() );
-		$this->assertContains( 'holvek_process_job', $this->hookNames() );
+		$this->assertContains( 'quinrel_process_job', $this->hookNames() );
 		$this->assertNotContains( 'admin_menu', $this->hookNames() );
 		$this->assertNotContains( 'admin_enqueue_scripts', $this->hookNames() );
 		$this->assertSame( array(), $GLOBALS['mock_rest_routes'] );
 	}
 
 	public function testRestRouteQueryIsNotHtml(): void {
-		$_GET['rest_route'] = '/holvek/v1/ai/usage';
+		$_GET['rest_route'] = '/quinrel/v1/ai/usage';
 		$this->bootAt( '/index.php', false, false );
 
 		$this->assertContains( 'transition_post_status', $this->hookNames() );
@@ -150,22 +150,22 @@ class BootstrapSplitTest extends TestCase {
 
 		$plugin->registerRestControllers();
 
-		$this->assertArrayHasKey( 'holvek/v1/settings', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/pagespeed', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/analytics/pagespeed', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/ai/usage', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/robots-txt', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/gsc/status', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/inspector/audit', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/seo/global', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/schemamap', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/writing/suggest-meta', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/rank-tracker/keywords', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/analytics/bing/settings', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/migration/detect', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/bulk-meta', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayHasKey( 'holvek/v1/roles/capabilities', $GLOBALS['mock_rest_routes'] );
-		$this->assertArrayNotHasKey( 'holvek/v1/schema/product', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/settings', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/pagespeed', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/analytics/pagespeed', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/ai/usage', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/robots-txt', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/gsc/status', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/inspector/audit', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/seo/global', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/schemamap', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/writing/suggest-meta', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/rank-tracker/keywords', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/analytics/bing/settings', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/migration/detect', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/bulk-meta', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/roles/capabilities', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayNotHasKey( 'quinrel/v1/schema/product', $GLOBALS['mock_rest_routes'] );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 		$this->assertFalse( $this->hasService( $plugin, 'backend_api_client' ) );
 	}
@@ -214,13 +214,13 @@ class BootstrapSplitTest extends TestCase {
 		$this->assertTrue( apply_filters( 'wp_sitemaps_enabled', true ) );
 		$this->assertFalse( $this->hasService( $plugin, 'sitemap_module' ) );
 
-		update_option( 'holvek_enable_index_sitemap', 'yes' );
+		update_option( 'quinrel_enable_index_sitemap', 'yes' );
 		$this->assertFalse( apply_filters( 'wp_sitemaps_enabled', true ) );
 		$this->assertFalse( $this->hasService( $plugin, 'sitemap_module' ) );
 	}
 
 	public function testRetiredHtaccessFlagSkipsEditor(): void {
-		update_option( 'holvek_htaccess_web_backups_retired', 'yes' );
+		update_option( 'quinrel_htaccess_web_backups_retired', 'yes' );
 		$plugin = $this->bootAt( '/hello', false, false );
 
 		$this->assertContains( 'init', $this->hookNames() );

@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Indexing;
+namespace Quinrel\WordPress\Modules\Indexing;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class IndexStatusChecker {
 
 	private const CACHE_TTL        = HOUR_IN_SECONDS;
-	private const GSC_TOKEN_OPTION = 'holvek_gsc_access_token';
+	private const GSC_TOKEN_OPTION = 'quinrel_gsc_access_token';
 	private const MAX_BULK         = 10;
 
 	private const INSPECT_ENDPOINT = 'https://searchconsole.googleapis.com/v1/urlInspection/index:inspect';
@@ -33,7 +33,7 @@ class IndexStatusChecker {
 		$editorCap = fn() => current_user_can( 'edit_posts' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/indexing/check-status',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -43,7 +43,7 @@ class IndexStatusChecker {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/indexing/check-status-bulk',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -60,11 +60,11 @@ class IndexStatusChecker {
 		$postId = absint( $params['post_id'] ?? 0 );
 
 		if ( $postId < 1 ) {
-			return new \WP_Error( 'missing_post_id', __( 'A post ID is required.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_post_id', __( 'A post ID is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! current_user_can( 'edit_post', $postId ) ) {
-			return new \WP_Error( 'forbidden_post', __( 'You cannot inspect this post.', 'holvek' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'forbidden_post', __( 'You cannot inspect this post.', 'quinrel' ), array( 'status' => 403 ) );
 		}
 
 		$url = get_permalink( $postId );
@@ -81,7 +81,7 @@ class IndexStatusChecker {
 				'missing_ids',
 				sprintf(
 					/* translators: %d: maximum number of post IDs in one request. */
-					__( 'Provide post_ids array (max %d).', 'holvek' ),
+					__( 'Provide post_ids array (max %d).', 'quinrel' ),
 					self::MAX_BULK
 				),
 				array( 'status' => 400 )
@@ -93,7 +93,7 @@ class IndexStatusChecker {
 			if ( ! current_user_can( 'edit_post', $id ) ) {
 				$results[ $id ] = array(
 					'status'  => 'forbidden',
-					'message' => __( 'You cannot inspect this post.', 'holvek' ),
+					'message' => __( 'You cannot inspect this post.', 'quinrel' ),
 				);
 				continue;
 			}
@@ -110,7 +110,7 @@ class IndexStatusChecker {
 	// ── Core inspection ───────────────────────────────────────────────────────
 
 	private function inspect( string $url ): array {
-		$cacheKey = 'holvek_index_status_' . md5( $url );
+		$cacheKey = 'quinrel_index_status_' . md5( $url );
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return array_merge( $cached, array( 'cached' => true ) );
@@ -121,7 +121,7 @@ class IndexStatusChecker {
 			return array(
 				'url'                  => $url,
 				'status'               => 'unconfigured',
-				'message'              => 'Google Search Console is not connected. Go to Holvek → Settings → Integrations to connect.',
+				'message'              => 'Google Search Console is not connected. Go to Quinrel → Settings → Integrations to connect.',
 				'cached'               => false,
 				'troubleshooting_tips' => array(),
 			);
@@ -163,7 +163,7 @@ class IndexStatusChecker {
 				'status'               => 'api_error',
 				'message'              => 'GSC API returned HTTP ' . $code . '. Your access token may have expired.',
 				'cached'               => false,
-				'troubleshooting_tips' => array( 'Re-authorise your Google Search Console connection in Holvek → Settings → Integrations.' ),
+				'troubleshooting_tips' => array( 'Re-authorise your Google Search Console connection in Quinrel → Settings → Integrations.' ),
 			);
 		}
 
@@ -203,11 +203,11 @@ class IndexStatusChecker {
 		}
 
 		if ( ( $index['robotsTxtState'] ?? '' ) === 'DISALLOWED' ) {
-			$tips[] = 'This URL is blocked by your robots.txt. Go to Holvek → Technical SEO → Robots.txt to review.';
+			$tips[] = 'This URL is blocked by your robots.txt. Go to Quinrel → Technical SEO → Robots.txt to review.';
 		}
 
 		if ( ( $index['indexingState'] ?? '' ) === 'INDEXING_NOT_ALLOWED' ) {
-			$tips[] = 'A noindex directive is preventing indexing. Check the Meta Robots field in the Holvek SEO panel for this post.';
+			$tips[] = 'A noindex directive is preventing indexing. Check the Meta Robots field in the Quinrel SEO panel for this post.';
 		}
 
 		if ( stripos( $coverage, 'Crawled - currently not indexed' ) !== false ) {

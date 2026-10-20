@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Core\Support;
+namespace Quinrel\WordPress\Core\Support;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

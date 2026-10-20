@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ContentAssistant;
+namespace Quinrel\WordPress\Modules\ContentAssistant;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,10 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class AuditScheduler {
 
-	private const RESULTS_OPTION  = 'holvek_last_audit_results';
-	private const HISTORY_OPTION  = 'holvek_audit_history';
-	private const SCHEDULE_OPTION = 'holvek_audit_schedule';
-	private const CRON_HOOK       = 'holvek_scheduled_audit';
+	private const RESULTS_OPTION  = 'quinrel_last_audit_results';
+	private const HISTORY_OPTION  = 'quinrel_audit_history';
+	private const SCHEDULE_OPTION = 'quinrel_audit_schedule';
+	private const CRON_HOOK       = 'quinrel_scheduled_audit';
 	private const HISTORY_MAX     = 12;
 
 	public function register(): void {
@@ -38,14 +38,14 @@ class AuditScheduler {
 
 		$config     = ( new self() )->getConfig();
 		$frequency  = ( $config['frequency'] ?? 'weekly' ) === 'monthly' ? 'monthly' : 'weekly';
-		$recurrence = ( $frequency === 'monthly' ) ? 'holvek_monthly' : 'weekly';
+		$recurrence = ( $frequency === 'monthly' ) ? 'quinrel_monthly' : 'weekly';
 		wp_schedule_event( time() + 60, $recurrence, self::CRON_HOOK );
 	}
 
 	public function registerSchedules( array $schedules ): array {
-		$schedules['holvek_monthly'] = array(
+		$schedules['quinrel_monthly'] = array(
 			'interval' => 30 * DAY_IN_SECONDS,
-			'display'  => __( 'Once Monthly', 'holvek' ),
+			'display'  => __( 'Once Monthly', 'quinrel' ),
 		);
 		return $schedules;
 	}
@@ -56,7 +56,7 @@ class AuditScheduler {
 		$adminCap = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/audit/schedule',
 			array(
 				array(
@@ -73,7 +73,7 @@ class AuditScheduler {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/audit/results',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -83,7 +83,7 @@ class AuditScheduler {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/audit/run-now',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -148,7 +148,7 @@ class AuditScheduler {
 		return rest_ensure_response(
 			array(
 				'success' => true,
-				'message' => __( 'Audit will run momentarily.', 'holvek' ),
+				'message' => __( 'Audit will run momentarily.', 'quinrel' ),
 			)
 		);
 	}
@@ -171,7 +171,7 @@ class AuditScheduler {
 				'posts_per_page' => 1,
 				'meta_query'     => array(
 					array(
-						'key'     => '_holvek_meta_description',
+						'key'     => '_quinrel_meta_description',
 						'compare' => 'NOT EXISTS',
 					),
 				),
@@ -204,9 +204,9 @@ class AuditScheduler {
 
 			// 3. 404 count
 			global $wpdb;
-			$logTable    = $wpdb->prefix . 'holvek_404_logs';
+			$logTable    = $wpdb->prefix . 'quinrel_404_logs';
 			$tableExists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $logTable ) ) );
-			$count404    = $tableExists ? (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_404_logs" ) : 0;
+			$count404    = $tableExists ? (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_404_logs" ) : 0;
 			if ( $count404 > 20 ) {
 				++$issues;
 				$details['404_count'] = $count404; } elseif ( $count404 > 5 ) {
@@ -216,7 +216,7 @@ class AuditScheduler {
 
 						// 4. Noindex on front page
 						$frontPageId  = (int) get_option( 'page_on_front' );
-						$frontNoindex = $frontPageId > 0 ? get_post_meta( $frontPageId, '_holvek_noindex', true ) : '';
+						$frontNoindex = $frontPageId > 0 ? get_post_meta( $frontPageId, '_quinrel_noindex', true ) : '';
 						if ( $frontNoindex === 'yes' ) {
 							++$issues;
 							$details['front_page_noindex'] = true; } else {
@@ -253,7 +253,7 @@ class AuditScheduler {
 								if ( $config['email_enabled'] ) {
 									wp_mail(
 										$config['email_address'],
-										'[Holvek] Scheduled SEO Audit Results',
+										'[Quinrel] Scheduled SEO Audit Results',
 										$this->formatEmailBody( $results ),
 										array( 'Content-Type: text/html; charset=UTF-8' )
 									);
@@ -269,13 +269,13 @@ class AuditScheduler {
 			wp_unschedule_event( $ts, self::CRON_HOOK );
 		}
 
-		$recurrence = ( $frequency === 'monthly' ) ? 'holvek_monthly' : 'weekly';
+		$recurrence = ( $frequency === 'monthly' ) ? 'quinrel_monthly' : 'weekly';
 		wp_schedule_event( time() + 60, $recurrence, self::CRON_HOOK );
 	}
 
 	public function formatEmailBody( array $results ): string {
 		$s     = $results['summary'];
-		$body  = '<h2>Holvek SEO Audit Results</h2>';
+		$body  = '<h2>Quinrel SEO Audit Results</h2>';
 		$body .= "<p>Run at: <strong>{$results['timestamp']}</strong></p>";
 		$body .= '<table border="1" cellpadding="6" style="border-collapse:collapse">';
 		$body .= '<tr><th>Metric</th><th>Count</th></tr>';
@@ -292,7 +292,7 @@ class AuditScheduler {
 			$body .= '</ul>';
 		}
 
-		$body .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=holvek' ) ) . '">View full audit in Holvek →</a></p>';
+		$body .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=quinrel' ) ) . '">View full audit in Quinrel →</a></p>';
 		return $body;
 	}
 

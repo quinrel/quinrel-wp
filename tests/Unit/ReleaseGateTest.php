@@ -1,14 +1,14 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Modules\Admin\AdminMenu;
-use Holvek\WordPress\Modules\Admin\AdminModule;
-use Holvek\WordPress\Modules\Api\HeadlessSeoEndpoints;
-use Holvek\WordPress\Modules\Social\SocialModule;
-use Holvek\WordPress\Modules\TechnicalSeo\HtaccessEditor;
-use Holvek\WordPress\Plugin;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Modules\Admin\AdminMenu;
+use Quinrel\WordPress\Modules\Admin\AdminModule;
+use Quinrel\WordPress\Modules\Api\HeadlessSeoEndpoints;
+use Quinrel\WordPress\Modules\Social\SocialModule;
+use Quinrel\WordPress\Modules\TechnicalSeo\HtaccessEditor;
+use Quinrel\WordPress\Plugin;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -132,23 +132,23 @@ class ReleaseGateTest extends TestCase {
 		$created = implode( "\n", array_map( 'strval', $GLOBALS['mock_db_delta'] ) );
 		foreach (
 			array(
-				'wp_holvek_redirects',
-				'wp_holvek_404_logs',
-				'wp_holvek_sitemap_settings',
-				'wp_holvek_links',
-				'wp_holvek_ai_usage',
-				'wp_holvek_audit_log',
-				'wp_holvek_rank_history',
-				'wp_holvek_broken_links',
+				'wp_quinrel_redirects',
+				'wp_quinrel_404_logs',
+				'wp_quinrel_sitemap_settings',
+				'wp_quinrel_links',
+				'wp_quinrel_ai_usage',
+				'wp_quinrel_audit_log',
+				'wp_quinrel_rank_history',
+				'wp_quinrel_broken_links',
 			) as $table
 		) {
 			$this->assertStringContainsString( $table, $created );
 		}
 		$this->assertFalse( $this->queriesContain( 'DROP TABLE' ) );
-		$this->assertSame( HOLVEK_VERSION, get_option( 'holvek_db_version' ) );
-		$this->assertNotSame( '', (string) get_option( 'holvek_encryption_salt' ) );
+		$this->assertSame( QUINREL_VERSION, get_option( 'quinrel_db_version' ) );
+		$this->assertNotSame( '', (string) get_option( 'quinrel_encryption_salt' ) );
 		$this->assertTrue(
-			$this->queriesContain( "SET autoload = 'no' WHERE option_name = 'holvek_encryption_salt'" )
+			$this->queriesContain( "SET autoload = 'no' WHERE option_name = 'quinrel_encryption_salt'" )
 		);
 		$this->assertTrue( $this->roleHas( 'administrator', 'manage_seo' ) );
 		$this->assertTrue( $this->roleHas( 'administrator', 'view_seo_reports' ) );
@@ -168,25 +168,25 @@ class ReleaseGateTest extends TestCase {
 		}
 		foreach (
 			array(
-				'holvek_flush_404_buffer',
-				'holvek_404_cleanup',
-				'holvek_rank_check',
-				'holvek_apply_retention',
-				'holvek_weekly_usage_email',
-				'holvek_cornerstone_staleness_check',
-				'holvek_prune_audit_log',
-				'holvek_scheduled_audit',
+				'quinrel_flush_404_buffer',
+				'quinrel_404_cleanup',
+				'quinrel_rank_check',
+				'quinrel_apply_retention',
+				'quinrel_weekly_usage_email',
+				'quinrel_cornerstone_staleness_check',
+				'quinrel_prune_audit_log',
+				'quinrel_scheduled_audit',
 			) as $hook
 		) {
 			$this->assertContains( $hook, $scheduled );
 		}
 
-		update_option( 'holvek_enable_index_sitemap', 'yes' );
+		update_option( 'quinrel_enable_index_sitemap', 'yes' );
 		Plugin::activate();
 
 		$this->assertSame( 2, $GLOBALS['mock_flush_count'] );
 		$this->assertSame(
-			'index.php?holvek_sitemap=index',
+			'index.php?quinrel_sitemap=index',
 			$GLOBALS['wp_rewrite']->extra_rules_top['^sitemap\\.xml$']
 		);
 		$this->assertArrayNotHasKey( '^sitemap-news\\.xml$', $GLOBALS['wp_rewrite']->extra_rules_top );
@@ -197,7 +197,7 @@ class ReleaseGateTest extends TestCase {
 		$this->assertArrayNotHasKey( '^sitemap\\.xml$', $GLOBALS['wp_rewrite']->extra_rules_top );
 		$this->assertSame( 'index.php?keep=1', $GLOBALS['wp_rewrite']->extra_rules_top['^keep-me$'] );
 		$this->assertSame( 3, $GLOBALS['mock_flush_count'] );
-		$this->assertSame( HOLVEK_VERSION, get_option( 'holvek_db_version' ) );
+		$this->assertSame( QUINREL_VERSION, get_option( 'quinrel_db_version' ) );
 		$this->assertFalse( $this->queriesContain( 'DROP TABLE' ) );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 
@@ -207,21 +207,21 @@ class ReleaseGateTest extends TestCase {
 		}
 		foreach (
 			array(
-				'holvek_process_job',
-				'holvek_flush_404_buffer',
-				'holvek_scan_orphaned',
-				'holvek_stale_cornerstone_check',
-				'holvek_cornerstone_staleness_check',
-				'holvek_weekly_audit',
-				'holvek_monthly_audit',
-				'holvek_scheduled_audit',
-				'holvek_rank_check',
-				'holvek_prune_audit_log',
-				'holvek_404_cleanup',
-				'holvek_apply_retention',
-				'holvek_run_technical_audit',
-				'holvek_blc_scan_batch',
-				'holvek_weekly_usage_email',
+				'quinrel_process_job',
+				'quinrel_flush_404_buffer',
+				'quinrel_scan_orphaned',
+				'quinrel_stale_cornerstone_check',
+				'quinrel_cornerstone_staleness_check',
+				'quinrel_weekly_audit',
+				'quinrel_monthly_audit',
+				'quinrel_scheduled_audit',
+				'quinrel_rank_check',
+				'quinrel_prune_audit_log',
+				'quinrel_404_cleanup',
+				'quinrel_apply_retention',
+				'quinrel_run_technical_audit',
+				'quinrel_blc_scan_batch',
+				'quinrel_weekly_usage_email',
 			) as $hook
 		) {
 			$this->assertContains( $hook, $GLOBALS['mock_cleared_hooks'] );
@@ -243,7 +243,7 @@ class ReleaseGateTest extends TestCase {
 		$this->assertSame( 403, $read->get_error_data()['status'] );
 
 		update_option(
-			'holvek_social_accounts',
+			'quinrel_social_accounts',
 			array(
 				array(
 					'network'      => 'twitter',
@@ -260,8 +260,8 @@ class ReleaseGateTest extends TestCase {
 
 		$admin = new AdminModule( new EventManager(), new AdminMenu() );
 		$admin->registerRestRoutes();
-		$export = $GLOBALS['mock_rest_routes']['holvek/v1/settings/export']['permission_callback'];
-		$import = $GLOBALS['mock_rest_routes']['holvek/v1/settings/import']['permission_callback'];
+		$export = $GLOBALS['mock_rest_routes']['quinrel/v1/settings/export']['permission_callback'];
+		$import = $GLOBALS['mock_rest_routes']['quinrel/v1/settings/import']['permission_callback'];
 		$this->assertSame( array( $admin, 'checkSettingsTransferPermission' ), $export );
 		$this->assertFalse( $export() );
 		$this->assertFalse( $import() );
@@ -286,13 +286,13 @@ class ReleaseGateTest extends TestCase {
 			)
 		);
 		$GLOBALS['mock_post_meta'][88] = array(
-			'_holvek_meta_title'    => 'Hidden title',
-			'_holvek_focus_keyword' => 'secret keyword',
+			'_quinrel_meta_title'    => 'Hidden title',
+			'_quinrel_focus_keyword' => 'secret keyword',
 		);
 
 		$endpoints = new HeadlessSeoEndpoints();
 		$endpoints->registerRoutes();
-		$route = $GLOBALS['mock_rest_routes']['holvek/v1/seo/(?P<post_id>\\d+)'];
+		$route = $GLOBALS['mock_rest_routes']['quinrel/v1/seo/(?P<post_id>\\d+)'];
 		$deny  = new \WP_REST_Request();
 		$deny->set_param( 'post_id', 88 );
 		$deny->set_json_params(
@@ -307,7 +307,7 @@ class ReleaseGateTest extends TestCase {
 		$this->assertInstanceOf( \WP_Error::class, $updated );
 		$this->assertSame( 'forbidden', $updated->get_error_code() );
 		$this->assertSame( 403, $updated->get_error_data()['status'] );
-		$this->assertSame( 'Hidden title', get_post_meta( 88, '_holvek_meta_title', true ) );
+		$this->assertSame( 'Hidden title', get_post_meta( 88, '_quinrel_meta_title', true ) );
 		$this->assertStringNotContainsString( 'secret keyword', (string) wp_json_encode( $updated->get_error_data() ) );
 
 		$hidden = $endpoints->getPostSeo( $deny );
@@ -320,7 +320,7 @@ class ReleaseGateTest extends TestCase {
 		$this->assertTrue( $route[1]['permission_callback']( $own ) );
 		$saved = $endpoints->updatePostSeo( $own );
 		$this->assertInstanceOf( \WP_REST_Response::class, $saved );
-		$this->assertSame( 'Mine', get_post_meta( 41, '_holvek_meta_title', true ) );
+		$this->assertSame( 'Mine', get_post_meta( 41, '_quinrel_meta_title', true ) );
 	}
 
 	private function roleHas( string $role, string $cap ): bool {

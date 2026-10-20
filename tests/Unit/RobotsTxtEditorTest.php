@@ -1,9 +1,9 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use Holvek\WordPress\Modules\TechnicalSeo\RobotsTxtEditor;
+use Quinrel\WordPress\Modules\TechnicalSeo\RobotsTxtEditor;
 
 class RobotsTxtEditorTest extends TestCase
 {
@@ -30,7 +30,7 @@ class RobotsTxtEditorTest extends TestCase
 
     public function testGetMergedBotListWithCustomBots(): void
     {
-        update_option('holvek_custom_ai_bots', ['CustomBot-1', 'DeepSeek-Crawler']);
+        update_option('quinrel_custom_ai_bots', ['CustomBot-1', 'DeepSeek-Crawler']);
 
         $bots = $this->editor->getMergedBotList();
         $this->assertContains('CustomBot-1', $bots);
@@ -40,7 +40,7 @@ class RobotsTxtEditorTest extends TestCase
 
     public function testUpdateAiBotsSanitizationAndValidation(): void
     {
-        $request = new \WP_REST_Request('POST', '/holvek/v1/ai-bots');
+        $request = new \WP_REST_Request('POST', '/quinrel/v1/ai-bots');
         $request->set_json_params([
             'custom_bots' => [
                 'ValidBot-1',
@@ -75,7 +75,7 @@ class RobotsTxtEditorTest extends TestCase
         $this->assertSame(1, substr_count($output, 'Sitemap: https://example.com/sitemap.xml'));
     }
 
-    public function testExistingHolvekSitemapLineIsNotRepeated(): void
+    public function testExistingQuinrelSitemapLineIsNotRepeated(): void
     {
         $incoming = "User-agent: *\nSitemap: https://example.com/sitemap.xml\n";
 
@@ -97,8 +97,8 @@ class RobotsTxtEditorTest extends TestCase
 
     public function testFilterRobotsTxtWithAiBlocking(): void
     {
-        update_option('holvek_block_ai_bots', 'yes');
-        update_option('holvek_custom_ai_bots', ['MyTestCrawler']);
+        update_option('quinrel_block_ai_bots', 'yes');
+        update_option('quinrel_custom_ai_bots', ['MyTestCrawler']);
 
         $output = $this->editor->filterRobotsTxt('', true);
 
@@ -110,18 +110,18 @@ class RobotsTxtEditorTest extends TestCase
 
     public function testFilterRobotsTxtWithAiTrainingOptOut(): void
     {
-        update_option('holvek_ai_training_optout', 'yes');
+        update_option('quinrel_ai_training_optout', 'yes');
 
         $output = $this->editor->filterRobotsTxt('', true);
 
-        $this->assertStringContainsString('# AI Training Data Opt-Out (Holvek)', $output);
+        $this->assertStringContainsString('# AI Training Data Opt-Out (Quinrel)', $output);
         $this->assertStringContainsString('NoAI: 1', $output);
         $this->assertStringContainsString('NoImageAI: 1', $output);
     }
 
     public function testSavedRobotsWithoutAcknowledgementDoesNotReplace(): void
     {
-        update_option('holvek_robots_txt', "User-agent: *\nDisallow: /private/\n");
+        update_option('quinrel_robots_txt', "User-agent: *\nDisallow: /private/\n");
         $incoming = "User-agent: *\nDisallow: /wp-admin/\n# Kept by another plugin\n";
 
         $output = $this->editor->filterRobotsTxt($incoming, true);
@@ -132,8 +132,8 @@ class RobotsTxtEditorTest extends TestCase
 
     public function testAcknowledgedCustomRobotsReplacesGeneratedFile(): void
     {
-        update_option('holvek_robots_txt', "User-agent: *\nDisallow: /private/\nAllow: /public/\n");
-        update_option('holvek_robots_txt_replaces_generated', 'yes');
+        update_option('quinrel_robots_txt', "User-agent: *\nDisallow: /private/\nAllow: /public/\n");
+        update_option('quinrel_robots_txt_replaces_generated', 'yes');
 
         $output = $this->editor->filterRobotsTxt("User-agent: *\n# Core sitemap line\n", true);
 
@@ -145,7 +145,7 @@ class RobotsTxtEditorTest extends TestCase
 
     public function testAcknowledgementWithoutContentDoesNotReplace(): void
     {
-        update_option('holvek_robots_txt_replaces_generated', 'yes');
+        update_option('quinrel_robots_txt_replaces_generated', 'yes');
         $incoming = "# Still generated\n";
 
         $output = $this->editor->filterRobotsTxt($incoming, true);
@@ -155,9 +155,9 @@ class RobotsTxtEditorTest extends TestCase
 
     public function testUpdateRejectsReplacementUntilRulesExist(): void
     {
-        update_option('holvek_robots_txt', "User-agent: *\nDisallow: /kept/\n");
+        update_option('quinrel_robots_txt', "User-agent: *\nDisallow: /kept/\n");
 
-        $request = new \WP_REST_Request('POST', '/holvek/v1/robots-txt');
+        $request = new \WP_REST_Request('POST', '/quinrel/v1/robots-txt');
         $request->set_json_params([
             'content' => '   ',
             'replace_generated' => true,
@@ -167,13 +167,13 @@ class RobotsTxtEditorTest extends TestCase
 
         $this->assertInstanceOf(\WP_Error::class, $result);
         $this->assertSame('robots_replace_empty', $result->get_error_code());
-        $this->assertSame("User-agent: *\nDisallow: /kept/\n", get_option('holvek_robots_txt', ''));
-        $this->assertNotSame('yes', get_option('holvek_robots_txt_replaces_generated', 'no'));
+        $this->assertSame("User-agent: *\nDisallow: /kept/\n", get_option('quinrel_robots_txt', ''));
+        $this->assertNotSame('yes', get_option('quinrel_robots_txt_replaces_generated', 'no'));
     }
 
     public function testUpdateAcknowledgedDocumentReplacesOnTheNextRequest(): void
     {
-        $request = new \WP_REST_Request('POST', '/holvek/v1/robots-txt');
+        $request = new \WP_REST_Request('POST', '/quinrel/v1/robots-txt');
         $request->set_json_params([
             'content' => "User-agent: *\nDisallow: /private/\n",
             'replace_generated' => true,
@@ -207,7 +207,7 @@ class RobotsTxtEditorTest extends TestCase
         $disabled = ob_get_clean();
         $this->assertSame('', $disabled);
 
-        update_option('holvek_block_ai_bots', 'yes');
+        update_option('quinrel_block_ai_bots', 'yes');
         $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (compatible; NotOmgiliBrowser/1.0) Chrome/120.0.0.0';
         ob_start();
         $this->editor->proactiveBlockAiBots();

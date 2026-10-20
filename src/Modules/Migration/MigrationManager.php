@@ -1,13 +1,13 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Migration;
+namespace Quinrel\WordPress\Modules\Migration;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Auto-detects installed SEO plugins and migrates their data to Holvek.
+ * Auto-detects installed SEO plugins and migrates their data to Quinrel.
  * Supports: Yoast SEO, RankMath, All in One SEO (AIOSEO).
  *
  * Philosophy: One click, zero data loss.
@@ -15,38 +15,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 class MigrationManager {
 
 	/**
-	 * Meta key mapping from competitor plugins to Holvek.
+	 * Meta key mapping from competitor plugins to Quinrel.
 	 */
 	private const META_MAP = array(
 		'yoast'    => array(
-			'_yoast_wpseo_title'                 => '_holvek_meta_title',
-			'_yoast_wpseo_metadesc'              => '_holvek_meta_description',
-			'_yoast_wpseo_focuskw'               => '_holvek_focus_keyword',
-			'_yoast_wpseo_opengraph-title'       => '_holvek_og_title',
-			'_yoast_wpseo_opengraph-description' => '_holvek_og_description',
-			'_yoast_wpseo_opengraph-image'       => '_holvek_og_image',
-			'_yoast_wpseo_twitter-title'         => '_holvek_twitter_title',
-			'_yoast_wpseo_meta-robots-noindex'   => '_holvek_noindex',
-			'_yoast_wpseo_meta-robots-nofollow'  => '_holvek_nofollow',
+			'_yoast_wpseo_title'                 => '_quinrel_meta_title',
+			'_yoast_wpseo_metadesc'              => '_quinrel_meta_description',
+			'_yoast_wpseo_focuskw'               => '_quinrel_focus_keyword',
+			'_yoast_wpseo_opengraph-title'       => '_quinrel_og_title',
+			'_yoast_wpseo_opengraph-description' => '_quinrel_og_description',
+			'_yoast_wpseo_opengraph-image'       => '_quinrel_og_image',
+			'_yoast_wpseo_twitter-title'         => '_quinrel_twitter_title',
+			'_yoast_wpseo_meta-robots-noindex'   => '_quinrel_noindex',
+			'_yoast_wpseo_meta-robots-nofollow'  => '_quinrel_nofollow',
 		),
 		'rankmath' => array(
-			'rank_math_title'                => '_holvek_meta_title',
-			'rank_math_description'          => '_holvek_meta_description',
-			'rank_math_focus_keyword'        => '_holvek_focus_keyword',
-			'rank_math_facebook_title'       => '_holvek_og_title',
-			'rank_math_facebook_description' => '_holvek_og_description',
-			'rank_math_facebook_image'       => '_holvek_og_image',
-			'rank_math_twitter_title'        => '_holvek_twitter_title',
-			'rank_math_robots'               => '_holvek_noindex',
+			'rank_math_title'                => '_quinrel_meta_title',
+			'rank_math_description'          => '_quinrel_meta_description',
+			'rank_math_focus_keyword'        => '_quinrel_focus_keyword',
+			'rank_math_facebook_title'       => '_quinrel_og_title',
+			'rank_math_facebook_description' => '_quinrel_og_description',
+			'rank_math_facebook_image'       => '_quinrel_og_image',
+			'rank_math_twitter_title'        => '_quinrel_twitter_title',
+			'rank_math_robots'               => '_quinrel_noindex',
 		),
 		'aioseo'   => array(
-			'_aioseo_title'          => '_holvek_meta_title',
-			'_aioseo_description'    => '_holvek_meta_description',
-			'_aioseo_keywords'       => '_holvek_focus_keyword',
-			'_aioseo_og_title'       => '_holvek_og_title',
-			'_aioseo_og_description' => '_holvek_og_description',
-			'_aioseo_og_image'       => '_holvek_og_image',
-			'_aioseo_twitter_title'  => '_holvek_twitter_title',
+			'_aioseo_title'          => '_quinrel_meta_title',
+			'_aioseo_description'    => '_quinrel_meta_description',
+			'_aioseo_keywords'       => '_quinrel_focus_keyword',
+			'_aioseo_og_title'       => '_quinrel_og_title',
+			'_aioseo_og_description' => '_quinrel_og_description',
+			'_aioseo_og_image'       => '_quinrel_og_image',
+			'_aioseo_twitter_title'  => '_quinrel_twitter_title',
 		),
 	);
 
@@ -111,7 +111,7 @@ class MigrationManager {
 			return array(
 				'success' => false,
 				'wrote'   => false,
-				'message' => __( 'Unknown plugin.', 'holvek' ),
+				'message' => __( 'Unknown plugin.', 'quinrel' ),
 			);
 		}
 
@@ -145,14 +145,84 @@ class MigrationManager {
 			'fields'  => $fields,
 			'copy'    => $copy,
 			'skipped' => $skipped,
+			'samples' => $this->samplePosts( $pluginId, 3 ),
 			'message' => $this->previewMessage( $copy, $skipped, $pluginId ),
 		);
 	}
 
 	/**
+	 * Fetch 3 sample posts to preview how titles and descriptions will be resolved.
+	 *
+	 * @param string $pluginId Competitor plugin ID (yoast, rankmath, aioseo).
+	 * @param int    $limit    Max sample count.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function samplePosts( string $pluginId, int $limit = 3 ): array {
+		if ( ! isset( self::META_MAP[ $pluginId ] ) ) {
+			return array();
+		}
+
+		global $wpdb;
+		$titleKey = match ( $pluginId ) {
+			'yoast'    => '_yoast_wpseo_title',
+			'rankmath' => 'rank_math_title',
+			'aioseo'   => '_aioseo_title',
+			default    => '',
+		};
+
+		if ( '' === $titleKey ) {
+			return array();
+		}
+
+		$postIds = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value != '' ORDER BY post_id DESC LIMIT %d",
+				$titleKey,
+				$limit
+			)
+		);
+
+		if ( empty( $postIds ) || ! is_array( $postIds ) ) {
+			return array();
+		}
+
+		$samples = array();
+		foreach ( $postIds as $rawId ) {
+			$postId = (int) $rawId;
+			$post   = get_post( $postId );
+			if ( ! $post ) {
+				continue;
+			}
+
+			$sourceTitle = (string) get_post_meta( $postId, $titleKey, true );
+			$sourceDesc  = match ( $pluginId ) {
+				'yoast'    => (string) get_post_meta( $postId, '_yoast_wpseo_metadesc', true ),
+				'rankmath' => (string) get_post_meta( $postId, 'rank_math_description', true ),
+				'aioseo'   => (string) get_post_meta( $postId, '_aioseo_description', true ),
+				default    => '',
+			};
+
+			$resolvedTitle = \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $sourceTitle, $postId );
+			$resolvedDesc  = \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $sourceDesc, $postId );
+
+			$samples[] = array(
+				'post_id'              => $postId,
+				'post_title'           => (string) $post->post_title,
+				'url'                  => (string) get_permalink( $postId ),
+				'source_title'         => $sourceTitle,
+				'resolved_title'       => $resolvedTitle,
+				'source_description'   => $sourceDesc,
+				'resolved_description' => $resolvedDesc,
+			);
+		}
+
+		return $samples;
+	}
+
+	/**
 	 * Copy one plugin's meta in batches of 50.
 	 *
-	 * An existing non-empty `_holvek_*` value is left unchanged.
+	 * An existing non-empty `_quinrel_*` value is left unchanged.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -161,7 +231,7 @@ class MigrationManager {
 			return array(
 				'success' => false,
 				'wrote'   => false,
-				'message' => __( 'Unknown plugin.', 'holvek' ),
+				'message' => __( 'Unknown plugin.', 'quinrel' ),
 			);
 		}
 
@@ -196,15 +266,24 @@ class MigrationManager {
 						continue;
 					}
 
-					if ( in_array( $targetKey, array( '_holvek_noindex', '_holvek_nofollow' ), true ) && 'yoast' === $pluginId ) {
+					if ( in_array( $targetKey, array( '_quinrel_noindex', '_quinrel_nofollow' ), true ) && 'yoast' === $pluginId ) {
 						$value = ( '1' === $value ) ? 'yes' : 'no';
 					}
 
-					if ( '_holvek_focus_keyword' === $targetKey && in_array( $pluginId, array( 'rankmath', 'aioseo' ), true ) ) {
+					if ( '_quinrel_focus_keyword' === $targetKey && in_array( $pluginId, array( 'rankmath', 'aioseo' ), true ) ) {
 						$value = $this->firstKeyword( $value );
 					}
 
-					$this->writeIfEmpty( $postId, $targetKey, sanitize_text_field( $value ), $migrated, $skipped );
+					if ( '_quinrel_og_image' === $targetKey ) {
+						$sanitized = esc_url_raw( trim( $value ) );
+					} else {
+						if ( in_array( $targetKey, array( '_quinrel_meta_title', '_quinrel_meta_description', '_quinrel_og_title', '_quinrel_og_description', '_quinrel_twitter_title' ), true ) ) {
+							$value = \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $value, $postId );
+						}
+						$sanitized = sanitize_text_field( $value );
+					}
+
+					$this->writeIfEmpty( $postId, $targetKey, $sanitized, $migrated, $skipped );
 				}
 
 				$rowCount = count( $rows );
@@ -270,9 +349,9 @@ class MigrationManager {
 			$tokens
 		);
 
-		$this->writeIfEmpty( $postId, '_holvek_noindex', in_array( 'noindex', $tokens, true ) ? 'yes' : 'no', $migrated, $skipped );
+		$this->writeIfEmpty( $postId, '_quinrel_noindex', in_array( 'noindex', $tokens, true ) ? 'yes' : 'no', $migrated, $skipped );
 		if ( in_array( 'nofollow', $tokens, true ) ) {
-			$this->writeIfEmpty( $postId, '_holvek_nofollow', 'yes', $migrated, $skipped );
+			$this->writeIfEmpty( $postId, '_quinrel_nofollow', 'yes', $migrated, $skipped );
 		}
 	}
 
@@ -309,7 +388,7 @@ class MigrationManager {
 	private function previewMessage( int $copy, int $skipped, string $pluginId ): string {
 		return sprintf(
 			/* translators: 1: number of fields to copy, 2: number skipped, 3: the other SEO plugin name. */
-			__( 'Will copy %1$d fields. %2$d already have Holvek data and will be skipped. Deactivate %3$s after import so both plugins do not print titles and schema.', 'holvek' ),
+			__( 'Will copy %1$d fields. %2$d already have Quinrel data and will be skipped. Deactivate %3$s after import so both plugins do not print titles and schema.', 'quinrel' ),
 			$copy,
 			$skipped,
 			$this->pluginLabel( $pluginId )
@@ -319,7 +398,7 @@ class MigrationManager {
 	private function migrateMessage( int $migrated, int $skipped, string $pluginId ): string {
 		return sprintf(
 			/* translators: 1: number of fields copied, 2: number skipped, 3: the other SEO plugin name. */
-			__( 'Migrated %1$d meta entries. Skipped %2$d that already had Holvek data. Deactivate %3$s after import so both plugins do not print titles and schema.', 'holvek' ),
+			__( 'Migrated %1$d meta entries. Skipped %2$d that already had Quinrel data. Deactivate %3$s after import so both plugins do not print titles and schema.', 'quinrel' ),
 			$migrated,
 			$skipped,
 			$this->pluginLabel( $pluginId )
@@ -331,7 +410,7 @@ class MigrationManager {
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/migration/detect',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -342,13 +421,32 @@ class MigrationManager {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/migration/run',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handleMigrate' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' ); },
+					return current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
+				},
+			)
+		);
+
+		register_rest_route(
+			'quinrel/v1',
+			'/migration/deactivate-competitor',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handleDeactivateCompetitor' ),
+				'permission_callback' => function () {
+					return current_user_can( 'activate_plugins' ) || current_user_can( 'manage_options' );
+				},
+				'args'                => array(
+					'plugin_id' => array(
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
 			)
 		);
 	}
@@ -368,5 +466,43 @@ class MigrationManager {
 		}
 
 		return rest_ensure_response( $this->migrate( $pluginId ) );
+	}
+
+	public function handleDeactivateCompetitor( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$pluginId    = sanitize_text_field( (string) $request->get_param( 'plugin_id' ) );
+		$pluginFiles = array(
+			'yoast'    => 'wordpress-seo/wp-seo.php',
+			'rankmath' => 'seo-by-rank-math/rank-math.php',
+			'aioseo'   => 'all-in-one-seo-pack/all_in_one_seo_pack.php',
+			'seopress' => 'wp-seopress/seopress.php',
+		);
+
+		if ( ! isset( $pluginFiles[ $pluginId ] ) ) {
+			return new \WP_Error( 'unknown_plugin', __( 'Unknown plugin to deactivate.', 'quinrel' ), array( 'status' => 400 ) );
+		}
+
+		$file = $pluginFiles[ $pluginId ];
+		if ( ! function_exists( 'deactivate_plugins' ) ) {
+			if ( file_exists( ABSPATH . 'wp-admin/includes/plugin.php' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+		}
+
+		if ( function_exists( 'is_plugin_active' ) && is_plugin_active( $file ) ) {
+			if ( function_exists( 'deactivate_plugins' ) ) {
+				deactivate_plugins( $file );
+			}
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => sprintf(
+					/* translators: %s: competitor plugin name */
+					__( '%s has been safely deactivated.', 'quinrel' ),
+					$this->pluginLabel( $pluginId )
+				),
+			)
+		);
 	}
 }

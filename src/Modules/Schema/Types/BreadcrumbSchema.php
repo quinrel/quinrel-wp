@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Schema\Types;
+namespace Quinrel\WordPress\Modules\Schema\Types;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,7 +16,7 @@ class BreadcrumbSchema {
 	}
 
 	public function generate( ?int $postId = null ): array {
-		$renderer = new \Holvek\WordPress\Modules\Breadcrumbs\BreadcrumbRenderer();
+		$renderer = new \Quinrel\WordPress\Modules\Breadcrumbs\BreadcrumbRenderer();
 		$trail    = $postId !== null ? $renderer->itemsForPost( $postId ) : $renderer->items();
 		if ( count( $trail ) < 2 ) {
 			return array();

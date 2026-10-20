@@ -2,8 +2,8 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Holvek 1.0.1\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/holvek-wp\n"
+"Project-Id-Version: Quinrel 1.0.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/quinrel-wp\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -12,39 +12,39 @@ msgstr ""
 "POT-Creation-Date: 2026-10-09T13:59:42+02:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
-"X-Domain: holvek\n"
+"X-Domain: quinrel\n"
 
 #. Plugin Name of the plugin
-#: holvek.php
-#: holvek.php:45
-#: holvek.php:68
-msgid "Holvek"
+#: quinrel.php
+#: quinrel.php:45
+#: quinrel.php:68
+msgid "Quinrel"
 msgstr ""
 
 #. Plugin URI of the plugin
 #. Author URI of the plugin
-#: holvek.php
-msgid "https://holvek.com"
+#: quinrel.php
+msgid "https://quinrel.com"
 msgstr ""
 
 #. Description of the plugin
-#: holvek.php
+#: quinrel.php
 #: src/assets/js/App.js:1693
 msgid "Technical SEO, structured data, sitemaps, redirects, and indexing tools for WordPress."
 msgstr ""
 
 #. Author of the plugin
-#: holvek.php
+#: quinrel.php
 msgid "Skoorite Limited"
 msgstr ""
 
 #. translators: 1: Required PHP version, 2: Current PHP version
-#: holvek.php:48
+#: quinrel.php:48
 #, php-format
-msgid "Holvek requires PHP version %1$s or higher. Your server is running PHP %2$s. Please upgrade your PHP version."
+msgid "Quinrel requires PHP version %1$s or higher. Your server is running PHP %2$s. Please upgrade your PHP version."
 msgstr ""
 
-#: holvek.php:70
+#: quinrel.php:70
 msgid "Please run <code>composer install</code> in the plugin directory."
 msgstr ""
 
@@ -97,15 +97,15 @@ msgid "A remote Ollama host receives the post content you send for suggestions. 
 msgstr ""
 
 #: src/Core/Api/BackendApiClient.php:78
-msgid "No Holvek API key configured. Operating in local / BYOK fallback mode."
+msgid "No Quinrel API key configured. Operating in local / BYOK fallback mode."
 msgstr ""
 
 #: src/Core/Api/BackendApiClient.php:95
-msgid "Successfully connected to Holvek Backend API."
+msgid "Successfully connected to Quinrel Backend API."
 msgstr ""
 
 #: src/Core/Api/BackendApiClient.php:103
-msgid "Failed to connect to Holvek Backend API."
+msgid "Failed to connect to Quinrel Backend API."
 msgstr ""
 
 #: src/Core/Api/BackendApiClient.php:176
@@ -135,11 +135,11 @@ msgid "No keywords to check."
 msgstr ""
 
 #: src/Core/Api/BackendApiClient.php:251
-msgid "Add a SerpApi key in Holvek settings to check rankings on this site."
+msgid "Add a SerpApi key in Quinrel settings to check rankings on this site."
 msgstr ""
 
 #: src/Core/Api/BackendApiClient.php:264
-msgid "the Holvek cloud"
+msgid "the Quinrel cloud"
 msgstr ""
 
 #. translators: %d: HTTP status code
@@ -150,75 +150,75 @@ msgstr ""
 
 #: src/Core/Api/CloudCredential.php:254
 #: src/Core/Api/CloudCredential.php:264
-msgid "Holvek did not confirm the saved credential. It is no longer treated as connected. SEO data was kept."
+msgid "Quinrel did not confirm the saved credential. It is no longer treated as connected. SEO data was kept."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:341
-msgid "The Holvek credential was removed from this site. SEO data was kept. Holvek could not be reached to revoke the remote token."
+msgid "The Quinrel credential was removed from this site. SEO data was kept. Quinrel could not be reached to revoke the remote token."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:350
 #: src/assets/js/App.js:242
-msgid "The Holvek credential was removed from this site. SEO data was kept."
+msgid "The Quinrel credential was removed from this site. SEO data was kept."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:364
-msgid "Holvek did not return a site credential. Nothing was saved."
+msgid "Quinrel did not return a site credential. Nothing was saved."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:377
-msgid "Holvek did not confirm this credential. Nothing was saved."
+msgid "Quinrel did not confirm this credential. Nothing was saved."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:402
-msgid "Holvek could not store this credential. Nothing was saved."
+msgid "Quinrel could not store this credential. Nothing was saved."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:488
 #: src/assets/js/App.js:252
-msgid "Holvek could not be reached. This site keeps working without an account."
+msgid "Quinrel could not be reached. This site keeps working without an account."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:503
 #: src/assets/js/App.js:228
-msgid "Holvek did not accept this credential. Nothing was saved."
+msgid "Quinrel did not accept this credential. Nothing was saved."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:527
-msgid "Enter the site token or authorization code from Holvek. The settings screen cannot change the Holvek API host."
+msgid "Enter the site token or authorization code from Quinrel. The settings screen cannot change the Quinrel API host."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:564
-msgid "Sorry, you are not allowed to manage the Holvek connection."
+msgid "Sorry, you are not allowed to manage the Quinrel connection."
 msgstr ""
 
 #: src/Core/Api/CloudCredential.php:572
-msgid "This site is not connected to Holvek. You can keep using Holvek on this site."
+msgid "This site is not connected to Quinrel. You can keep using Quinrel on this site."
 msgstr ""
 
-#: src/Core/Api/HolvekApiGateway.php:33
+#: src/Core/Api/QuinrelApiGateway.php:33
 #: src/Modules/Analytics/PageSpeedDashboard.php:70
 #: src/Modules/Analytics/PageSpeedDashboard.php:123
-msgid "PageSpeed through Holvek"
+msgid "PageSpeed through Quinrel"
 msgstr ""
 
-#: src/Core/Api/HolvekApiGateway.php:56
-msgid "Holvek API error."
+#: src/Core/Api/QuinrelApiGateway.php:56
+msgid "Quinrel API error."
 msgstr ""
 
 #. translators: %s: cloud feature that was requested.
 #: src/Core/Mode/OperatingMode.php:65
 #, php-format
-msgid "This site is not connected to Holvek, so %s is unavailable. You can keep using Holvek on this site."
+msgid "This site is not connected to Quinrel, so %s is unavailable. You can keep using Quinrel on this site."
 msgstr ""
 
 #: src/Core/Security/KeyVault.php:96
-msgid "Holvek cannot store this secret because the PHP OpenSSL extension is unavailable. The value was not saved."
+msgid "Quinrel cannot store this secret because the PHP OpenSSL extension is unavailable. The value was not saved."
 msgstr ""
 
 #: src/Core/Security/KeyVault.php:103
 #: src/Core/Security/KeyVault.php:111
-msgid "Holvek cannot store this secret because the encryption salt is missing. The value was not saved."
+msgid "Quinrel cannot store this secret because the encryption salt is missing. The value was not saved."
 msgstr ""
 
 #: src/Core/Security/KeyVault.php:119
@@ -227,11 +227,11 @@ msgstr ""
 #: src/Modules/Admin/AdminModule.php:1618
 #: src/Modules/Social/SocialAccountManager.php:49
 #: src/Modules/Social/SocialModule.php:650
-msgid "Holvek could not encrypt this secret. The value was not saved."
+msgid "Quinrel could not encrypt this secret. The value was not saved."
 msgstr ""
 
 #: src/Core/Security/KeyVault.php:297
-msgid "Holvek cannot encrypt API keys or access tokens because the PHP OpenSSL extension is missing. Saving those secrets is turned off until OpenSSL is enabled. The rest of the plugin keeps working."
+msgid "Quinrel cannot encrypt API keys or access tokens because the PHP OpenSSL extension is missing. Saving those secrets is turned off until OpenSSL is enabled. The rest of the plugin keeps working."
 msgstr ""
 
 #: src/Core/Security/KeyVault.php:310
@@ -244,7 +244,7 @@ msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:302
 #: src/Modules/Admin/AdminModule.php:311
-msgid "The IndexNow key must be 8 to 128 letters, numbers, or dashes. Holvek does not create one for you."
+msgid "The IndexNow key must be 8 to 128 letters, numbers, or dashes. Quinrel does not create one for you."
 msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:467
@@ -271,7 +271,7 @@ msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:495
 #: src/Modules/Indexing/BingIndexNowApi.php:381
-msgid "Turn on IndexNow and save a key before submitting a URL. Holvek does not create a key."
+msgid "Turn on IndexNow and save a key before submitting a URL. Quinrel does not create a key."
 msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:503
@@ -288,11 +288,11 @@ msgid "Could not resolve post URL."
 msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:641
-msgid "Google Search Console is not connected. Please add your Service Account JSON under Holvek → Settings → Indexing."
+msgid "Google Search Console is not connected. Please add your Service Account JSON under Quinrel → Settings → Indexing."
 msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:754
-msgid "Google Search Console is not connected. Add your Service Account JSON under Holvek → Settings → Indexing."
+msgid "Google Search Console is not connected. Add your Service Account JSON under Quinrel → Settings → Indexing."
 msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:919
@@ -309,7 +309,7 @@ msgid "The provided credentials JSON is not a valid Google Service Account file.
 msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:1332
-msgid "GA4 Property ID and Service Account credentials are required. Configure them under Holvek → Analytics."
+msgid "GA4 Property ID and Service Account credentials are required. Configure them under Quinrel → Analytics."
 msgstr ""
 
 #: src/Modules/Admin/AdminModule.php:1340
@@ -403,7 +403,7 @@ msgid "Content is too thin (under 300 words)."
 msgstr ""
 
 #: src/Modules/Admin/FrontendSeoInspector.php:224
-msgid "Holvek Inspector"
+msgid "Quinrel Inspector"
 msgstr ""
 
 #: src/Modules/Admin/FrontendSeoInspector.php:225
@@ -419,7 +419,7 @@ msgid "Error loading audit."
 msgstr ""
 
 #: src/Modules/Admin/SettingsTransfer.php:93
-msgid "This settings file was not exported from Holvek."
+msgid "This settings file was not exported from Quinrel."
 msgstr ""
 
 #: src/Modules/Admin/SettingsTransfer.php:102
@@ -433,22 +433,22 @@ msgid "Imported %d settings successfully. API keys and credentials are excluded 
 msgstr ""
 
 #: src/Modules/Admin/SettingsTransfer.php:489
-msgid "This settings file contains a setting Holvek does not import. Nothing was changed."
+msgid "This settings file contains a setting Quinrel does not import. Nothing was changed."
 msgstr ""
 
 #. translators: %s: setting name.
 #: src/Modules/Admin/SettingsTransfer.php:499
 #, php-format
-msgid "The setting %s has a value Holvek cannot import. Nothing was changed."
+msgid "The setting %s has a value Quinrel cannot import. Nothing was changed."
 msgstr ""
 
 #: src/Modules/Admin/StandaloneDashboard.php:48
-msgid "You do not have permission to view Holvek results for this site."
+msgid "You do not have permission to view Quinrel results for this site."
 msgstr ""
 
 #: src/Modules/Admin/StandaloneDashboard.php:60
 #: src/assets/js/App.js:1683
-msgid "Holvek writes titles, meta descriptions, schema, the sitemap, and robots.txt on this site. Redirects and 404 logs stay on this site. A Holvek account is optional."
+msgid "Quinrel writes titles, meta descriptions, schema, the sitemap, and robots.txt on this site. Redirects and 404 logs stay on this site. A Quinrel account is optional."
 msgstr ""
 
 #: src/Modules/Admin/StandaloneDashboard.php:63
@@ -458,7 +458,7 @@ msgstr ""
 
 #: src/Modules/Admin/StandaloneDashboard.php:64
 #: src/assets/js/App.js:1686
-msgid "Set up Holvek to choose a site type. Titles and the sitemap already work."
+msgid "Set up Quinrel to choose a site type. Titles and the sitemap already work."
 msgstr ""
 
 #: src/Modules/Admin/StandaloneDashboard.php:67
@@ -610,11 +610,11 @@ msgstr ""
 #. translators: %s: number of AI tokens used this week.
 #: src/Modules/Ai/UsageMeteringManager.php:265
 #, php-format
-msgid "[Holvek] Weekly AI Usage Summary — %s tokens used"
+msgid "[Quinrel] Weekly AI Usage Summary — %s tokens used"
 msgstr ""
 
 #: src/Modules/Ai/UsageMeteringManager.php:269
-msgid "Holvek Weekly AI Usage"
+msgid "Quinrel Weekly AI Usage"
 msgstr ""
 
 #: src/Modules/Ai/UsageMeteringManager.php:270
@@ -652,7 +652,7 @@ msgid "Bing API returned status %d"
 msgstr ""
 
 #: src/Modules/Analytics/GoogleSearchConsoleIntegration.php:109
-msgid "Set your Google OAuth client_id and client_secret in Holvek → Settings → Integrations."
+msgid "Set your Google OAuth client_id and client_secret in Quinrel → Settings → Integrations."
 msgstr ""
 
 #: src/Modules/Analytics/GoogleSearchConsoleIntegration.php:139
@@ -721,7 +721,7 @@ msgid "<strong>External services:</strong> Indexing features send published URLs
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:314
-msgid "<strong>404 logs:</strong> Holvek stores the missing path, the referring address without its query string, and a shortened browser name. Rows are kept for 90 days and then deleted. They are not linked to a WordPress account unless the stored path or referrer contains that account email or login."
+msgid "<strong>404 logs:</strong> Quinrel stores the missing path, the referring address without its query string, and a shortened browser name. Rows are kept for 90 days and then deleted. They are not linked to a WordPress account unless the stored path or referrer contains that account email or login."
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:315
@@ -737,29 +737,29 @@ msgid "<strong>Search Console and Analytics:</strong> Google Search Console and 
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:318
-msgid "<strong>Cookie notice:</strong> The visitor’s choice is stored in the holvek_consent cookie in the browser. It does not store an email address or a WordPress user ID, so it is not part of an account export."
+msgid "<strong>Cookie notice:</strong> The visitor’s choice is stored in the quinrel_consent cookie in the browser. It does not store an email address or a WordPress user ID, so it is not part of an account export."
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:320
-msgid "Holvek stores these records on this site. The site owner decides the legal basis. This plugin does not make a site compliant with a privacy law."
+msgid "Quinrel stores these records on this site. The site owner decides the legal basis. This plugin does not make a site compliant with a privacy law."
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:326
 #: src/assets/js/editor.js:2041
-msgid "Holvek SEO"
+msgid "Quinrel SEO"
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:331
 #: src/Modules/Compliance/CcpaPrivacyTools.php:339
-msgid "Holvek SEO Data"
+msgid "Quinrel SEO Data"
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:352
-msgid "Holvek AI Usage"
+msgid "Quinrel AI Usage"
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:378
-msgid "Holvek 404 logs"
+msgid "Quinrel 404 logs"
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:382
@@ -779,7 +779,7 @@ msgid "Last seen"
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:404
-msgid "Holvek audit log"
+msgid "Quinrel audit log"
 msgstr ""
 
 #: src/Modules/Compliance/CcpaPrivacyTools.php:408
@@ -876,8 +876,8 @@ msgstr ""
 #. translators: 1: number of stale cornerstone posts, 2: review URL.
 #: src/Modules/ContentAssistant/StaleCornerStoneDetector.php:130
 #, php-format
-msgid "Holvek: %1$d cornerstone post is stale. <a href=\"%2$s\">Review and refresh</a>"
-msgid_plural "Holvek: %1$d cornerstone posts are stale. <a href=\"%2$s\">Review and refresh</a>"
+msgid "Quinrel: %1$d cornerstone post is stale. <a href=\"%2$s\">Review and refresh</a>"
+msgid_plural "Quinrel: %1$d cornerstone posts are stale. <a href=\"%2$s\">Review and refresh</a>"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -928,17 +928,17 @@ msgstr ""
 #. translators: 1: number of fields to copy, 2: number skipped, 3: the other SEO plugin name.
 #: src/Modules/Migration/MigrationManager.php:312
 #, php-format
-msgid "Will copy %1$d fields. %2$d already have Holvek data and will be skipped. Deactivate %3$s after import so both plugins do not print titles and schema."
+msgid "Will copy %1$d fields. %2$d already have Quinrel data and will be skipped. Deactivate %3$s after import so both plugins do not print titles and schema."
 msgstr ""
 
 #. translators: 1: number of fields copied, 2: number skipped, 3: the other SEO plugin name.
 #: src/Modules/Migration/MigrationManager.php:322
 #, php-format
-msgid "Migrated %1$d meta entries. Skipped %2$d that already had Holvek data. Deactivate %3$s after import so both plugins do not print titles and schema."
+msgid "Migrated %1$d meta entries. Skipped %2$d that already had Quinrel data. Deactivate %3$s after import so both plugins do not print titles and schema."
 msgstr ""
 
 #: src/Modules/Onboarding/SetupWizard.php:52
-msgid "Welcome to Holvek!"
+msgid "Welcome to Quinrel!"
 msgstr ""
 
 #. translators: %s: setup wizard URL
@@ -948,11 +948,11 @@ msgid "Your SEO is already working with smart defaults. <a href=\"%s\" style=\"c
 msgstr ""
 
 #: src/Modules/Onboarding/SetupWizard.php:175
-msgid "Setup skipped. Holvek keeps the current defaults."
+msgid "Setup skipped. Quinrel keeps the current defaults."
 msgstr ""
 
 #: src/Modules/Onboarding/SetupWizard.php:202
-msgid "Setup complete. Holvek is using the choices you saved."
+msgid "Setup complete. Quinrel is using the choices you saved."
 msgstr ""
 
 #: src/Modules/Schema/CompetitorScraper.php:29
@@ -1075,7 +1075,7 @@ msgstr ""
 #. translators: %s: names of the other SEO plugins.
 #: src/Modules/Sitemap/SitemapModule.php:145
 #, php-format
-msgid "Another SEO plugin is also publishing a sitemap (%s). Disable the Holvek XML sitemap or disable the sitemap in the other plugin so search engines receive one sitemap."
+msgid "Another SEO plugin is also publishing a sitemap (%s). Disable the Quinrel XML sitemap or disable the sitemap in the other plugin so search engines receive one sitemap."
 msgstr ""
 
 #: src/Modules/Social/SocialApiGateway.php:23
@@ -1124,7 +1124,7 @@ msgid "Account not found."
 msgstr ""
 
 #: src/Modules/Social/SocialModule.php:319
-msgid "Share queued. Holvek will send it in the background."
+msgid "Share queued. Quinrel will send it in the background."
 msgstr ""
 
 #: src/Modules/Social/SocialModule.php:334
@@ -1180,7 +1180,7 @@ msgid "Failed to create redirect."
 msgstr ""
 
 #: src/Modules/TechnicalSeo/FaviconAudit.php:65
-msgid "Holvek: no favicon is set for this site. A favicon is shown in browser tabs and bookmarks."
+msgid "Quinrel: no favicon is set for this site. A favicon is shown in browser tabs and bookmarks."
 msgstr ""
 
 #: src/Modules/TechnicalSeo/FaviconAudit.php:67
@@ -1377,12 +1377,12 @@ msgstr ""
 
 #: src/assets/js/App.js:190
 #: src/assets/js/App.js:197
-msgid "The Holvek connection could not be loaded."
+msgid "The Quinrel connection could not be loaded."
 msgstr ""
 
 #: src/assets/js/App.js:248
 #: src/assets/js/App.js:1790
-msgid "This site is connected to Holvek."
+msgid "This site is connected to Quinrel."
 msgstr ""
 
 #: src/assets/js/App.js:272
@@ -1395,7 +1395,7 @@ msgstr ""
 
 #: src/assets/js/App.js:1340
 #: src/assets/js/App.js:4082
-msgid "This site is not connected to Holvek, so cloud rank tracking is unavailable. You can keep using Holvek on this site."
+msgid "This site is not connected to Quinrel, so cloud rank tracking is unavailable. You can keep using Quinrel on this site."
 msgstr ""
 
 #: src/assets/js/App.js:1635
@@ -1471,7 +1471,7 @@ msgid "Network SEO"
 msgstr ""
 
 #: src/assets/js/App.js:1698
-msgid "Holvek settings"
+msgid "Quinrel settings"
 msgstr ""
 
 #: src/assets/js/App.js:1719
@@ -1479,7 +1479,7 @@ msgid "This site"
 msgstr ""
 
 #: src/assets/js/App.js:1725
-msgid "Set up Holvek"
+msgid "Set up Quinrel"
 msgstr ""
 
 #: src/assets/js/App.js:1735
@@ -1515,7 +1515,7 @@ msgid "Optional next step"
 msgstr ""
 
 #: src/assets/js/App.js:1769
-msgid "Connect Google Search Console, or connect Holvek. Neither one is required."
+msgid "Connect Google Search Console, or connect Quinrel. Neither one is required."
 msgstr ""
 
 #: src/assets/js/App.js:1772
@@ -1523,27 +1523,27 @@ msgid "Connect Google Search Console"
 msgstr ""
 
 #: src/assets/js/App.js:1775
-msgid "Connect Holvek"
+msgid "Connect Quinrel"
 msgstr ""
 
 #: src/assets/js/App.js:1780
-msgid "Connecting Holvek is optional. This site keeps titles, the sitemap, redirects, and 404 logs without an account."
+msgid "Connecting Quinrel is optional. This site keeps titles, the sitemap, redirects, and 404 logs without an account."
 msgstr ""
 
 #: src/assets/js/App.js:1781
-msgid "The settings screen cannot change the Holvek API host."
+msgid "The settings screen cannot change the Quinrel API host."
 msgstr ""
 
 #: src/assets/js/App.js:1784
-msgid "Loading the Holvek connection."
+msgid "Loading the Quinrel connection."
 msgstr ""
 
 #: src/assets/js/App.js:1788
-msgid "Holvek requests use this address:"
+msgid "Quinrel requests use this address:"
 msgstr ""
 
 #: src/assets/js/App.js:1791
-msgid "No Holvek credential is saved as connected on this site."
+msgid "No Quinrel credential is saved as connected on this site."
 msgstr ""
 
 #: src/assets/js/App.js:1793
@@ -1591,7 +1591,7 @@ msgid "The writing assistant uses an OpenAI, Anthropic, or Ollama key saved on t
 msgstr ""
 
 #: src/assets/js/App.js:3340
-msgid "Holvek publishes an llms.txt file on this site. It does not submit the site to ChatGPT, Perplexity, or Claude, and it does not check whether they mention it."
+msgid "Quinrel publishes an llms.txt file on this site. It does not submit the site to ChatGPT, Perplexity, or Claude, and it does not check whether they mention it."
 msgstr ""
 
 #: src/assets/js/App.js:3907
@@ -1647,11 +1647,11 @@ msgid "You are all set."
 msgstr ""
 
 #: src/assets/js/components/SetupWizard.js:105
-msgid "Holvek is using the choices you saved."
+msgid "Quinrel is using the choices you saved."
 msgstr ""
 
 #: src/assets/js/components/SetupWizard.js:122
-msgid "Welcome to Holvek"
+msgid "Welcome to Quinrel"
 msgstr ""
 
 #: src/assets/js/components/SetupWizard.js:124
@@ -1667,7 +1667,7 @@ msgid "Import existing SEO data"
 msgstr ""
 
 #: src/assets/js/components/SetupWizard.js:163
-msgid "We detected SEO data from other plugins. Preview the counts first. Existing Holvek fields are not overwritten. Deactivate the other plugin after import so both plugins do not print titles and schema."
+msgid "We detected SEO data from other plugins. Preview the counts first. Existing Quinrel fields are not overwritten. Deactivate the other plugin after import so both plugins do not print titles and schema."
 msgstr ""
 
 #. translators: %d: number of posts with imported SEO data.
@@ -1857,7 +1857,7 @@ msgid "Twitter / X Preview"
 msgstr ""
 
 #: src/assets/js/editor.js:638
-msgid "AI Generation failed. Make sure your API Key is verified under Holvek Settings."
+msgid "AI Generation failed. Make sure your API Key is verified under Quinrel Settings."
 msgstr ""
 
 #: src/assets/js/editor.js:641
@@ -1865,7 +1865,7 @@ msgid "Network error occurred during generation."
 msgstr ""
 
 #: src/assets/js/editor.js:657
-msgid "Holvek AI Assistant"
+msgid "Quinrel AI Assistant"
 msgstr ""
 
 #: src/assets/js/editor.js:660
@@ -2159,7 +2159,7 @@ msgid "PageSpeed Performance"
 msgstr ""
 
 #: src/assets/js/editor.js:1693
-msgid "This site is not connected to Holvek, so PageSpeed through Holvek is unavailable. You can keep using Holvek on this site."
+msgid "This site is not connected to Quinrel, so PageSpeed through Quinrel is unavailable. You can keep using Quinrel on this site."
 msgstr ""
 
 #: src/assets/js/editor.js:1699
@@ -2175,7 +2175,7 @@ msgid "No PageSpeed data cached yet. Click below to run an analysis."
 msgstr ""
 
 #: src/assets/js/editor.js:1744
-msgid "Failed to fetch keyword data. Connect GSC under Holvek Settings."
+msgid "Failed to fetch keyword data. Connect GSC under Quinrel Settings."
 msgstr ""
 
 #: src/assets/js/editor.js:1756
@@ -2199,7 +2199,7 @@ msgid "Clicks"
 msgstr ""
 
 #: src/assets/js/editor.js:1778
-msgid "No ranking data yet. Connect Google Search Console under Holvek → Settings."
+msgid "No ranking data yet. Connect Google Search Console under Quinrel → Settings."
 msgstr ""
 
 #: src/assets/js/editor.js:1783
@@ -2341,7 +2341,7 @@ msgid "An error occurred during submission."
 msgstr ""
 
 #: src/assets/js/editor.js:2043
-msgid "Holvek AI SEO"
+msgid "Quinrel AI SEO"
 msgstr ""
 
 #: src/assets/js/editor.js:2066

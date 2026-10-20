@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 /**
  * Optional Apache .htaccess editor.
@@ -13,9 +13,9 @@ class HtaccessEditor {
 
 	private const BACKUP_LIMIT   = 20;
 	private const MAX_BYTES      = 524288;
-	private const ENABLED_OPTION = 'holvek_htaccess_editor_enabled';
-	private const BACKUPS_OPTION = 'holvek_htaccess_backups';
-	private const RETIRED_OPTION = 'holvek_htaccess_web_backups_retired';
+	private const ENABLED_OPTION = 'quinrel_htaccess_editor_enabled';
+	private const BACKUPS_OPTION = 'quinrel_htaccess_backups';
+	private const RETIRED_OPTION = 'quinrel_htaccess_web_backups_retired';
 
 	protected function htaccessPath(): string {
 		return ( defined( 'ABSPATH' ) ? ABSPATH : '' ) . '.htaccess';
@@ -25,7 +25,7 @@ class HtaccessEditor {
 	 * Old public backup directory. Reads from here are only for one-time removal.
 	 */
 	protected function legacyBackupDir(): string {
-		return ( defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : '' ) . '/holvek-backups/htaccess/';
+		return ( defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : '' ) . '/quinrel-backups/htaccess/';
 	}
 
 	/**
@@ -54,7 +54,7 @@ class HtaccessEditor {
 		$permission = array( $this, 'checkPermission' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/htaccess',
 			array(
 				array(
@@ -71,7 +71,7 @@ class HtaccessEditor {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/htaccess/access',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -81,7 +81,7 @@ class HtaccessEditor {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/htaccess/restore',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -117,7 +117,7 @@ class HtaccessEditor {
 		if ( ! is_array( $params ) || ! array_key_exists( 'enabled', $params ) ) {
 			return new \WP_Error(
 				'invalid_enabled',
-				__( 'Say whether the .htaccess editor should be on or off.', 'holvek' ),
+				__( 'Say whether the .htaccess editor should be on or off.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -126,7 +126,7 @@ class HtaccessEditor {
 		if ( null === $enabled ) {
 			return new \WP_Error(
 				'invalid_enabled',
-				__( 'Say whether the .htaccess editor should be on or off.', 'holvek' ),
+				__( 'Say whether the .htaccess editor should be on or off.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -146,7 +146,7 @@ class HtaccessEditor {
 		if ( ! is_array( $params ) || ! array_key_exists( 'content', $params ) || ! is_string( $params['content'] ) ) {
 			return new \WP_Error(
 				'invalid_content',
-				__( 'Content must be a string.', 'holvek' ),
+				__( 'Content must be a string.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -155,7 +155,7 @@ class HtaccessEditor {
 		if ( strlen( $content ) > self::MAX_BYTES ) {
 			return new \WP_Error(
 				'too_large',
-				__( 'That .htaccess file is too large to edit here.', 'holvek' ),
+				__( 'That .htaccess file is too large to edit here.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -167,14 +167,14 @@ class HtaccessEditor {
 		if ( ! $this->saveHtaccess( $content ) ) {
 			return new \WP_Error(
 				'save_failed',
-				__( 'The .htaccess file could not be written. Check file permissions.', 'holvek' ),
+				__( 'The .htaccess file could not be written. Check file permissions.', 'quinrel' ),
 				array( 'status' => 500 )
 			);
 		}
 
 		$payload            = $this->statusPayload( true );
 		$payload['success'] = true;
-		$payload['notice']  = __( 'The .htaccess file was saved.', 'holvek' );
+		$payload['notice']  = __( 'The .htaccess file was saved.', 'quinrel' );
 		return rest_ensure_response( $payload );
 	}
 
@@ -189,7 +189,7 @@ class HtaccessEditor {
 		if ( '' === $filename ) {
 			return new \WP_Error(
 				'missing_filename',
-				__( 'A backup filename is required.', 'holvek' ),
+				__( 'A backup filename is required.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -197,7 +197,7 @@ class HtaccessEditor {
 		if ( ! $this->isBackupFilename( $filename ) ) {
 			return new \WP_Error(
 				'invalid_filename',
-				__( 'That backup filename is not valid.', 'holvek' ),
+				__( 'That backup filename is not valid.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -206,7 +206,7 @@ class HtaccessEditor {
 		if ( null === $content ) {
 			return new \WP_Error(
 				'restore_failed',
-				__( 'That backup was not found.', 'holvek' ),
+				__( 'That backup was not found.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -218,14 +218,14 @@ class HtaccessEditor {
 		if ( ! $this->saveHtaccess( $content ) ) {
 			return new \WP_Error(
 				'restore_failed',
-				__( 'The backup could not be restored.', 'holvek' ),
+				__( 'The backup could not be restored.', 'quinrel' ),
 				array( 'status' => 500 )
 			);
 		}
 
 		$payload            = $this->statusPayload( true );
 		$payload['success'] = true;
-		$payload['notice']  = __( 'The backup was restored.', 'holvek' );
+		$payload['notice']  = __( 'The backup was restored.', 'quinrel' );
 		return rest_ensure_response( $payload );
 	}
 
@@ -318,7 +318,7 @@ class HtaccessEditor {
 			if ( stripos( $trimmed, 'Deny from all' ) !== false && ! str_starts_with( $trimmed, '#' ) ) {
 				$warnings[] = sprintf(
 					/* translators: %d: line number in the .htaccess file. */
-					__( 'Line %d: \'Deny from all\' detected. Confirm this block is intentional.', 'holvek' ),
+					__( 'Line %d: \'Deny from all\' detected. Confirm this block is intentional.', 'quinrel' ),
 					$lineNum + 1
 				);
 			}
@@ -327,7 +327,7 @@ class HtaccessEditor {
 		if ( count( $openTags ) !== count( $closingTags ) ) {
 			$warnings[] = sprintf(
 				/* translators: 1: number of opening tags, 2: number of closing tags. */
-				__( 'Unmatched directive tags detected (open: %1$d, close: %2$d). Review block nesting.', 'holvek' ),
+				__( 'Unmatched directive tags detected (open: %1$d, close: %2$d). Review block nesting.', 'quinrel' ),
 				count( $openTags ),
 				count( $closingTags )
 			);
@@ -376,14 +376,14 @@ class HtaccessEditor {
 
 	private function statusMessage( bool $locked, bool $enabled ): string {
 		if ( $locked ) {
-			return __( 'WordPress file editing is disabled on this site, so the .htaccess editor cannot run.', 'holvek' );
+			return __( 'WordPress file editing is disabled on this site, so the .htaccess editor cannot run.', 'quinrel' );
 		}
 
 		if ( ! $enabled ) {
-			return __( 'The .htaccess editor is off. Turn it on only for Apache rules that redirects and robots.txt cannot handle.', 'holvek' );
+			return __( 'The .htaccess editor is off. Turn it on only for Apache rules that redirects and robots.txt cannot handle.', 'quinrel' );
 		}
 
-		return __( 'This file applies to Apache. Nginx does not read .htaccess. Use Redirects and robots.txt for rules that should work on every server. A private backup is kept before each save.', 'holvek' );
+		return __( 'This file applies to Apache. Nginx does not read .htaccess. Use Redirects and robots.txt for rules that should work on every server. A private backup is kept before each save.', 'quinrel' );
 	}
 
 	private function permissionError(): ?\WP_Error {
@@ -393,7 +393,7 @@ class HtaccessEditor {
 
 		return new \WP_Error(
 			'forbidden',
-			__( 'You do not have permission to edit the server configuration.', 'holvek' ),
+			__( 'You do not have permission to edit the server configuration.', 'quinrel' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -407,7 +407,7 @@ class HtaccessEditor {
 		if ( $this->fileEditingDisallowed() ) {
 			return new \WP_Error(
 				'file_editing_disabled',
-				__( 'WordPress file editing is disabled on this site, so the .htaccess editor cannot run.', 'holvek' ),
+				__( 'WordPress file editing is disabled on this site, so the .htaccess editor cannot run.', 'quinrel' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -415,7 +415,7 @@ class HtaccessEditor {
 		if ( $requireEnabled && ! $this->isFeatureEnabled() ) {
 			return new \WP_Error(
 				'feature_disabled',
-				__( 'The .htaccess editor is off. Turn it on only for Apache rules that redirects and robots.txt cannot handle.', 'holvek' ),
+				__( 'The .htaccess editor is off. Turn it on only for Apache rules that redirects and robots.txt cannot handle.', 'quinrel' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -426,7 +426,7 @@ class HtaccessEditor {
 	private function unsafeContentError(): \WP_Error {
 		return new \WP_Error(
 			'unsafe_content',
-			__( 'Save rejected: the .htaccess content contains a directive that can execute code.', 'holvek' ),
+			__( 'Save rejected: the .htaccess content contains a directive that can execute code.', 'quinrel' ),
 			array( 'status' => 422 )
 		);
 	}

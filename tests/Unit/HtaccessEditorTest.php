@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\TechnicalSeo\HtaccessEditor;
+use Quinrel\WordPress\Modules\TechnicalSeo\HtaccessEditor;
 use PHPUnit\Framework\TestCase;
 
 class HtaccessEditorTest extends TestCase {
@@ -14,7 +14,7 @@ class HtaccessEditorTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->sandbox = sys_get_temp_dir() . '/holvek-htaccess-' . bin2hex( random_bytes( 4 ) );
+		$this->sandbox = sys_get_temp_dir() . '/quinrel-htaccess-' . bin2hex( random_bytes( 4 ) );
 		mkdir( $this->sandbox, 0700, true );
 		$this->editor = $this->makeEditor( false );
 
@@ -23,9 +23,9 @@ class HtaccessEditorTest extends TestCase {
 			'manage_seo'     => true,
 			'edit_posts'     => true,
 		);
-		update_option( 'holvek_htaccess_editor_enabled', 'no' );
-		update_option( 'holvek_htaccess_backups', array() );
-		update_option( 'holvek_htaccess_web_backups_retired', 'yes' );
+		update_option( 'quinrel_htaccess_editor_enabled', 'no' );
+		update_option( 'quinrel_htaccess_backups', array() );
+		update_option( 'quinrel_htaccess_web_backups_retired', 'yes' );
 	}
 
 	protected function tearDown(): void {
@@ -107,7 +107,7 @@ HTACCESS;
 		);
 
 		foreach ( $dangerousPayloads as $payload => $description ) {
-			$request = new \WP_REST_Request( 'POST', '/holvek/v1/htaccess' );
+			$request = new \WP_REST_Request( 'POST', '/quinrel/v1/htaccess' );
 			$request->set_json_params( array( 'content' => $payload ) );
 
 			$result = $this->editor->saveHtaccessEndpoint( $request );
@@ -170,7 +170,7 @@ HTACCESS;
 		$enable->set_json_params( array( 'enabled' => true ) );
 		$enabled = $this->editor->updateAccessEndpoint( $enable );
 		$this->assertSame( 'forbidden', $enabled->get_error_code() );
-		$this->assertSame( 'no', get_option( 'holvek_htaccess_editor_enabled' ) );
+		$this->assertSame( 'no', get_option( 'quinrel_htaccess_editor_enabled' ) );
 
 		$this->assertFalse( $this->editor->checkPermission() );
 	}
@@ -247,7 +247,7 @@ HTACCESS;
 		$this->assertCount( 1, $replaced->get_data()['backups'] );
 		$this->assertStringNotContainsString( 'BEGIN WordPress', wp_json_encode( $replaced->get_data()['backups'] ) );
 		$this->assertStringNotContainsString( $this->sandbox, wp_json_encode( $replaced->get_data() ) );
-		$this->assertStringContainsString( 'BEGIN WordPress', (string) get_option( 'holvek_htaccess_backups' )[0]['content'] );
+		$this->assertStringContainsString( 'BEGIN WordPress', (string) get_option( 'quinrel_htaccess_backups' )[0]['content'] );
 		$this->assertDirectoryDoesNotExist( $this->sandbox . '/public-backups' );
 
 		$filename = $replaced->get_data()['backups'][0]['filename'];
@@ -264,7 +264,7 @@ HTACCESS;
 		$this->enableEditor();
 		file_put_contents( $this->sandbox . '/.htaccess', "RewriteEngine On\n" );
 		update_option(
-			'holvek_htaccess_backups',
+			'quinrel_htaccess_backups',
 			array(
 				array(
 					'filename'   => 'htaccess-2026-10-02-120000.txt',
@@ -287,7 +287,7 @@ HTACCESS;
 	public function testLegacyPublicBackupsAreImportedAndRemoved(): void {
 		$this->grantAdmin();
 		$this->enableEditor();
-		update_option( 'holvek_htaccess_web_backups_retired', 'no' );
+		update_option( 'quinrel_htaccess_web_backups_retired', 'no' );
 
 		$dir = $this->sandbox . '/public-backups/htaccess/';
 		mkdir( $dir, 0700, true );
@@ -306,14 +306,14 @@ HTACCESS;
 		$this->assertFileDoesNotExist( $dir . 'index.php' );
 		$this->assertFileExists( $dir . 'notes.txt' );
 		$this->assertStringContainsString( 'Require all denied', (string) file_get_contents( $dir . '.htaccess' ) );
-		$this->assertStringContainsString( 'LEGACY-SAFE-RULE', (string) get_option( 'holvek_htaccess_backups' )[0]['content'] );
-		$this->assertSame( 'yes', get_option( 'holvek_htaccess_web_backups_retired' ) );
+		$this->assertStringContainsString( 'LEGACY-SAFE-RULE', (string) get_option( 'quinrel_htaccess_backups' )[0]['content'] );
+		$this->assertSame( 'yes', get_option( 'quinrel_htaccess_web_backups_retired' ) );
 	}
 
 	public function testDirectSaveRefusesUntilAnAdministratorTurnsTheEditorOn(): void {
 		file_put_contents( $this->sandbox . '/.htaccess', "AuthUserFile /etc/secret\n" );
 		update_option(
-			'holvek_htaccess_backups',
+			'quinrel_htaccess_backups',
 			array(
 				array(
 					'filename'   => 'htaccess-2026-10-02-120000.txt',
@@ -347,23 +347,23 @@ HTACCESS;
 
 		$this->editor->retirePublicBackupsOnce();
 		$this->assertFileExists( $file );
-		$this->assertSame( array(), get_option( 'holvek_htaccess_backups' ) );
+		$this->assertSame( array(), get_option( 'quinrel_htaccess_backups' ) );
 
-		update_option( 'holvek_htaccess_web_backups_retired', 'no' );
+		update_option( 'quinrel_htaccess_web_backups_retired', 'no' );
 		$this->editor->retirePublicBackupsOnce();
 		$this->assertFileDoesNotExist( $file );
-		$this->assertStringContainsString( 'ONCE-RULE', (string) get_option( 'holvek_htaccess_backups' )[0]['content'] );
-		$this->assertSame( 'yes', get_option( 'holvek_htaccess_web_backups_retired' ) );
+		$this->assertStringContainsString( 'ONCE-RULE', (string) get_option( 'quinrel_htaccess_backups' )[0]['content'] );
+		$this->assertSame( 'yes', get_option( 'quinrel_htaccess_web_backups_retired' ) );
 
 		mkdir( $dir, 0700, true );
 		file_put_contents( $file, "RewriteEngine On\n# STAYS\n" );
 		$this->editor->retirePublicBackupsOnce();
 		$this->assertFileExists( $file );
-		$this->assertStringNotContainsString( 'STAYS', (string) wp_json_encode( get_option( 'holvek_htaccess_backups' ) ) );
+		$this->assertStringNotContainsString( 'STAYS', (string) wp_json_encode( get_option( 'quinrel_htaccess_backups' ) ) );
 
 		unlink( $file );
-		update_option( 'holvek_htaccess_web_backups_retired', 'no' );
-		update_option( 'holvek_htaccess_backups', array() );
+		update_option( 'quinrel_htaccess_web_backups_retired', 'no' );
+		update_option( 'quinrel_htaccess_backups', array() );
 		file_put_contents( $file, "RewriteEngine On\n# READ-WHILE-OFF\n" );
 		file_put_contents( $this->sandbox . '/.htaccess', "AuthUserFile /etc/secret\n" );
 		$this->grantAdmin();
@@ -375,8 +375,8 @@ HTACCESS;
 		$this->assertStringNotContainsString( 'AuthUserFile', (string) wp_json_encode( $read->get_data() ) );
 		$this->assertStringNotContainsString( $this->sandbox, (string) wp_json_encode( $read->get_data() ) );
 		$this->assertFileDoesNotExist( $file );
-		$this->assertStringContainsString( 'READ-WHILE-OFF', (string) get_option( 'holvek_htaccess_backups' )[0]['content'] );
-		$this->assertSame( 'yes', get_option( 'holvek_htaccess_web_backups_retired' ) );
+		$this->assertStringContainsString( 'READ-WHILE-OFF', (string) get_option( 'quinrel_htaccess_backups' )[0]['content'] );
+		$this->assertSame( 'yes', get_option( 'quinrel_htaccess_web_backups_retired' ) );
 	}
 
 	public function testRoutesRequireManageOptions(): void {
@@ -387,16 +387,16 @@ HTACCESS;
 		$this->assertContains( array( 'action', 'rest_api_init' ), $GLOBALS['mock_hooks'] );
 		$this->editor->registerRoutes();
 
-		foreach ( $GLOBALS['mock_rest_routes']['holvek/v1/htaccess'] as $endpoint ) {
+		foreach ( $GLOBALS['mock_rest_routes']['quinrel/v1/htaccess'] as $endpoint ) {
 			$this->assertSame( array( $this->editor, 'checkPermission' ), $endpoint['permission_callback'] );
 		}
 		$this->assertSame(
 			array( $this->editor, 'checkPermission' ),
-			$GLOBALS['mock_rest_routes']['holvek/v1/htaccess/access']['permission_callback']
+			$GLOBALS['mock_rest_routes']['quinrel/v1/htaccess/access']['permission_callback']
 		);
 		$this->assertSame(
 			array( $this->editor, 'checkPermission' ),
-			$GLOBALS['mock_rest_routes']['holvek/v1/htaccess/restore']['permission_callback']
+			$GLOBALS['mock_rest_routes']['quinrel/v1/htaccess/restore']['permission_callback']
 		);
 	}
 
@@ -409,7 +409,7 @@ HTACCESS;
 	}
 
 	private function enableEditor(): void {
-		update_option( 'holvek_htaccess_editor_enabled', 'yes' );
+		update_option( 'quinrel_htaccess_editor_enabled', 'yes' );
 	}
 
 	private function makeEditor( bool $locked ): HtaccessEditor {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Analytics;
+namespace Quinrel\WordPress\Modules\Analytics;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class MultisiteNetworkSeo {
 
-	private const NETWORK_OPTION = 'holvek_network_seo_settings';
+	private const NETWORK_OPTION = 'quinrel_network_seo_settings';
 
 	public function register(): void {
 		if ( ! is_multisite() ) {
@@ -27,7 +27,7 @@ class MultisiteNetworkSeo {
 		add_action( 'wp_initialize_site', array( $this, 'initializeNewSite' ) );
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
 		add_action( 'network_admin_menu', array( $this, 'addNetworkMenu' ) );
-		add_filter( 'holvek_get_option', array( $this, 'maybeUseNetworkDefault' ), 10, 2 );
+		add_filter( 'quinrel_get_option', array( $this, 'maybeUseNetworkDefault' ), 10, 2 );
 	}
 
 	/**
@@ -59,7 +59,7 @@ class MultisiteNetworkSeo {
 			$switched = true;
 		}
 
-		\Holvek\WordPress\Plugin::activate( false );
+		\Quinrel\WordPress\Plugin::activate( false );
 
 		if ( $switched ) {
 			restore_current_blog();
@@ -67,11 +67,11 @@ class MultisiteNetworkSeo {
 	}
 
 	private function isNetworkActive(): bool {
-		if ( ! defined( 'HOLVEK_PLUGIN_FILE' ) ) {
+		if ( ! defined( 'QUINREL_PLUGIN_FILE' ) ) {
 			return false;
 		}
 
-		$basename = plugin_basename( HOLVEK_PLUGIN_FILE );
+		$basename = plugin_basename( QUINREL_PLUGIN_FILE );
 		if ( function_exists( 'is_plugin_active_for_network' ) ) {
 			return (bool) is_plugin_active_for_network( $basename );
 		}
@@ -83,7 +83,7 @@ class MultisiteNetworkSeo {
 	private function networkForbidden(): \WP_Error {
 		return new \WP_Error(
 			'rest_forbidden',
-			__( 'Sorry, you are not allowed to do that.', 'holvek' ),
+			__( 'Sorry, you are not allowed to do that.', 'quinrel' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -94,7 +94,7 @@ class MultisiteNetworkSeo {
 
 		// Network defaults (super admin only)
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/network/settings',
 			array(
 				array(
@@ -112,7 +112,7 @@ class MultisiteNetworkSeo {
 
 		// Per-site override status
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/network/site-overrides',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -123,7 +123,7 @@ class MultisiteNetworkSeo {
 
 		// List all network sites with basic SEO health
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/network/sites',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -137,7 +137,7 @@ class MultisiteNetworkSeo {
 		unset( $request );
 
 		if ( ! is_multisite() ) {
-			return new \WP_Error( 'not_multisite', __( 'Not a multisite network.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'not_multisite', __( 'Not a multisite network.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 		if ( ! current_user_can( 'manage_network_options' ) ) {
 			return $this->networkForbidden();
@@ -149,7 +149,7 @@ class MultisiteNetworkSeo {
 
 	public function saveNetworkSettings( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		if ( ! is_multisite() ) {
-			return new \WP_Error( 'not_multisite', __( 'Not a multisite network.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'not_multisite', __( 'Not a multisite network.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 		if ( ! current_user_can( 'manage_network_options' ) ) {
 			return $this->networkForbidden();
@@ -177,11 +177,11 @@ class MultisiteNetworkSeo {
 
 	public function getSiteOverrides( \WP_REST_Request $request ): \WP_REST_Response {
 		if ( ! is_multisite() ) {
-			return new \WP_Error( 'not_multisite', __( 'Not a multisite network.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'not_multisite', __( 'Not a multisite network.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$networkSettings = get_site_option( self::NETWORK_OPTION, $this->getDefaults() );
-		$siteOverrides   = get_option( 'holvek_site_overrides', array() );
+		$siteOverrides   = get_option( 'quinrel_site_overrides', array() );
 
 		return rest_ensure_response(
 			array(
@@ -196,7 +196,7 @@ class MultisiteNetworkSeo {
 		unset( $request );
 
 		if ( ! is_multisite() ) {
-			return new \WP_Error( 'not_multisite', __( 'Not a multisite network.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'not_multisite', __( 'Not a multisite network.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 		if ( ! current_user_can( 'manage_network_options' ) ) {
 			return $this->networkForbidden();
@@ -227,10 +227,10 @@ class MultisiteNetworkSeo {
 
 	public function addNetworkMenu(): void {
 		add_menu_page(
-			'Holvek Network',
-			'Holvek',
+			'Quinrel Network',
+			'Quinrel',
 			'manage_network_options',
-			'holvek-network',
+			'quinrel-network',
 			array( $this, 'renderNetworkAdminPage' ),
 			'dashicons-chart-area',
 			30
@@ -238,7 +238,7 @@ class MultisiteNetworkSeo {
 	}
 
 	public function renderNetworkAdminPage(): void {
-		echo '<div id="holvek-network-admin"><!-- React renders here --></div>';
+		echo '<div id="quinrel-network-admin"><!-- React renders here --></div>';
 	}
 
 	/**
@@ -250,7 +250,7 @@ class MultisiteNetworkSeo {
 		}
 
 		$networkSettings = get_site_option( self::NETWORK_OPTION, array() );
-		$networkKey      = str_replace( 'holvek_', '', $optionKey );
+		$networkKey      = str_replace( 'quinrel_', '', $optionKey );
 
 		return $networkSettings[ $networkKey ] ?? $value;
 	}

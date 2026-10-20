@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\Analytics\MultisiteNetworkSeo;
+use Quinrel\WordPress\Modules\Analytics\MultisiteNetworkSeo;
 use PHPUnit\Framework\TestCase;
 
 class MultisiteLifecycleTest extends TestCase {
@@ -77,7 +77,7 @@ class MultisiteLifecycleTest extends TestCase {
 		( new MultisiteNetworkSeo() )->initializeNewSite( (object) array( 'blog_id' => 4 ) );
 
 		$created = implode( "\n", array_map( 'strval', $GLOBALS['mock_db_delta'] ) );
-		$this->assertStringContainsString( 'wp_4_holvek_redirects', $created );
+		$this->assertStringContainsString( 'wp_4_quinrel_redirects', $created );
 		$this->assertTrue( $this->roleEventOnBlog( 'add', 'manage_seo', 4 ) );
 		$this->assertSame( 1, get_current_blog_id() );
 		$this->assertSame( 'wp_', $GLOBALS['wpdb']->prefix );
@@ -126,10 +126,10 @@ class MultisiteLifecycleTest extends TestCase {
 		$this->assertSame( array(), $GLOBALS['mock_switched_blogs'] );
 
 		$saved = array( 'untouched' => true );
-		$GLOBALS['mock_site_options']['holvek_network_seo_settings'] = $saved;
+		$GLOBALS['mock_site_options']['quinrel_network_seo_settings'] = $saved;
 		$write = $network->saveNetworkSettings( new \WP_REST_Request() );
 		$this->assertSame( 'rest_forbidden', $write->get_error_code() );
-		$this->assertSame( $saved, $GLOBALS['mock_site_options']['holvek_network_seo_settings'] );
+		$this->assertSame( $saved, $GLOBALS['mock_site_options']['quinrel_network_seo_settings'] );
 
 		$GLOBALS['mock_user_caps']['manage_network_options'] = true;
 		$allowed = $network->getNetworkSites( new \WP_REST_Request() );
@@ -148,12 +148,12 @@ class MultisiteLifecycleTest extends TestCase {
 		$this->assertContains( 1, $keep['blogs'] );
 		$this->assertContains( 2, $keep['blogs'] );
 		$this->assertSame( 32, $keep['removals'] );
-		$this->assertContains( 'holvek_404_cleanup', $keep['cleared'] );
-		$this->assertContains( 'holvek_indexnow_flush', $keep['cleared'] );
+		$this->assertContains( 'quinrel_404_cleanup', $keep['cleared'] );
+		$this->assertContains( 'quinrel_indexnow_flush', $keep['cleared'] );
 
 		$drop = $this->runUninstall( 'yes' );
-		$this->assertTrue( $this->queriesContain( $drop['queries'], 'DROP TABLE IF EXISTS `wp_holvek_redirects`' ) );
-		$this->assertTrue( $this->queriesContain( $drop['queries'], 'DROP TABLE IF EXISTS `wp_2_holvek_redirects`' ) );
+		$this->assertTrue( $this->queriesContain( $drop['queries'], 'DROP TABLE IF EXISTS `wp_quinrel_redirects`' ) );
+		$this->assertTrue( $this->queriesContain( $drop['queries'], 'DROP TABLE IF EXISTS `wp_2_quinrel_redirects`' ) );
 		$this->assertTrue( $this->queriesContain( $drop['queries'], 'wp_usermeta' ) );
 		$this->assertTrue( $this->queriesContain( $drop['queries'], 'wp_sitemeta' ) );
 		$this->assertFalse( $drop['backup_exists'] );
@@ -197,11 +197,11 @@ class MultisiteLifecycleTest extends TestCase {
 	}
 
 	private function markNetworkActive(): void {
-		if ( ! defined( 'HOLVEK_PLUGIN_FILE' ) ) {
-			define( 'HOLVEK_PLUGIN_FILE', dirname( __DIR__, 2 ) . '/holvek.php' );
+		if ( ! defined( 'QUINREL_PLUGIN_FILE' ) ) {
+			define( 'QUINREL_PLUGIN_FILE', dirname( __DIR__, 2 ) . '/quinrel.php' );
 		}
 		$GLOBALS['mock_site_options']['active_sitewide_plugins'] = array(
-			plugin_basename( HOLVEK_PLUGIN_FILE ) => 1,
+			plugin_basename( QUINREL_PLUGIN_FILE ) => 1,
 		);
 	}
 
@@ -237,7 +237,7 @@ class MultisiteLifecycleTest extends TestCase {
 		}
 		$this->removeBackupTree();
 		$root   = dirname( __DIR__, 2 );
-		$script = tempnam( sys_get_temp_dir(), 'holvek-uninstall-' );
+		$script = tempnam( sys_get_temp_dir(), 'quinrel-uninstall-' );
 		if ( ! is_string( $script ) ) {
 			$this->fail( 'Could not create the uninstall script.' );
 		}
@@ -251,12 +251,12 @@ class MultisiteLifecycleTest extends TestCase {
 			. "\$GLOBALS['mock_is_multisite'] = true;\n"
 			. "\$GLOBALS['mock_sites'] = array(1, 2);\n"
 			. "\$GLOBALS['mock_current_blog_id'] = 1;\n"
-			. "\$GLOBALS['mock_wp_options']['holvek_delete_data_on_uninstall'] = \$mode;\n"
+			. "\$GLOBALS['mock_wp_options']['quinrel_delete_data_on_uninstall'] = \$mode;\n"
 			. "\$GLOBALS['mock_role_events'] = array();\n"
 			. "\$GLOBALS['mock_cleared_hooks'] = array();\n"
 			. "\$content = WP_CONTENT_DIR;\n"
 			. "if (!is_dir(\$content) && !mkdir(\$content, 0777, true) && !is_dir(\$content)) { fwrite(STDERR, \"content mkdir failed\\n\"); exit(1); }\n"
-			. "\$backup = \$content . '/holvek-backups/htaccess';\n"
+			. "\$backup = \$content . '/quinrel-backups/htaccess';\n"
 			. "if (!is_dir(\$backup) && !mkdir(\$backup, 0777, true) && !is_dir(\$backup)) { fwrite(STDERR, \"backup mkdir failed\\n\"); exit(1); }\n"
 			. "file_put_contents(\$backup . '/old.txt', 'secret');\n"
 			. 'require ' . var_export( $root . '/uninstall.php', true ) . ";\n"
@@ -272,7 +272,7 @@ class MultisiteLifecycleTest extends TestCase {
 			. "    'blogs' => array_values(array_unique(\$blogs)),\n"
 			. "    'removals' => \$removals,\n"
 			. "    'cleared' => \$GLOBALS['mock_cleared_hooks'] ?? array(),\n"
-			. "    'backup_exists' => is_dir(\$content . '/holvek-backups'),\n"
+			. "    'backup_exists' => is_dir(\$content . '/quinrel-backups'),\n"
 			. "));\n"
 		);
 
@@ -300,7 +300,7 @@ class MultisiteLifecycleTest extends TestCase {
 	}
 
 	private function removeBackupTree(): void {
-		$root = dirname( __DIR__, 2 ) . '/wp-content/holvek-backups';
+		$root = dirname( __DIR__, 2 ) . '/wp-content/quinrel-backups';
 		if ( ! is_dir( $root ) ) {
 			return;
 		}

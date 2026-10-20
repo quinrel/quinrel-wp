@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Analytics;
+namespace Quinrel\WordPress\Modules\Analytics;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class BingWebmasterIntegration {
 
-	private const API_KEY_OPTION = 'holvek_bing_api_key';
+	private const API_KEY_OPTION = 'quinrel_bing_api_key';
 	private const CACHE_TTL      = 6 * HOUR_IN_SECONDS;
 
 	public function register(): void {
@@ -26,7 +26,7 @@ class BingWebmasterIntegration {
 		$reportCap = fn() => current_user_can( 'view_seo_reports' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/analytics/bing/settings',
 			array(
 				array(
@@ -43,7 +43,7 @@ class BingWebmasterIntegration {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/analytics/bing/decay',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -70,10 +70,10 @@ class BingWebmasterIntegration {
 	public function getDecayingPages( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$apiKey = get_option( self::API_KEY_OPTION, '' );
 		if ( empty( $apiKey ) ) {
-			return new \WP_Error( 'bing_unconfigured', __( 'Bing Webmaster API Key is not configured.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'bing_unconfigured', __( 'Bing Webmaster API Key is not configured.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
-		$cacheKey = 'holvek_bing_decay_' . md5( site_url() );
+		$cacheKey = 'quinrel_bing_decay_' . md5( site_url() );
 		$cached   = get_transient( $cacheKey );
 		if ( false !== $cached ) {
 			return rest_ensure_response( $cached );
@@ -137,7 +137,7 @@ class BingWebmasterIntegration {
 				'bing_api_error',
 				sprintf(
 					/* translators: %d: HTTP status code returned by the Bing Webmaster API. */
-					__( 'Bing API returned status %d', 'holvek' ),
+					__( 'Bing API returned status %d', 'quinrel' ),
 					(int) $code
 				),
 				$body

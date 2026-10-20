@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ImageSeo;
+namespace Quinrel\WordPress\Modules\ImageSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -14,9 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ImageCompressor {
 
-	private const OPTION_KEY         = 'holvek_image_compression';
-	private const PROCESSED_META_KEY = '_holvek_compressed';
-	private const ORIGINAL_META_KEY  = '_holvek_compression_original';
+	private const OPTION_KEY         = 'quinrel_image_compression';
+	private const PROCESSED_META_KEY = '_quinrel_compressed';
+	private const ORIGINAL_META_KEY  = '_quinrel_compression_original';
 
 	public function boot(): void {
 		$config = $this->getConfig();
@@ -111,7 +111,7 @@ class ImageCompressor {
 	public function registerRoutes(): void {
 		// Settings CRUD
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/image-compression',
 			array(
 				array(
@@ -129,7 +129,7 @@ class ImageCompressor {
 
 		// Bulk compress endpoint — processes library in batches
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/images/compress-bulk',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -139,7 +139,7 @@ class ImageCompressor {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/images/(?P<attachment_id>\d+)/restore',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -155,7 +155,7 @@ class ImageCompressor {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/images/compression-backups',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -176,7 +176,7 @@ class ImageCompressor {
 
 		// Stats endpoint — total images, compressed count, saved bytes estimate
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/images/compression-stats',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -197,7 +197,7 @@ class ImageCompressor {
 		if ( $enabled && empty( $params['acknowledge_reversible_processing'] ) ) {
 			return new \WP_Error(
 				'compression_confirmation_required',
-				__( 'Confirm that originals will be retained before enabling image compression.', 'holvek' ),
+				__( 'Confirm that originals will be retained before enabling image compression.', 'quinrel' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -230,7 +230,7 @@ class ImageCompressor {
 		$config    = $this->getConfig();
 
 		if ( ! $config['enabled'] ) {
-			return new \WP_Error( 'compression_disabled', __( 'Enable and confirm reversible image compression before starting a bulk run.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'compression_disabled', __( 'Enable and confirm reversible image compression before starting a bulk run.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
 		$query = new \WP_Query(
@@ -380,7 +380,7 @@ class ImageCompressor {
 	 * not be the only copy of the original.
 	 */
 	public function retainOriginalAttachment( int $attachmentId, string $file, string $mime ): int {
-		$existing = (int) get_post_meta( $attachmentId, '_holvek_original_attachment_id', true );
+		$existing = (int) get_post_meta( $attachmentId, '_quinrel_original_attachment_id', true );
 		if ( $existing > 0 ) {
 			$kept = get_attached_file( $existing );
 			if ( get_post( $existing ) && is_string( $kept ) && is_readable( $kept ) ) {
@@ -400,10 +400,10 @@ class ImageCompressor {
 			return 0;
 		}
 
-		$dest = $dir . '/' . $base . '-holvek-original.' . $ext;
+		$dest = $dir . '/' . $base . '-quinrel-original.' . $ext;
 		$try  = 2;
 		while ( file_exists( $dest ) ) {
-			$dest = $dir . '/' . $base . '-holvek-original-' . $try . '.' . $ext;
+			$dest = $dir . '/' . $base . '-quinrel-original-' . $try . '.' . $ext;
 			++$try;
 			if ( $try > 50 ) {
 				return 0;
@@ -433,8 +433,8 @@ class ImageCompressor {
 
 		$originalId = (int) $inserted;
 		update_attached_file( $originalId, $dest );
-		update_post_meta( $attachmentId, '_holvek_original_attachment_id', $originalId );
-		update_post_meta( $originalId, '_holvek_original_of', $attachmentId );
+		update_post_meta( $attachmentId, '_quinrel_original_attachment_id', $originalId );
+		update_post_meta( $originalId, '_quinrel_original_of', $attachmentId );
 		update_post_meta( $attachmentId, self::ORIGINAL_META_KEY, (string) $originalId );
 
 		return $originalId;
@@ -444,11 +444,11 @@ class ImageCompressor {
 		$attachmentId = (int) $request->get_param( 'attachment_id' );
 
 		if ( ! current_user_can( 'edit_post', $attachmentId ) ) {
-			return new \WP_Error( 'unauthorized', __( 'You do not have permission to edit this attachment.', 'holvek' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'unauthorized', __( 'You do not have permission to edit this attachment.', 'quinrel' ), array( 'status' => 403 ) );
 		}
 
 		$file       = get_attached_file( $attachmentId );
-		$originalId = (int) get_post_meta( $attachmentId, '_holvek_original_attachment_id', true );
+		$originalId = (int) get_post_meta( $attachmentId, '_quinrel_original_attachment_id', true );
 		$backup     = $originalId > 0 ? get_attached_file( $originalId ) : '';
 		if ( ! is_string( $backup ) || '' === $backup || ! is_readable( $backup ) ) {
 			$legacy = (string) get_post_meta( $attachmentId, self::ORIGINAL_META_KEY, true );
@@ -458,7 +458,7 @@ class ImageCompressor {
 		}
 
 		if ( ! is_string( $file ) || '' === $file || ! is_string( $backup ) || '' === $backup || ! is_readable( $backup ) || ! copy( $backup, $file ) ) {
-			return new \WP_Error( 'restore_failed', __( 'No restorable image backup is available for this attachment.', 'holvek' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'restore_failed', __( 'No restorable image backup is available for this attachment.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
 		delete_post_meta( $attachmentId, self::PROCESSED_META_KEY );

@@ -31,12 +31,12 @@ function ollamaHostIsLoopback(url) {
 }
 
 const App = () => {
-    const holvekAdminConfig = window.holvekAdminConfig || {};
+    const quinrelAdminConfig = window.quinrelAdminConfig || {};
     const [showSetup, setShowSetup] = useState(window.location.hash === '#setup');
-    const [setupFinished, setSetupFinished] = useState(holvekAdminConfig.setupComplete === '1');
+    const [setupFinished, setSetupFinished] = useState(quinrelAdminConfig.setupComplete === '1');
     const [activeTab, setActiveTab] = useState('dashboard');
     const [focusIndexing, setFocusIndexing] = useState(false);
-    const [showHolvekNote, setShowHolvekNote] = useState(false);
+    const [showQuinrelNote, setShowQuinrelNote] = useState(false);
     const [connection, setConnection] = useState(null);
     const [connectionLoading, setConnectionLoading] = useState(false);
     const [connectionError, setConnectionError] = useState('');
@@ -44,11 +44,12 @@ const App = () => {
     const [connectionBusy, setConnectionBusy] = useState(false);
     const [siteToken, setSiteToken] = useState('');
     const [authorizationCode, setAuthorizationCode] = useState('');
-    const canConnectHolvek = !!(holvekAdminConfig.capabilities && holvekAdminConfig.capabilities.manage_options === true);
+    const canConnectQuinrel = !!(quinrelAdminConfig.capabilities && quinrelAdminConfig.capabilities.manage_options === true);
 
     const [standalone, setStandalone] = useState(null);
     const [standaloneLoading, setStandaloneLoading] = useState(false);
     const [standaloneError, setStandaloneError] = useState('');
+    const [aiBotActivity, setAiBotActivity] = useState(null);
 
     // GSC Dashboard — loaded only after the user asks for it.
     const [gscOpen, setGscOpen]         = useState(false);
@@ -106,11 +107,11 @@ const App = () => {
         setIsTestingAi(true);
         setAiTestResult(null);
         try {
-            const response = await fetch(`${holvekAdminConfig.apiUrl}/settings/ai/test-connection`, {
+            const response = await fetch(`${quinrelAdminConfig.apiUrl}/settings/ai/test-connection`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-WP-Nonce': holvekAdminConfig.nonce,
+                    'X-WP-Nonce': quinrelAdminConfig.nonce,
                 },
                 body: JSON.stringify({
                     ai_provider: settings.ai_provider,
@@ -157,11 +158,11 @@ const App = () => {
         }
         setStandaloneLoading(true);
         setStandaloneError('');
-        fetch(`${holvekAdminConfig.apiUrl}/dashboard/standalone`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+        fetch(`${quinrelAdminConfig.apiUrl}/dashboard/standalone`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
             .then(r => r.json().then(d => ({ ok: r.ok, d })))
             .then(({ ok, d }) => {
                 if (!ok || d.code) {
-                    setStandaloneError(d.message || __('The local results could not be loaded.', 'holvek'));
+                    setStandaloneError(d.message || __('The local results could not be loaded.', 'quinrel'));
                     return;
                 }
                 if (d.next_step === 'active') {
@@ -169,32 +170,32 @@ const App = () => {
                 }
                 setStandalone(current => (current && current.next_step === 'active' ? current : d));
             })
-            .catch(() => setStandaloneError(__('The local results could not be loaded.', 'holvek')))
+            .catch(() => setStandaloneError(__('The local results could not be loaded.', 'quinrel')))
             .finally(() => setStandaloneLoading(false));
     }, [activeTab]);
 
     useEffect(() => {
-        if (!showHolvekNote || !canConnectHolvek) {
+        if (!showQuinrelNote || !canConnectQuinrel) {
             return;
         }
         let cancelled = false;
         setConnectionLoading(true);
         setConnectionError('');
-        fetch(`${holvekAdminConfig.apiUrl}/connection`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+        fetch(`${quinrelAdminConfig.apiUrl}/connection`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
             .then((response) => response.json().then((data) => ({ ok: response.ok, data })))
             .then(({ ok, data }) => {
                 if (cancelled) {
                     return;
                 }
                 if (!ok || data.code) {
-                    setConnectionError(data.message || __('The Holvek connection could not be loaded.', 'holvek'));
+                    setConnectionError(data.message || __('The Quinrel connection could not be loaded.', 'quinrel'));
                     return;
                 }
                 setConnection(data);
             })
             .catch(() => {
                 if (!cancelled) {
-                    setConnectionError(__('The Holvek connection could not be loaded.', 'holvek'));
+                    setConnectionError(__('The Quinrel connection could not be loaded.', 'quinrel'));
                 }
             })
             .finally(() => {
@@ -205,7 +206,7 @@ const App = () => {
         return () => {
             cancelled = true;
         };
-    }, [showHolvekNote, canConnectHolvek]);
+    }, [showQuinrelNote, canConnectQuinrel]);
 
     const postConnection = (path, body) => {
         setConnectionBusy(true);
@@ -215,18 +216,18 @@ const App = () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-WP-Nonce': holvekAdminConfig.nonce,
+                'X-WP-Nonce': quinrelAdminConfig.nonce,
             },
         };
         if (body) {
             options.body = JSON.stringify(body);
         }
-        fetch(`${holvekAdminConfig.apiUrl}${path}`, options)
+        fetch(`${quinrelAdminConfig.apiUrl}${path}`, options)
             .then((response) => response.json().then((data) => ({ ok: response.ok, data })))
             .then(({ ok, data }) => {
                 if (!ok || data.code) {
-                    setConnectionError(data.message || __('Holvek did not accept this credential. Nothing was saved.', 'holvek'));
-                    if (data.code === 'holvek_not_verified') {
+                    setConnectionError(data.message || __('Quinrel did not accept this credential. Nothing was saved.', 'quinrel'));
+                    if (data.code === 'quinrel_not_verified') {
                         setConnection((current) => (current ? { ...current, connected: false, tier: '' } : current));
                     }
                     return;
@@ -236,20 +237,20 @@ const App = () => {
                         connected: false,
                         credential_saved: false,
                         tier: '',
-                        host: 'https://api.holvek.com',
+                        host: 'https://api.quinrel.com',
                         api_base: current && current.api_base ? current.api_base : '',
                     }));
-                    setConnectionMessage(data.message || __('The Holvek credential was removed from this site. SEO data was kept.', 'holvek'));
+                    setConnectionMessage(data.message || __('The Quinrel credential was removed from this site. SEO data was kept.', 'quinrel'));
                     setSiteToken('');
                     setAuthorizationCode('');
                     return;
                 }
                 setConnection(data);
-                setConnectionMessage(__('This site is connected to Holvek.', 'holvek'));
+                setConnectionMessage(__('This site is connected to Quinrel.', 'quinrel'));
                 setSiteToken('');
                 setAuthorizationCode('');
             })
-            .catch(() => setConnectionError(__('Holvek could not be reached. This site keeps working without an account.', 'holvek')))
+            .catch(() => setConnectionError(__('Quinrel could not be reached. This site keeps working without an account.', 'quinrel')))
             .finally(() => setConnectionBusy(false));
     };
 
@@ -257,7 +258,7 @@ const App = () => {
         if (activeTab !== 'settings' || !focusIndexing || isLoadingSettings) {
             return;
         }
-        const node = document.getElementById('holvek-search-engine-notifications');
+        const node = document.getElementById('quinrel-search-engine-notifications');
         if (node && typeof node.focus === 'function') {
             node.focus();
         }
@@ -267,25 +268,33 @@ const App = () => {
         // Search Console data is optional and stays unloaded until the user opens it.
         if (activeTab === 'dashboard' && gscOpen && !gscData && !gscLoading) {
             setGscLoading(true); setGscError(null);
-            fetch(`${holvekAdminConfig.apiUrl}/gsc/dashboard`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+            fetch(`${quinrelAdminConfig.apiUrl}/gsc/dashboard`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
                 .then(r => r.json())
-                .then(d => { if (d.success) setGscData(d); else setGscError(d.message || __('Google Search Console is not connected. Add the service account JSON under Settings.', 'holvek')); })
-                .catch(() => setGscError(__('Search Console data could not be loaded.', 'holvek')))
+                .then(d => { if (d.success) setGscData(d); else setGscError(d.message || __('Google Search Console is not connected. Add the service account JSON under Settings.', 'quinrel')); })
+                .catch(() => setGscError(__('Search Console data could not be loaded.', 'quinrel')))
                 .finally(() => setGscLoading(false));
+        }
+
+        // AI Bot Activity
+        if (activeTab === 'dashboard' || activeTab === 'llms') {
+            fetch(`${quinrelAdminConfig.apiUrl}/ai-bot-activity`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
+                .then(r => r.json())
+                .then(d => { if (d.success && d.data) setAiBotActivity(d.data); })
+                .catch(() => {});
         }
 
         // GA4 Analytics
         if (activeTab === 'analytics') {
             if (!ga4Report && !ga4Loading) {
                 setGa4Loading(true); setGa4Error(null);
-                fetch(`${holvekAdminConfig.apiUrl}/ga4/report`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+                fetch(`${quinrelAdminConfig.apiUrl}/ga4/report`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
                     .then(r => r.json())
                     .then(d => { if (d.success) setGa4Report(d); else setGa4Error(d.message || 'GA4 not configured.'); })
                     .catch(() => setGa4Error('Failed to load GA4 data.'))
                     .finally(() => setGa4Loading(false));
             }
             if (!ga4Settings.measurement_id && !ga4Settings.credentials_set) {
-                fetch(`${holvekAdminConfig.apiUrl}/settings/ga4`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+                fetch(`${quinrelAdminConfig.apiUrl}/settings/ga4`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
                     .then(r => r.json()).then(d => setGa4Settings(prev => ({ ...prev, ...d, credentials: '' })));
             }
         }
@@ -297,7 +306,7 @@ const App = () => {
             }
             if (!linkStats && !linkStatsLoading) {
                 setLinkStatsLoading(true);
-                fetch(`${holvekAdminConfig.apiUrl}/links/stats`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+                fetch(`${quinrelAdminConfig.apiUrl}/links/stats`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
                     .then(r => r.json()).then(d => { if (d.success) setLinkStats(d); }).finally(() => setLinkStatsLoading(false));
             }
         }
@@ -311,7 +320,7 @@ const App = () => {
     useEffect(() => {
         if (activeTab === 'dashboard' && gscOpen && gscSubTab === 'cannibalization' && !cannData && !cannLoading) {
             setCannLoading(true);
-            fetch(`${holvekAdminConfig.apiUrl}/gsc/cannibalization`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+            fetch(`${quinrelAdminConfig.apiUrl}/gsc/cannibalization`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
                 .then(r => r.json()).then(d => { if (d.success) setCannData(d); }).finally(() => setCannLoading(false));
         }
     }, [activeTab, gscOpen, gscSubTab]);
@@ -319,9 +328,9 @@ const App = () => {
     const saveGa4Settings = useCallback(async () => {
         setGa4Saving(true); setGa4SaveMsg(null);
         try {
-            const res = await fetch(`${holvekAdminConfig.apiUrl}/settings/ga4`, {
+            const res = await fetch(`${quinrelAdminConfig.apiUrl}/settings/ga4`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(ga4Settings),
             });
             const d = await res.json();
@@ -360,21 +369,21 @@ const App = () => {
     useEffect(() => {
         if (activeTab === 'html_sitemap' && !sitemapCfg && !sitemapLoading) {
             setSitemapLoading(true);
-            fetch(`${holvekAdminConfig.apiUrl}/html-sitemap`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+            fetch(`${quinrelAdminConfig.apiUrl}/html-sitemap`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
                 .then(r => r.json()).then(d => setSitemapCfg(d)).finally(() => setSitemapLoading(false));
         }
     }, [activeTab]);
 
     const loadSitemapPreview = useCallback(() => {
-        fetch(`${holvekAdminConfig.apiUrl}/html-sitemap/preview`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+        fetch(`${quinrelAdminConfig.apiUrl}/html-sitemap/preview`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
             .then(r => r.json()).then(d => setSitemapPreview(d));
     }, []);
 
     const saveSitemapCfg = useCallback(async () => {
         setSitemapSaving(true); setSitemapSaveMsg(null);
         try {
-            const res = await fetch(`${holvekAdminConfig.apiUrl}/html-sitemap`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const res = await fetch(`${quinrelAdminConfig.apiUrl}/html-sitemap`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(sitemapCfg),
             });
             const d = await res.json();
@@ -387,8 +396,8 @@ const App = () => {
     const saveHtaccess = useCallback(async () => {
         setHtaccessSaving(true); setHtaccessMsg(null);
         try {
-            const res = await fetch(`${holvekAdminConfig.apiUrl}/htaccess`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const res = await fetch(`${quinrelAdminConfig.apiUrl}/htaccess`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ content: htaccessContent }),
             });
             const d = await res.json();
@@ -406,8 +415,8 @@ const App = () => {
     const setHtaccessEnabled = useCallback(async (enabled) => {
         setHtaccessSaving(true); setHtaccessMsg(null);
         try {
-            const res = await fetch(`${holvekAdminConfig.apiUrl}/htaccess/access`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const res = await fetch(`${quinrelAdminConfig.apiUrl}/htaccess/access`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ enabled }),
             });
             const d = await res.json();
@@ -425,8 +434,8 @@ const App = () => {
         if (!window.confirm('Replace the current .htaccess file with this backup?')) return;
         setHtaccessSaving(true); setHtaccessMsg(null);
         try {
-            const res = await fetch(`${holvekAdminConfig.apiUrl}/htaccess/restore`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const res = await fetch(`${quinrelAdminConfig.apiUrl}/htaccess/restore`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ filename }),
             });
             const d = await res.json();
@@ -444,13 +453,13 @@ const App = () => {
     const downloadExport = useCallback(async () => {
         setExportMsg(null);
         try {
-            const res = await fetch(`${holvekAdminConfig.apiUrl}/settings/export`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } });
+            const res = await fetch(`${quinrelAdminConfig.apiUrl}/settings/export`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
             const d = await res.json();
             if (!d.success) { setExportMsg({ type: 'error', text: 'Export failed.' }); return; }
             const blob = new Blob([JSON.stringify(d.data, null, 2)], { type: 'application/json' });
             const url  = URL.createObjectURL(blob);
             const a    = document.createElement('a');
-            a.href = url; a.download = `holvek-settings-${new Date().toISOString().slice(0,10)}.json`; a.click();
+            a.href = url; a.download = `quinrel-settings-${new Date().toISOString().slice(0,10)}.json`; a.click();
             URL.revokeObjectURL(url);
             setExportMsg({ type: 'success', text: 'Settings file downloaded.' });
         } catch (e) { setExportMsg({ type: 'error', text: 'Export error.' }); }
@@ -462,8 +471,8 @@ const App = () => {
         try {
             const text = await file.text();
             const json = JSON.parse(text);
-            const res  = await fetch(`${holvekAdminConfig.apiUrl}/settings/import`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const res  = await fetch(`${quinrelAdminConfig.apiUrl}/settings/import`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(json),
             });
             const d = await res.json();
@@ -476,9 +485,9 @@ const App = () => {
 
     const fetchSettings = async () => {
         try {
-            const response = await fetch(`${holvekAdminConfig.apiUrl}/settings`, {
+            const response = await fetch(`${quinrelAdminConfig.apiUrl}/settings`, {
                 headers: {
-                    'X-WP-Nonce': holvekAdminConfig.nonce,
+                    'X-WP-Nonce': quinrelAdminConfig.nonce,
                 }
             });
             if (response.ok) {
@@ -543,11 +552,11 @@ const App = () => {
         setIsSaving(true);
         setSaveStatus(null);
         try {
-            const response = await fetch(`${holvekAdminConfig.apiUrl}/settings`, {
+            const response = await fetch(`${quinrelAdminConfig.apiUrl}/settings`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-WP-Nonce': holvekAdminConfig.nonce,
+                    'X-WP-Nonce': quinrelAdminConfig.nonce,
                 },
                 body: JSON.stringify(settings)
             });
@@ -579,8 +588,8 @@ const App = () => {
     useEffect(() => {
         if (activeTab === 'technical' && !robotsLoaded) {
             setIsLoadingRobots(true);
-            fetch(`${holvekAdminConfig.apiUrl}/robots-txt`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+            fetch(`${quinrelAdminConfig.apiUrl}/robots-txt`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             })
             .then(r => r.json())
             .then(data => {
@@ -599,9 +608,9 @@ const App = () => {
         setRobotsStatus(null);
         try {
             const replaceGenerated = robotsReplace && robotsTxt.trim() !== '';
-            const response = await fetch(`${holvekAdminConfig.apiUrl}/robots-txt`, {
+            const response = await fetch(`${quinrelAdminConfig.apiUrl}/robots-txt`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({
                     content: robotsTxt,
                     block_ai_bots: blockAiBots,
@@ -617,7 +626,7 @@ const App = () => {
                     type: 'success',
                     message: data.replace_generated
                         ? 'Custom robots.txt now replaces the generated file.'
-                        : 'Saved. Holvek keeps the generated robots.txt and adds its own rules.',
+                        : 'Saved. Quinrel keeps the generated robots.txt and adds its own rules.',
                 }
                 : { type: 'error', message: data.message || 'Failed to save settings.' }
             );
@@ -636,7 +645,7 @@ const App = () => {
             return;
         }
         setHtaccessLoading(true);
-        fetch(`${holvekAdminConfig.apiUrl}/htaccess`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+        fetch(`${quinrelAdminConfig.apiUrl}/htaccess`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
             .then(async (r) => {
                 const d = await r.json();
                 if (!r.ok) {
@@ -689,9 +698,9 @@ const App = () => {
     const fetchSchemaRules = async () => {
         setIsLoadingSchemaRules(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/schema/global-rules`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/schema/global-rules`, {
                 headers: {
-                    'X-WP-Nonce': holvekAdminConfig.nonce
+                    'X-WP-Nonce': quinrelAdminConfig.nonce
                 }
             });
             const data = await r.json();
@@ -710,11 +719,11 @@ const App = () => {
         setIsSavingSchemaRules(true);
         setSchemaRulesStatus(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/schema/global-rules`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/schema/global-rules`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-WP-Nonce': holvekAdminConfig.nonce
+                    'X-WP-Nonce': quinrelAdminConfig.nonce
                 },
                 body: JSON.stringify({ rules: newRules })
             });
@@ -744,8 +753,8 @@ const App = () => {
     const fetchSocialAccounts = async () => {
         setIsLoadingSocial(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/social/accounts`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/social/accounts`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             });
             const data = await r.json();
             if (data) {
@@ -754,8 +763,8 @@ const App = () => {
                 setSocialCategories(data.categories || []);
             }
             
-            const rSettings = await fetch(`${holvekAdminConfig.apiUrl}/social/settings`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+            const rSettings = await fetch(`${quinrelAdminConfig.apiUrl}/social/settings`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             });
             const settingsData = await rSettings.json();
             if (settingsData && settingsData.apps) {
@@ -768,9 +777,9 @@ const App = () => {
     const updateSocialAccount = async (id, payload) => {
         setIsSavingAccount(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/social/accounts/${id}`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/social/accounts/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(payload)
             });
             const data = await r.json();
@@ -785,9 +794,9 @@ const App = () => {
     const deleteSocialAccount = async (id) => {
         if (!confirm('Are you sure you want to disconnect this account?')) return;
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/social/accounts/${id}`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/social/accounts/${id}`, {
                 method: 'DELETE',
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             });
             const data = await r.json();
             if (data.success) {
@@ -799,9 +808,9 @@ const App = () => {
     const toggleGlobalAutoShare = async (val) => {
         setGlobalAutoShare(val);
         try {
-            await fetch(`${holvekAdminConfig.apiUrl}/social/accounts`, {
+            await fetch(`${quinrelAdminConfig.apiUrl}/social/accounts`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ global_auto_share: val })
             });
         } catch (e) {}
@@ -814,11 +823,11 @@ const App = () => {
         }
 
         try {
-            const res = await fetch(`${holvekAdminConfig.apiUrl}/social/oauth-init`, {
+            const res = await fetch(`${quinrelAdminConfig.apiUrl}/social/oauth-init`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-WP-Nonce': holvekAdminConfig.nonce,
+                    'X-WP-Nonce': quinrelAdminConfig.nonce,
                 },
                 body: JSON.stringify({ network })
             });
@@ -836,9 +845,9 @@ const App = () => {
     const saveSocialSettings = async () => {
         setIsSavingSocialApps(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/social/settings`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/social/settings`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(socialApps)
             });
             const data = await r.json();
@@ -901,8 +910,8 @@ const App = () => {
     const fetchSitemapsSettings = async () => {
         setIsLoadingSitemaps(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/settings/sitemaps`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/settings/sitemaps`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             });
             if (r.ok) {
                 const data = await r.json();
@@ -917,9 +926,9 @@ const App = () => {
         setIsSavingSitemaps(true);
         setSitemapsStatus(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/settings/sitemaps`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/settings/sitemaps`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(sitemapsData)
             });
             if (r.ok) {
@@ -938,7 +947,7 @@ const App = () => {
     const loadCustom404 = async () => {
         setIsLoading404Page(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/settings/404-page`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } });
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/settings/404-page`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
             const d = await r.json();
             setCustom404PageId(d.page_id || 0);
             setAvailable404Pages(d.pages || []);
@@ -949,8 +958,8 @@ const App = () => {
     const saveCustom404Page = async () => {
         setIsSaving404Page(true); setCustom404Msg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/settings/404-page`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/settings/404-page`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ page_id: custom404PageId }),
             });
             const d = await r.json();
@@ -963,7 +972,7 @@ const App = () => {
     const loadCookieBanner = async () => {
         setIsLoadingCookieBanner(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/settings/cookie-banner`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } });
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/settings/cookie-banner`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
             const d = await r.json();
             setCookieBanner(d);
         } catch(e) {}
@@ -973,8 +982,8 @@ const App = () => {
     const saveCookieBanner = async () => {
         setIsSavingCookieBanner(true); setCookieBannerMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/settings/cookie-banner`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/settings/cookie-banner`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(cookieBanner),
             });
             const d = await r.json();
@@ -988,9 +997,9 @@ const App = () => {
         setIsLoadingCompression(true);
         try {
             const [statsRes, cfgRes, backupsRes] = await Promise.all([
-                fetch(`${holvekAdminConfig.apiUrl}/images/compression-stats`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } }),
-                fetch(`${holvekAdminConfig.apiUrl}/settings/image-compression`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } }),
-                fetch(`${holvekAdminConfig.apiUrl}/images/compression-backups`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } }),
+                fetch(`${quinrelAdminConfig.apiUrl}/images/compression-stats`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
+                fetch(`${quinrelAdminConfig.apiUrl}/settings/image-compression`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
+                fetch(`${quinrelAdminConfig.apiUrl}/images/compression-backups`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
             ]);
             const [stats, cfg, backups] = await Promise.all([statsRes.json(), cfgRes.json(), backupsRes.json()]);
             setCompressionStats(stats); setCompressionConfig(cfg); setCompressionAcknowledged(Boolean(cfg.enabled)); setCompressionBackups(backups.items || []);
@@ -1001,8 +1010,8 @@ const App = () => {
     const saveCompressionConfig = async () => {
         setIsSavingCompression(true); setCompressionMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/settings/image-compression`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/settings/image-compression`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ ...compressionConfig, acknowledge_reversible_processing: compressionAcknowledged }),
             });
             const d = await r.json();
@@ -1015,8 +1024,8 @@ const App = () => {
         setIsBulkCompressing(true); setCompressionProgress(null);
         const processNext = async () => {
             try {
-                const r = await fetch(`${holvekAdminConfig.apiUrl}/images/compress-bulk`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                const r = await fetch(`${quinrelAdminConfig.apiUrl}/images/compress-bulk`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                     body: JSON.stringify({ batch_size: 20 }),
                 });
                 const d = await r.json();
@@ -1031,8 +1040,8 @@ const App = () => {
     const restoreCompressedImage = async (attachmentId) => {
         setCompressionMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/images/${attachmentId}/restore`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/images/${attachmentId}/restore`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({}),
             });
             const d = await r.json();
@@ -1049,7 +1058,7 @@ const App = () => {
     const loadAltAudit = async (page = 1) => {
         setIsLoadingAltAudit(true); setAltAuditMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/images/missing-alt?page=${page}&per_page=20`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } });
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/images/missing-alt?page=${page}&per_page=20`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
             const d = await r.json();
             setAltAuditItems(d.items || []); setAltAuditTotal(d.total || 0); setAltAuditPage(page);
         } catch(e) {}
@@ -1059,8 +1068,8 @@ const App = () => {
     const autoFillAltText = async () => {
         setIsAutoFillingAlt(true); setAltAuditMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/images/auto-fill-alt`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/images/auto-fill-alt`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({}),
             });
             const d = await r.json();
@@ -1074,8 +1083,8 @@ const App = () => {
         const items = Object.entries(altEdits).map(([id, alt]) => ({ id: Number(id), alt }));
         if (!items.length) return;
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/images/bulk-alt`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/images/bulk-alt`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ items }),
             });
             const d = await r.json();
@@ -1094,8 +1103,8 @@ const App = () => {
     const loadRoles = async () => {
         setRolesLoading(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/roles/capabilities`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/roles/capabilities`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
             });
             const d = await r.json();
             setRolesData(d);
@@ -1112,9 +1121,9 @@ const App = () => {
     const saveRoles = async () => {
         setRolesSaving(true); setRolesMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/roles/capabilities`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/roles/capabilities`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(roleEdits),
             });
             const d = await r.json();
@@ -1132,7 +1141,7 @@ const App = () => {
     };
 
     // ── Network SEO (Multisite) ───────────────────────────────────────────────
-    const isMultisite = holvekAdminConfig.isMultisite === '1';
+    const isMultisite = quinrelAdminConfig.isMultisite === '1';
     const [networkSettings, setNetworkSettings]     = useState(null);
     const [networkSites, setNetworkSites]           = useState([]);
     const [networkLoading, setNetworkLoading]       = useState(false);
@@ -1143,8 +1152,8 @@ const App = () => {
         setNetworkLoading(true);
         try {
             const [settingsRes, sitesRes] = await Promise.all([
-                fetch(`${holvekAdminConfig.apiUrl}/network/settings`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } }),
-                fetch(`${holvekAdminConfig.apiUrl}/network/sites`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } }),
+                fetch(`${quinrelAdminConfig.apiUrl}/network/settings`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
+                fetch(`${quinrelAdminConfig.apiUrl}/network/sites`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
             ]);
             const [settings, sites] = await Promise.all([settingsRes.json(), sitesRes.json()]);
             setNetworkSettings(settings);
@@ -1156,9 +1165,9 @@ const App = () => {
     const saveNetworkSettings = async () => {
         setNetworkSaving(true); setNetworkMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/network/settings`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/network/settings`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(networkSettings),
             });
             const d = await r.json();
@@ -1175,7 +1184,7 @@ const App = () => {
 
     const loadAuditResults = async () => {
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/audit/technical`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } });
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/audit/technical`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
             const d = await r.json();
             if (d.checks) setAuditResults(d);
         } catch(e) {}
@@ -1185,13 +1194,13 @@ const App = () => {
         setAuditRunning(true); setAuditResults(null);
         setAuditProgress({ status: 'running', percent: 0, current_check: 'Starting…' });
         try {
-            await fetch(`${holvekAdminConfig.apiUrl}/audit/technical/run`, {
-                method: 'POST', headers: { 'X-WP-Nonce': holvekAdminConfig.nonce },
+            await fetch(`${quinrelAdminConfig.apiUrl}/audit/technical/run`, {
+                method: 'POST', headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
             });
             // Poll progress every 3s until done
             const poll = setInterval(async () => {
                 try {
-                    const r = await fetch(`${holvekAdminConfig.apiUrl}/audit/technical/progress`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } });
+                    const r = await fetch(`${quinrelAdminConfig.apiUrl}/audit/technical/progress`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
                     const d = await r.json();
                     setAuditProgress(d);
                     if (d.status === 'done') {
@@ -1218,8 +1227,8 @@ const App = () => {
     const loadBlcResults = async (page = 1, resolved = false) => {
         setBlcLoading(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/broken-links?per_page=20&page=${page}&resolved=${resolved ? 1 : 0}`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/broken-links?per_page=20&page=${page}&resolved=${resolved ? 1 : 0}`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
             });
             const d = await r.json();
             setBlcResults(d.items || []); setBlcTotal(d.total || 0); setBlcPage(page);
@@ -1229,7 +1238,7 @@ const App = () => {
 
     const loadBlcProgress = async () => {
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/broken-links/progress`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } });
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/broken-links/progress`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
             const d = await r.json();
             setBlcProgress(d);
             return d.status;
@@ -1240,8 +1249,8 @@ const App = () => {
         setBlcScanning(true); setBlcMsg(null);
         setBlcProgress({ status: 'running', scanned: 0, total: 0, found: 0 });
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/broken-links/scan`, {
-                method: 'POST', headers: { 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/broken-links/scan`, {
+                method: 'POST', headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
             });
             const d = await r.json();
             if (d.success) {
@@ -1261,8 +1270,8 @@ const App = () => {
 
     const resolveBlcLink = async (id) => {
         try {
-            await fetch(`${holvekAdminConfig.apiUrl}/broken-links/${id}/resolve`, {
-                method: 'POST', headers: { 'X-WP-Nonce': holvekAdminConfig.nonce },
+            await fetch(`${quinrelAdminConfig.apiUrl}/broken-links/${id}/resolve`, {
+                method: 'POST', headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
             });
             loadBlcResults(blcPage, blcShowResolved);
         } catch(e) {}
@@ -1271,8 +1280,8 @@ const App = () => {
     const recheckBlcLink = async (id, url) => {
         setBlcMsg({ type: 'info', text: `Rechecking ${url}…` });
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/broken-links/recheck`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/broken-links/recheck`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ id, url }),
             });
             const d = await r.json();
@@ -1300,14 +1309,14 @@ const App = () => {
         setRankLoading(true);
         try {
             const [kwRes, histRes] = await Promise.all([
-                fetch(`${holvekAdminConfig.apiUrl}/rank-tracker/keywords`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } }),
-                fetch(`${holvekAdminConfig.apiUrl}/rank-tracker/history?days=${rankDays}`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } }),
+                fetch(`${quinrelAdminConfig.apiUrl}/rank-tracker/keywords`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
+                fetch(`${quinrelAdminConfig.apiUrl}/rank-tracker/history?days=${rankDays}`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
             ]);
             const [kw, hist] = await Promise.all([kwRes.json(), histRes.json()]);
             setRankKeywords(kw.keywords || []);
             setRankHistory(hist.history || {});
             // Load SerpApi key from settings
-            const sRes = await fetch(`${holvekAdminConfig.apiUrl}/settings`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } });
+            const sRes = await fetch(`${quinrelAdminConfig.apiUrl}/settings`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
             const s = await sRes.json();
             setSerpApiKey(s.serpapi_key || '');
         } catch(e) {}
@@ -1317,8 +1326,8 @@ const App = () => {
     const saveRankKeywords = async (keywords) => {
         setRankSaving(true); setRankMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/rank-tracker/keywords`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/rank-tracker/keywords`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ keywords }),
             });
             const d = await r.json();
@@ -1331,13 +1340,13 @@ const App = () => {
     const checkRankNow = async (keyword = null) => {
         setRankChecking(true); setRankMsg(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/rank-tracker/check-now`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/rank-tracker/check-now`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(keyword ? { keyword } : {}),
             });
             const d = await r.json();
             if (!r.ok || d.code) {
-                setRankMsg({ type: 'error', text: d.message || __('This site is not connected to Holvek, so cloud rank tracking is unavailable. You can keep using Holvek on this site.', 'holvek') });
+                setRankMsg({ type: 'error', text: d.message || __('This site is not connected to Quinrel, so cloud rank tracking is unavailable. You can keep using Quinrel on this site.', 'quinrel') });
                 return;
             }
             if (d.queued) {
@@ -1372,8 +1381,8 @@ const App = () => {
         const nextPage = Math.max(1, page);
         setIsLoadingRedirects(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/redirects?page=${nextPage}&per_page=50`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/redirects?page=${nextPage}&per_page=50`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             });
             if (r.ok) {
                 const data = await r.json();
@@ -1393,9 +1402,9 @@ const App = () => {
             return;
         }
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/redirects`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/redirects`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(newRedirect)
             });
             const res = await r.json();
@@ -1415,9 +1424,9 @@ const App = () => {
     const deleteRedirect = async (id) => {
         setRedirectsStatus(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/redirects/delete`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/redirects/delete`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ id })
             });
             const res = await r.json();
@@ -1433,8 +1442,8 @@ const App = () => {
         const nextPage = Math.max(1, page);
         setIsLoading404(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/errors/404?page=${nextPage}&per_page=50`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/errors/404?page=${nextPage}&per_page=50`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             });
             if (r.ok) {
                 const data = await r.json();
@@ -1450,9 +1459,9 @@ const App = () => {
     // Clear specific 404 Log
     const delete404Log = async (id) => {
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/errors/404`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/errors/404`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ id })
             });
             const res = await r.json();
@@ -1465,9 +1474,9 @@ const App = () => {
     // Clear all 404 Logs
     const clearAll404Logs = async () => {
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/errors/404`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/errors/404`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({})
             });
             const res = await r.json();
@@ -1482,7 +1491,7 @@ const App = () => {
     const loadOrphans = (page = 1) => {
         const nextPage = Math.max(1, page);
         setOrphanLoading(true);
-        fetch(`${holvekAdminConfig.apiUrl}/links/orphans?page=${nextPage}&per_page=50`, { headers: { 'X-WP-Nonce': holvekAdminConfig.nonce } })
+        fetch(`${quinrelAdminConfig.apiUrl}/links/orphans?page=${nextPage}&per_page=50`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
             .then(r => r.json())
             .then(d => { if (d.success) setOrphanData(d); })
             .finally(() => setOrphanLoading(false));
@@ -1510,8 +1519,8 @@ const App = () => {
     const fetchLlmsSettings = async () => {
         setIsLoadingLlms(true);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/llms-txt/config`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/llms-txt/config`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             });
             if (r.ok) {
                 const data = await r.json();
@@ -1525,9 +1534,9 @@ const App = () => {
         setIsSavingLlms(true);
         setLlmsStatus(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/llms-txt/config`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/llms-txt/config`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify(llmsData)
             });
             if (r.ok) {
@@ -1555,8 +1564,8 @@ const App = () => {
         setIsLoadingBulkMeta(true);
         try {
             const params = new URLSearchParams(bulkMetaParams).toString();
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/bulk-meta?${params}`, {
-                headers: { 'X-WP-Nonce': holvekAdminConfig.nonce }
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/bulk-meta?${params}`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce }
             });
             if (r.ok) {
                 const data = await r.json();
@@ -1580,9 +1589,9 @@ const App = () => {
         setIsSavingBulkMeta(true);
         setBulkMetaStatus(null);
         try {
-            const r = await fetch(`${holvekAdminConfig.apiUrl}/bulk-meta`, {
+            const r = await fetch(`${quinrelAdminConfig.apiUrl}/bulk-meta`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': holvekAdminConfig.nonce },
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
                 body: JSON.stringify({ updates })
             });
             if (r.ok) {
@@ -1631,39 +1640,95 @@ const App = () => {
         }
     }, [activeTab, techSubTab, bulkMetaParams.page, bulkMetaParams.post_type]);
 
-    const navItems = [
-        { id: 'dashboard', label: __('Dashboard', 'holvek') },
-        { id: 'analytics', label: __('Google Analytics 4', 'holvek') },
-        { id: 'links', label: __('Link Health', 'holvek') },
-        { id: 'settings', label: __('Settings & Integrations', 'holvek') },
-        { id: 'technical', label: __('Technical SEO', 'holvek') },
-        { id: 'sitemaps', label: __('XML Sitemaps', 'holvek') },
-        { id: 'schema', label: __('Schema Markup', 'holvek') },
-        { id: 'social', label: __('Social & Sharing', 'holvek') },
-        { id: 'llms', label: __('LLM Agent Config', 'holvek') },
-        { id: 'bulk_meta', label: __('Bulk Meta Editor', 'holvek') },
-        { id: 'html_sitemap', label: __('HTML Sitemap', 'holvek') },
-        { id: 'image_seo', label: __('Image SEO', 'holvek') },
-        { id: 'compliance', label: __('Cookie & Compliance', 'holvek') },
-        { id: 'roles', label: __('Roles & Capabilities', 'holvek') },
-        { id: 'site_audit', label: __('Site Audit', 'holvek') },
-        { id: 'broken_links', label: __('Broken Links', 'holvek') },
-        { id: 'rank_tracker', label: __('Rank Tracker', 'holvek') },
+    const [activeCompetitor, setActiveCompetitor] = useState(null);
+    const [competitorDismissed, setCompetitorDismissed] = useState(false);
+
+    useEffect(() => {
+        fetch(`${quinrelAdminConfig.apiUrl}/migration/detect`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
+            .then(r => r.json())
+            .then(plugins => {
+                if (Array.isArray(plugins)) {
+                    const activeOne = plugins.find(p => p.active);
+                    if (activeOne) {
+                        setActiveCompetitor(activeOne);
+                    }
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    const deactivateCompetitorFromApp = async () => {
+        if (!activeCompetitor) return;
+        try {
+            const resp = await fetch(`${quinrelAdminConfig.apiUrl}/migration/deactivate-competitor`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': quinrelAdminConfig.nonce },
+                body: JSON.stringify({ plugin_id: activeCompetitor.id }),
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                setActiveCompetitor(null);
+                setSaveStatus({ type: 'success', text: data.message });
+            }
+        } catch (e) {
+            // Non-critical
+        }
+    };
+
+    const navPillars = [
+        {
+            title: __('Overview', 'quinrel'),
+            items: [
+                { id: 'dashboard', label: __('Dashboard', 'quinrel') },
+            ],
+        },
+        {
+            title: __('Visibility', 'quinrel'),
+            items: [
+                { id: 'bulk_meta', label: __('Titles & Meta', 'quinrel') },
+                { id: 'sitemaps', label: __('XML Sitemaps', 'quinrel') },
+                { id: 'html_sitemap', label: __('HTML Sitemap', 'quinrel') },
+                { id: 'schema', label: __('Schema Markup', 'quinrel') },
+                { id: 'social', label: __('Social & Sharing', 'quinrel') },
+                { id: 'image_seo', label: __('Image SEO', 'quinrel') },
+            ],
+        },
+        {
+            title: __('Intelligence', 'quinrel'),
+            items: [
+                { id: 'llms', label: __('AI Discovery (llms.txt)', 'quinrel') },
+                { id: 'rank_tracker', label: __('Rank Tracker', 'quinrel') },
+                { id: 'analytics', label: __('Google Analytics 4', 'quinrel') },
+            ],
+        },
+        {
+            title: __('Site Health', 'quinrel'),
+            items: [
+                { id: 'site_audit', label: __('Site Audit', 'quinrel') },
+                { id: 'technical', label: __('Technical SEO', 'quinrel') },
+                { id: 'links', label: __('Link Health', 'quinrel') },
+                { id: 'broken_links', label: __('Broken Links', 'quinrel') },
+                { id: 'compliance', label: __('Cookie & Compliance', 'quinrel') },
+                { id: 'roles', label: __('Roles & Capabilities', 'quinrel') },
+                { id: 'settings', label: __('Settings & Integrations', 'quinrel') },
+            ],
+        },
     ];
     if (isMultisite) {
-        navItems.push({ id: 'network_seo', label: __('Network SEO', 'holvek') });
+        navPillars[3].items.push({ id: 'network_seo', label: __('Network SEO', 'quinrel') });
     }
+    const navItems = navPillars.flatMap((pillar) => pillar.items);
     const activeNav = navItems.find((item) => item.id === activeTab) || navItems[0];
     const onNavKeyDown = (event) => {
-        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
             return;
         }
         event.preventDefault();
         const index = navItems.findIndex((item) => item.id === activeTab);
         let next = index < 0 ? 0 : index;
-        if (event.key === 'ArrowDown') {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
             next = (index + 1) % navItems.length;
-        } else if (event.key === 'ArrowUp') {
+        } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
             next = (index - 1 + navItems.length) % navItems.length;
         } else if (event.key === 'Home') {
             next = 0;
@@ -1673,56 +1738,91 @@ const App = () => {
         const nextId = navItems[next].id;
         setActiveTab(nextId);
         window.requestAnimationFrame(() => {
-            const button = document.getElementById(`holvek-tab-${nextId}`);
+            const button = document.getElementById(`quinrel-tab-${nextId}`);
             if (button) {
                 button.focus();
             }
         });
     };
 
-    const summary = standalone?.summary || __('Holvek writes titles, meta descriptions, schema, the sitemap, and robots.txt on this site. Redirects and 404 logs stay on this site. A Holvek account is optional.', 'holvek');
+    const summary = standalone?.summary || __('Quinrel runs technical SEO on this site with no account. A connected account adds intelligence, quick fixes, and an action plan from the Quinrel API. A Quinrel account is optional.', 'quinrel');
     const nextMessage = setupFinished
-        ? __('Your titles and sitemap are already active.', 'holvek')
-        : (standalone?.next_step_message || __('Set up Holvek to choose a site type. Titles and the sitemap already work.', 'holvek'));
+        ? __('Technical SEO is already active on this site.', 'quinrel')
+        : (standalone?.next_step_message || __('Set up Quinrel to choose a site type. Technical SEO already works on this site.', 'quinrel'));
+    const cloudConnected = connection
+        ? connection.connected === true
+        : quinrelAdminConfig.cloudConfigured === '1';
 
     return (
         <>
-        <div className="holvek-wrapper mt-5 p-6 bg-white rounded-lg shadow-sm border border-gray-200">
-            <header className="mb-8 border-b pb-4">
-                <h1 className="text-2xl font-bold text-slate-900 m-0">Holvek</h1>
-                <p className="text-slate-500 m-0 mt-1">{__('Technical SEO, structured data, sitemaps, redirects, and indexing tools for WordPress.', 'holvek')}</p>
+        <div className="quinrel-wrapper mt-5 p-4 md:p-6 bg-white rounded-lg shadow-sm border border-gray-200">
+            <header className="mb-6 border-b pb-4">
+                <h1 className="text-2xl font-bold text-slate-900 m-0">Quinrel</h1>
+                <p className="text-slate-500 m-0 mt-1">{__('Visibility & Discovery Intelligence for WordPress, with technical SEO included.', 'quinrel')}</p>
             </header>
 
-            <div className="flex gap-6">
-                <aside className="w-64 flex-shrink-0">
-                    <nav className="flex flex-col gap-1" role="tablist" aria-orientation="vertical" aria-label={__('Holvek settings', 'holvek')}>
-                        {navItems.map((item) => (
-                            <NavItem
-                                key={item.id}
-                                id={item.id}
-                                label={item.label}
-                                active={activeTab === item.id}
-                                onClick={() => setActiveTab(item.id)}
-                                onKeyDown={onNavKeyDown}
-                            />
+            {activeCompetitor && !competitorDismissed && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" role="alert">
+                    <div className="flex items-start gap-3">
+                        <span className="text-xl" aria-hidden="true">⚠️</span>
+                        <div>
+                            <strong className="text-amber-900 font-semibold">{sprintf(__('%s is currently active alongside Quinrel.', 'quinrel'), activeCompetitor.name)}</strong>
+                            <p className="text-xs text-amber-800 m-0 mt-0.5">{__('Running multiple SEO plugins simultaneously can output duplicate title and meta tags. Import your settings and safely deactivate the other plugin.', 'quinrel')}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
+                        <button type="button" onClick={() => setShowSetup(true)} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded shadow-sm">
+                            {__('Import & Switch', 'quinrel')}
+                        </button>
+                        <button type="button" onClick={deactivateCompetitorFromApp} className="px-3 py-1.5 bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-semibold rounded">
+                            {sprintf(__('Deactivate %s', 'quinrel'), activeCompetitor.name)}
+                        </button>
+                        <button type="button" onClick={() => setCompetitorDismissed(true)} aria-label={__('Dismiss', 'quinrel')} className="text-amber-600 hover:text-amber-800 text-sm font-bold ml-1">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className="flex flex-col gap-6 lg:flex-row">
+                <aside className="lg:w-64 lg:flex-shrink-0">
+                    <nav className="flex flex-row gap-4 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0 space-y-0 lg:space-y-4" role="tablist" aria-orientation="vertical" aria-label={__('Quinrel settings', 'quinrel')}>
+                        {navPillars.map((pillar) => (
+                            <div key={pillar.title} className="flex-shrink-0">
+                                <div className="hidden lg:block px-3 py-1 text-[11px] font-bold tracking-wider uppercase text-slate-400">
+                                    {pillar.title}
+                                </div>
+                                <div className="flex flex-row lg:flex-col gap-1 mt-1">
+                                    {pillar.items.map((item) => (
+                                        <NavItem
+                                            key={item.id}
+                                            id={item.id}
+                                            label={item.label}
+                                            active={activeTab === item.id}
+                                            onClick={() => setActiveTab(item.id)}
+                                            onKeyDown={onNavKeyDown}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
                         ))}
                     </nav>
                 </aside>
 
-                <main id="holvek-tabpanel" className="flex-1" role="tabpanel" aria-labelledby={`holvek-tab-${activeNav.id}`}>
-                <p className="holvek-sr" role="status" aria-live="polite">{activeNav.label}</p>
+                <main id="quinrel-tabpanel" className="flex-1" role="tabpanel" aria-labelledby={`quinrel-tab-${activeNav.id}`}>
+                <p className="quinrel-sr" role="status" aria-live="polite">{activeNav.label}</p>
                 {/* ══════════════ GSC DASHBOARD ══════════════ */}
                     {activeTab === 'dashboard' && (
                         <div className="space-y-6">
-                            <section className="space-y-4" aria-labelledby="holvek-site-heading">
+                            <section className="space-y-4" aria-labelledby="quinrel-site-heading">
                                 <div>
-                                    <h2 id="holvek-site-heading" className="text-xl font-semibold m-0 text-slate-800">{__('This site', 'holvek')}</h2>
+                                    <h2 id="quinrel-site-heading" className="text-xl font-semibold m-0 text-slate-800">{__('This site', 'quinrel')}</h2>
                                     <p className="text-sm text-slate-600 mt-2 mb-0">{summary}</p>
                                 </div>
                                 <p className="text-sm text-slate-800 m-0">{nextMessage}</p>
                                 {!setupFinished && (
                                     <button type="button" onClick={() => setShowSetup(true)} className="px-4 py-2 bg-brand-500 text-white rounded font-medium">
-                                        {__('Set up Holvek', 'holvek')}
+                                        {__('Set up Quinrel', 'quinrel')}
                                     </button>
                                 )}
                                 {showSetup && (
@@ -1732,87 +1832,148 @@ const App = () => {
                                         window.location.hash = '';
                                     }} />
                                 )}
-                                {standaloneLoading && <p role="status" className="text-sm text-slate-500 m-0">{__('Loading the local results.', 'holvek')}</p>}
+                                {standaloneLoading && <p role="status" className="text-sm text-slate-500 m-0">{__('Loading the local results.', 'quinrel')}</p>}
                                 {standaloneError && <p role="alert" className="text-sm text-amber-800 m-0">{standaloneError}</p>}
                                 {standalone && (
                                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 m-0">
-                                        <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Indexability', 'holvek')}</dt>
-                                            <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.indexability}</dd>
+                                        <div className="border border-indigo-100 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 rounded-lg p-5 col-span-1 md:col-span-2">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="flex h-2.5 w-2.5 relative">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                                                    </span>
+                                                    <dt className="text-sm font-semibold text-slate-800 m-0">{__('AI Search Engine Crawlers (Live Activity)', 'quinrel')}</dt>
+                                                </div>
+                                                <dd className="text-xs text-slate-500 m-0">
+                                                    {aiBotActivity && aiBotActivity.total > 0 ? `${aiBotActivity.total} ${__('total AI visits', 'quinrel')}` : __('Awaiting first crawler hit', 'quinrel')}
+                                                </dd>
+                                            </div>
+                                            <p className="text-xs text-slate-600 mb-4">
+                                                {__('Real-time tracking of AI models and LLM search agents crawling your site via llms.txt and semantic schema.', 'quinrel')}
+                                            </p>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                <div className="bg-white p-3 rounded border border-slate-200">
+                                                    <div className="text-xs text-slate-500 font-medium">ChatGPT / GPTBot</div>
+                                                    <div className="text-lg font-bold text-slate-800">{aiBotActivity ? aiBotActivity.gptbot : 0}</div>
+                                                </div>
+                                                <div className="bg-white p-3 rounded border border-slate-200">
+                                                    <div className="text-xs text-slate-500 font-medium">Claude / Anthropic</div>
+                                                    <div className="text-lg font-bold text-slate-800">{aiBotActivity ? aiBotActivity.claudebot : 0}</div>
+                                                </div>
+                                                <div className="bg-white p-3 rounded border border-slate-200">
+                                                    <div className="text-xs text-slate-500 font-medium">PerplexityBot</div>
+                                                    <div className="text-lg font-bold text-slate-800">{aiBotActivity ? aiBotActivity.perplexitybot : 0}</div>
+                                                </div>
+                                                <div className="bg-white p-3 rounded border border-slate-200">
+                                                    <div className="text-xs text-slate-500 font-medium">Google & Apple AI</div>
+                                                    <div className="text-lg font-bold text-slate-800">{aiBotActivity ? (aiBotActivity.google_extended + aiBotActivity.applebot) : 0}</div>
+                                                </div>
+                                            </div>
+                                            {aiBotActivity && aiBotActivity.last_seen && (
+                                                <div className="text-xs text-slate-500 mt-3">
+                                                    {`${__('Last AI crawler hit:', 'quinrel')} ${aiBotActivity.last_seen} (${String(aiBotActivity.last_bot).toUpperCase()})`}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Sitemap', 'holvek')}</dt>
+                                            <dt className="text-sm font-medium text-slate-500">{__('Indexability', 'quinrel')}</dt>
+                                            <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.indexability}</dd>
+                                            {standalone.indexable === false && (
+                                                <dd className="mt-3 mb-0">
+                                                    <a href="options-reading.php" className="text-sm font-medium text-indigo-700 underline">{__('Open Reading settings', 'quinrel')}</a>
+                                                </dd>
+                                            )}
+                                        </div>
+                                        <div className="border rounded-lg p-4">
+                                            <dt className="text-sm font-medium text-slate-500">{__('Sitemap', 'quinrel')}</dt>
                                             <dd className="text-sm mt-1 mb-0 break-all">
                                                 <a href={standalone.sitemap_url} className="text-indigo-700 underline">{standalone.sitemap_url}</a>
                                             </dd>
                                         </div>
                                         <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Missing titles', 'holvek')}</dt>
+                                            <dt className="text-sm font-medium text-slate-500">{__('Missing titles', 'quinrel')}</dt>
                                             <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.missing_titles_label}</dd>
+                                            <dd className="mt-3 mb-0">
+                                                <button type="button" onClick={() => setActiveTab('bulk_meta')} className="text-sm font-medium text-indigo-700 underline bg-transparent border-0 p-0 cursor-pointer">{__('Edit titles', 'quinrel')}</button>
+                                            </dd>
                                         </div>
                                         <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Missing alt text', 'holvek')}</dt>
+                                            <dt className="text-sm font-medium text-slate-500">{__('Missing alt text', 'quinrel')}</dt>
                                             <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.missing_alt_label}</dd>
+                                            <dd className="mt-3 mb-0">
+                                                <button type="button" onClick={() => setActiveTab('image_seo')} className="text-sm font-medium text-indigo-700 underline bg-transparent border-0 p-0 cursor-pointer">{__('Review images', 'quinrel')}</button>
+                                            </dd>
                                         </div>
                                         <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Redirects', 'holvek')}</dt>
+                                            <dt className="text-sm font-medium text-slate-500">{__('Redirects', 'quinrel')}</dt>
                                             <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.redirects_label}</dd>
+                                            <dd className="mt-3 mb-0">
+                                                <button type="button" onClick={() => { setTechSubTab('redirects'); setActiveTab('technical'); }} className="text-sm font-medium text-indigo-700 underline bg-transparent border-0 p-0 cursor-pointer">{__('Open redirects', 'quinrel')}</button>
+                                            </dd>
                                         </div>
                                         <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Not found', 'holvek')}</dt>
+                                            <dt className="text-sm font-medium text-slate-500">{__('Not found', 'quinrel')}</dt>
                                             <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.not_found_label}</dd>
+                                            <dd className="mt-3 mb-0">
+                                                <button type="button" onClick={() => { setTechSubTab('404s'); setActiveTab('technical'); }} className="text-sm font-medium text-indigo-700 underline bg-transparent border-0 p-0 cursor-pointer">{__('Open the 404 log', 'quinrel')}</button>
+                                            </dd>
                                         </div>
                                     </dl>
                                 )}
-                                <div className="border rounded-lg p-4 space-y-3">
-                                    <h3 className="text-base font-semibold text-slate-800 m-0">{__('Optional next step', 'holvek')}</h3>
-                                    <p className="text-sm text-slate-600 m-0">{__('Connect Google Search Console, or connect Holvek. Neither one is required.', 'holvek')}</p>
+                            </section>
+                            <section className="border rounded-lg p-4 space-y-3" aria-labelledby="quinrel-cloud-heading">
+                                    <h3 id="quinrel-cloud-heading" className="text-base font-semibold text-slate-800 m-0">{__('Quinrel Cloud', 'quinrel')}</h3>
+                                    <p className="text-sm text-slate-800 m-0">
+                                        {cloudConnected
+                                            ? __('This site is connected to Quinrel.', 'quinrel')
+                                            : __('No Quinrel credential is saved as connected on this site.', 'quinrel')}
+                                    </p>
+                                    <p className="text-sm text-slate-600 m-0">{__('Connecting Quinrel is optional. A connected site can receive intelligence, quick fixes, and an action plan from the Quinrel API. This screen does not invent those results.', 'quinrel')}</p>
+                                    <p className="text-sm text-slate-600 m-0">{__('Technical SEO on this site keeps titles, the sitemap, redirects, and 404 logs without an account.', 'quinrel')}</p>
                                     <div className="flex flex-wrap gap-2">
-                                        <button type="button" onClick={() => { setActiveTab('settings'); setFocusIndexing(true); }} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
-                                            {__('Connect Google Search Console', 'holvek')}
-                                        </button>
-                                        <button type="button" aria-expanded={showHolvekNote} aria-controls="holvek-connect-note" onClick={() => setShowHolvekNote(open => !open)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
-                                            {__('Connect Holvek', 'holvek')}
+                                        <button type="button" aria-expanded={showQuinrelNote} aria-controls="quinrel-connect-note" onClick={() => setShowQuinrelNote(open => !open)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
+                                            {cloudConnected ? __('Manage Quinrel connection', 'quinrel') : __('Connect Quinrel', 'quinrel')}
                                         </button>
                                     </div>
-                                    {showHolvekNote && (
-                                        <div id="holvek-connect-note" className="space-y-3">
-                                            <p className="text-sm text-slate-700 m-0">{__('Connecting Holvek is optional. This site keeps titles, the sitemap, redirects, and 404 logs without an account.', 'holvek')}</p>
-                                            <p id="holvek-connect-host" className="text-sm text-slate-700 m-0">{__('The settings screen cannot change the Holvek API host.', 'holvek')}</p>
-                                            {canConnectHolvek && (
+                                    {showQuinrelNote && (
+                                        <div id="quinrel-connect-note" className="space-y-3">
+                                            <p id="quinrel-connect-host" className="text-sm text-slate-700 m-0">{__('The settings screen cannot change the Quinrel API host.', 'quinrel')}</p>
+                                            {!canConnectQuinrel && (
+                                                <p className="text-sm text-slate-700 m-0">{__('An administrator connects this site. Technical SEO on this site keeps working.', 'quinrel')}</p>
+                                            )}
+                                            {canConnectQuinrel && (
                                                 <div className="space-y-3">
-                                                    {connectionLoading && <p role="status" className="text-sm text-slate-500 m-0">{__('Loading the Holvek connection.', 'holvek')}</p>}
+                                                    {connectionLoading && <p role="status" className="text-sm text-slate-500 m-0">{__('Loading the Quinrel connection.', 'quinrel')}</p>}
                                                     {connectionError && <p role="alert" className="text-sm text-amber-800 m-0">{connectionError}</p>}
                                                     {connectionMessage && <p role="status" className="text-sm text-slate-700 m-0">{connectionMessage}</p>}
                                                     {connection && connection.api_base && (
-                                                        <p className="text-sm text-slate-700 m-0 break-all">{__('Holvek requests use this address:', 'holvek')} {connection.api_base}</p>
+                                                        <p className="text-sm text-slate-700 m-0 break-all">{__('Quinrel requests use this address:', 'quinrel')} {connection.api_base}</p>
                                                     )}
-                                                    {connection && connection.connected && <p className="text-sm text-slate-800 m-0">{__('This site is connected to Holvek.', 'holvek')}</p>}
-                                                    {connection && !connection.connected && <p className="text-sm text-slate-700 m-0">{__('No Holvek credential is saved as connected on this site.', 'holvek')}</p>}
                                                     <div className="space-y-2">
-                                                        <label htmlFor="holvek-site-token" className="block text-sm font-medium text-slate-800">{__('Site token', 'holvek')}</label>
-                                                        <input id="holvek-site-token" type="password" autoComplete="off" spellCheck={false} aria-describedby="holvek-connect-host" value={siteToken} onChange={(event) => setSiteToken(event.target.value)} className="w-full border border-slate-200 rounded px-3 py-2 text-sm" />
+                                                        <label htmlFor="quinrel-site-token" className="block text-sm font-medium text-slate-800">{__('Site token', 'quinrel')}</label>
+                                                        <input id="quinrel-site-token" type="password" autoComplete="off" spellCheck={false} aria-describedby="quinrel-connect-host" value={siteToken} onChange={(event) => setSiteToken(event.target.value)} className="w-full border border-slate-200 rounded px-3 py-2 text-sm" />
                                                         <button type="button" disabled={connectionBusy || siteToken.trim() === ''} onClick={() => postConnection('/connection/site-token', { site_token: siteToken.trim() })} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                            {__('Connect with site token', 'holvek')}
+                                                            {__('Connect with site token', 'quinrel')}
                                                         </button>
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <label htmlFor="holvek-authorization-code" className="block text-sm font-medium text-slate-800">{__('Authorization code', 'holvek')}</label>
-                                                        <input id="holvek-authorization-code" type="password" autoComplete="off" spellCheck={false} aria-describedby="holvek-connect-host" value={authorizationCode} onChange={(event) => setAuthorizationCode(event.target.value)} className="w-full border border-slate-200 rounded px-3 py-2 text-sm" />
+                                                        <label htmlFor="quinrel-authorization-code" className="block text-sm font-medium text-slate-800">{__('Authorization code', 'quinrel')}</label>
+                                                        <input id="quinrel-authorization-code" type="password" autoComplete="off" spellCheck={false} aria-describedby="quinrel-connect-host" value={authorizationCode} onChange={(event) => setAuthorizationCode(event.target.value)} className="w-full border border-slate-200 rounded px-3 py-2 text-sm" />
                                                         <button type="button" disabled={connectionBusy || authorizationCode.trim() === ''} onClick={() => postConnection('/connection/authorization-code', { code: authorizationCode.trim() })} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                            {__('Connect with authorization code', 'holvek')}
+                                                            {__('Connect with authorization code', 'quinrel')}
                                                         </button>
                                                     </div>
                                                     {connection && connection.credential_saved && (
                                                         <div className="flex flex-wrap gap-2">
                                                             <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/verify')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                                {__('Check saved credential', 'holvek')}
+                                                                {__('Check saved credential', 'quinrel')}
                                                             </button>
                                                             <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/rotate')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                                {__('Rotate credential', 'holvek')}
+                                                                {__('Rotate credential', 'quinrel')}
                                                             </button>
                                                             <button type="button" disabled={connectionBusy} onClick={() => postConnection('/connection/revoke')} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 disabled:opacity-50">
-                                                                {__('Disconnect', 'holvek')}
+                                                                {__('Disconnect', 'quinrel')}
                                                             </button>
                                                         </div>
                                                     )}
@@ -1820,26 +1981,30 @@ const App = () => {
                                             )}
                                         </div>
                                     )}
-                                </div>
                             </section>
 
-                            <section className="space-y-4 border rounded-lg p-4" aria-labelledby="holvek-gsc-heading">
-                            <div className="flex items-center justify-between">
+                            <section className="space-y-4 border rounded-lg p-4" aria-labelledby="quinrel-gsc-heading">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                    <h3 id="holvek-gsc-heading" className="text-base font-semibold m-0 text-slate-800">{__('Search Console', 'holvek')}</h3>
-                                    <p className="text-sm text-slate-600 mt-1 mb-0">{__('Search Console is optional. Titles, the sitemap, and robots.txt are already published without it.', 'holvek')}</p>
+                                    <h3 id="quinrel-gsc-heading" className="text-base font-semibold m-0 text-slate-800">{__('Search Console', 'quinrel')}</h3>
+                                    <p className="text-sm text-slate-600 mt-1 mb-0">{__('Search Console is optional. Titles, the sitemap, and robots.txt are already published without it.', 'quinrel')}</p>
                                 </div>
                             </div>
-                            {!gscOpen && (
-                                <button type="button" onClick={() => setGscOpen(true)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
-                                    {__('Show Search Console', 'holvek')}
+                            <div className="flex flex-wrap gap-2">
+                                <button type="button" onClick={() => { setActiveTab('settings'); setFocusIndexing(true); }} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
+                                    {__('Connect Google Search Console', 'quinrel')}
                                 </button>
-                            )}
+                                {!gscOpen && (
+                                    <button type="button" onClick={() => setGscOpen(true)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800">
+                                        {__('Show Search Console', 'quinrel')}
+                                    </button>
+                                )}
+                            </div>
                             {gscOpen && (
                             <>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-semibold m-0 text-slate-800">{__('Google Search Console', 'holvek')}</p>
+                                    <p className="text-sm font-semibold m-0 text-slate-800">{__('Google Search Console', 'quinrel')}</p>
                                     {gscData?.period && <p className="text-sm text-slate-500 mt-1 mb-0">{gscData.period.start} → {gscData.period.end} &nbsp;·&nbsp; {gscData.cached ? '⚡ Cached' : '🔄 Live'}</p>}
                                 </div>
                                 <button type="button" onClick={() => { setGscData(null); setCannData(null); }} className="text-xs text-indigo-600 hover:underline bg-transparent border-none cursor-pointer p-0">↺ Refresh</button>
@@ -1849,7 +2014,7 @@ const App = () => {
                             {gscError && <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">⚠ {gscError}</div>}
 
                             {gscData?.summary && (
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                     <StatCard title="Total Clicks" value={fmtNum(gscData.summary.clicks)} type="success" />
                                     <StatCard title="Impressions" value={fmtNum(gscData.summary.impressions)} />
                                     <StatCard title="Avg. CTR" value={gscData.summary.avg_ctr + '%'} />
@@ -1871,15 +2036,7 @@ const App = () => {
                                     {gscData.trend?.length > 0 && (
                                         <div className="bg-white border rounded-lg p-4">
                                             <h3 className="text-sm font-semibold text-slate-700 mb-3 m-0">28-Day Click Trend</h3>
-                                            <ResponsiveContainer width="100%" height={180}>
-                                                <LineChart data={gscData.trend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                                                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={d => d.slice(5)} />
-                                                    <YAxis tick={{ fontSize: 10 }} />
-                                                    <Tooltip formatter={(v, n) => [fmtNum(v), n === 'clicks' ? 'Clicks' : 'Impressions']} />
-                                                    <Line type="monotone" dataKey="clicks" stroke="#6366f1" strokeWidth={2} dot={false} name="clicks" />
-                                                    <Line type="monotone" dataKey="impressions" stroke="#cbd5e1" strokeWidth={1} dot={false} name="impressions" />
-                                                </LineChart>
-                                            </ResponsiveContainer>
+                                            <GscTrendChart data={gscData.trend} />
                                         </div>
                                     )}
                                     <div className="bg-white border rounded-lg overflow-hidden">
@@ -2000,6 +2157,23 @@ const App = () => {
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-600 mb-1">Service Account JSON {ga4Settings.credentials_set && <span className="text-green-600 font-normal">(✓ saved)</span>}</label>
                                         <textarea rows={4} placeholder={'{ "type": "service_account", "client_email": "...", "private_key": "..." }'} value={ga4Settings.credentials} onChange={e => setGa4Settings(s => ({ ...s, credentials: e.target.value }))} className="w-full border border-slate-200 rounded px-3 py-2 text-sm font-mono" />
+                                        {(() => {
+                                            const emailMatch = ga4Settings.credentials ? ga4Settings.credentials.match(/"client_email"\s*:\s*"([^"]+)"/) : null;
+                                            if (emailMatch && emailMatch[1]) {
+                                                return (
+                                                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-900 flex items-center justify-between gap-2">
+                                                        <div>
+                                                            <strong>{__('Service Account Email:', 'quinrel')}</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 select-all font-mono">{emailMatch[1]}</code>
+                                                            <p className="mt-1 mb-0 text-blue-700">{__('Invite this email as "Viewer" in your GA4 property before connecting.', 'quinrel')}</p>
+                                                        </div>
+                                                        <button type="button" onClick={() => { navigator.clipboard.writeText(emailMatch[1]); setGa4SaveMsg({ type: 'success', text: __('Copied email to clipboard!', 'quinrel') }); }} className="px-2.5 py-1 bg-white border border-blue-300 text-blue-800 rounded text-xs font-medium hover:bg-blue-50 flex-shrink-0">
+                                                            {__('Copy Email', 'quinrel')}
+                                                        </button>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
                                     </div>
                                     {ga4SaveMsg && <div className={`text-sm p-3 rounded ${ga4SaveMsg.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>{ga4SaveMsg.text}</div>}
                                     <button type="button" onClick={saveGa4Settings} disabled={ga4Saving} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 disabled:opacity-50">{ga4Saving ? 'Saving…' : 'Save & Connect'}</button>
@@ -2021,15 +2195,7 @@ const App = () => {
                                     {ga4Report.trend?.length > 0 && (
                                         <div className="bg-white border rounded-lg p-4">
                                             <h3 className="text-sm font-semibold text-slate-700 mb-3 m-0">28-Day Session Trend</h3>
-                                            <ResponsiveContainer width="100%" height={180}>
-                                                <LineChart data={ga4Report.trend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                                                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={d => d.slice(5)} />
-                                                    <YAxis tick={{ fontSize: 10 }} />
-                                                    <Tooltip />
-                                                    <Line type="monotone" dataKey="sessions" stroke="#6366f1" strokeWidth={2} dot={false} name="Sessions" />
-                                                    <Line type="monotone" dataKey="pageviews" stroke="#22c55e" strokeWidth={1} dot={false} name="Pageviews" />
-                                                </LineChart>
-                                            </ResponsiveContainer>
+                                            <Ga4TrendChart data={ga4Report.trend} />
                                         </div>
                                     )}
 
@@ -2049,14 +2215,7 @@ const App = () => {
                                         {ga4Report.channels?.length > 0 && (
                                             <div className="bg-white border rounded-lg p-4">
                                                 <div className="text-sm font-semibold text-slate-700 mb-3">Traffic Channels</div>
-                                                <ResponsiveContainer width="100%" height={200}>
-                                                    <PieChart>
-                                                        <Pie data={ga4Report.channels} dataKey="sessions" nameKey="channel" cx="50%" cy="50%" outerRadius={80} label={({ channel, percent }) => `${channel} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                                                            {ga4Report.channels.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                                                        </Pie>
-                                                        <Tooltip />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
+                                                <Ga4ChannelChart data={ga4Report.channels} />
                                             </div>
                                         )}
                                     </div>
@@ -2197,13 +2356,15 @@ const App = () => {
                             ) : (
                                 <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-6">
                                     {saveStatus && (
-                                        <Notice status={saveStatus.type} isDismissible={true} onRemove={() => setSaveStatus(null)}>
-                                            {saveStatus.message}
-                                        </Notice>
+                                        <div role="status" aria-live="polite">
+                                            <Notice status={saveStatus.type} isDismissible={true} onRemove={() => setSaveStatus(null)}>
+                                                {saveStatus.message}
+                                            </Notice>
+                                        </div>
                                     )}
 
                                     {/* ── SECTION 1: Search Engine APIs ── */}
-                                    <div id="holvek-search-engine-notifications" tabIndex={-1}>
+                                    <div id="quinrel-search-engine-notifications" tabIndex={-1}>
                                         <h3 className="text-lg font-semibold text-slate-800 mb-2">Search Engine Notifications</h3>
                                         <p className="text-sm text-slate-500 mb-4">IndexNow can notify participating search engines of published URLs. Google Indexing API access is restricted to eligible JobPosting and livestream pages and never guarantees indexing.</p>
                                         
@@ -2211,6 +2372,23 @@ const App = () => {
                                             <div>
                                                 <label className="block text-xs font-semibold text-slate-700 mb-1">Google Indexing Service Account JSON</label>
                                                 <TextareaControl value={settings.google_indexing_key} onChange={(val) => setSettings({ ...settings, google_indexing_key: val })} rows={6} placeholder='{"type": "service_account", ...}' />
+                                                {(() => {
+                                                    const emailMatch = settings.google_indexing_key ? settings.google_indexing_key.match(/"client_email"\s*:\s*"([^"]+)"/) : null;
+                                                    if (emailMatch && emailMatch[1]) {
+                                                        return (
+                                                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-900 flex items-center justify-between gap-2">
+                                                                <div>
+                                                                    <strong>{__('Service Account Email:', 'quinrel')}</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 select-all font-mono">{emailMatch[1]}</code>
+                                                                    <p className="mt-1 mb-0 text-blue-700">{__('Invite this email as "Owner" or "Full" in Google Search Console / Indexing API before testing.', 'quinrel')}</p>
+                                                                </div>
+                                                                <button type="button" onClick={() => { navigator.clipboard.writeText(emailMatch[1]); setSaveStatus({ type: 'success', text: __('Copied email to clipboard!', 'quinrel') }); }} className="px-2.5 py-1 bg-white border border-blue-300 text-blue-800 rounded text-xs font-medium hover:bg-blue-50 flex-shrink-0">
+                                                                    {__('Copy Email', 'quinrel')}
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
                                                 {settings.google_indexing_configured && <p className="text-xs text-emerald-700 mt-1 mb-0">A Google credential is saved. Leave this field empty to retain it.</p>}
                                             </div>
                                             <div>
@@ -2286,19 +2464,21 @@ const App = () => {
                                             </select>
                                         </div>
                                         <p className="text-xs text-slate-400">
-                                            You can manually place breadcrumbs anywhere in your template files with: <code>&lt;?php holvek_breadcrumbs(); ?&gt;</code> or shortcode: <code>[holvek_breadcrumbs]</code>.
+                                            You can manually place breadcrumbs anywhere in your template files with: <code>&lt;?php quinrel_breadcrumbs(); ?&gt;</code> or shortcode: <code>[quinrel_breadcrumbs]</code>.
                                         </p>
                                     </div>
 
                                     {/* ── SECTION 4: AI Integration Vault ── */}
                                     <div className="pt-6 border-t border-slate-200">
                                         <h3 className="text-lg font-semibold text-slate-800 mb-2">AI Integration Vault</h3>
-                                        <p className="text-sm text-slate-500 mb-4">{__('The writing assistant uses an OpenAI, Anthropic, or Ollama key saved on this site.', 'holvek')}</p>
+                                        <p className="text-sm text-slate-500 mb-4">{__('The writing assistant uses an OpenAI, Anthropic, or Ollama key saved on this site.', 'quinrel')}</p>
                                         
                                         {aiTestResult && (
-                                            <Notice status={aiTestResult.type} isDismissible={true} onRemove={() => setAiTestResult(null)} className="mb-4">
-                                                {aiTestResult.message}
-                                            </Notice>
+                                            <div role="status" aria-live="polite">
+                                                <Notice status={aiTestResult.type} isDismissible={true} onRemove={() => setAiTestResult(null)} className="mb-4">
+                                                    {aiTestResult.message}
+                                                </Notice>
+                                            </div>
                                         )}
 
                                         <div style={{ marginBottom: '16px' }}>
@@ -2322,7 +2502,7 @@ const App = () => {
                                                     type="password"
                                                     onChange={(val) => { setSettings({ ...settings, openai_key: val }); setFormErrors(e => ({ ...e, openai_key: '' })); }}
                                                     placeholder="sk-..."
-                                                    className={formErrors.openai_key ? 'holvek-field-error' : ''}
+                                                    className={formErrors.openai_key ? 'quinrel-field-error' : ''}
                                                 />
                                                 {formErrors.openai_key && <p role="alert" style={{ color: '#991b1b', fontSize: '12px', margin: '-8px 0 8px' }}>{formErrors.openai_key}</p>}
                                             </div>
@@ -2336,7 +2516,7 @@ const App = () => {
                                                     type="password"
                                                     onChange={(val) => { setSettings({ ...settings, anthropic_key: val }); setFormErrors(e => ({ ...e, anthropic_key: '' })); }}
                                                     placeholder="sk-ant-..."
-                                                    className={formErrors.anthropic_key ? 'holvek-field-error' : ''}
+                                                    className={formErrors.anthropic_key ? 'quinrel-field-error' : ''}
                                                 />
                                                 {formErrors.anthropic_key && <p role="alert" style={{ color: '#991b1b', fontSize: '12px', margin: '-8px 0 8px' }}>{formErrors.anthropic_key}</p>}
                                             </div>
@@ -2349,16 +2529,16 @@ const App = () => {
                                                     value={settings.ollama_url}
                                                     onChange={(val) => { setSettings({ ...settings, ollama_url: val, ollama_remote_confirmed: ollamaHostIsLoopback(val) ? false : settings.ollama_remote_confirmed }); setFormErrors(e => ({ ...e, ollama_url: '' })); }}
                                                     placeholder="http://localhost:11434"
-                                                    aria-describedby="holvek-ollama-help"
-                                                    className={formErrors.ollama_url ? 'holvek-field-error' : ''}
+                                                    aria-describedby="quinrel-ollama-help"
+                                                    className={formErrors.ollama_url ? 'quinrel-field-error' : ''}
                                                 />
-                                                <p id="holvek-ollama-help" style={{ color: '#64748b', fontSize: '12px', margin: '0 0 8px' }}>
+                                                <p id="quinrel-ollama-help" style={{ color: '#64748b', fontSize: '12px', margin: '0 0 8px' }}>
                                                     Ollama stays on this server at http://localhost:11434 unless you choose another host. A remote host receives the post title and content you send for suggestions.
                                                 </p>
                                                 {settings.ollama_url.trim() !== '' && !ollamaHostIsLoopback(settings.ollama_url) && (
-                                                    <label htmlFor="holvek-ollama-remote" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '13px', marginBottom: '8px' }}>
+                                                    <label htmlFor="quinrel-ollama-remote" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '13px', marginBottom: '8px' }}>
                                                         <input
-                                                            id="holvek-ollama-remote"
+                                                            id="quinrel-ollama-remote"
                                                             type="checkbox"
                                                             checked={!!settings.ollama_remote_confirmed}
                                                             onChange={(event) => setSettings({ ...settings, ollama_remote_confirmed: event.target.checked })}
@@ -2406,7 +2586,7 @@ const App = () => {
 
                                     <div className="pt-4 border-t border-slate-200">
                                         <h3 className="text-lg font-semibold text-slate-800 mb-2">Uninstall data</h3>
-                                        <ToggleControl label="Delete Holvek data when the plugin is deleted" help="Disabled by default. Enable only if you want plugin settings, SEO metadata, logs, and plugin tables permanently removed on uninstall." checked={settings.delete_data_on_uninstall} onChange={(val) => setSettings({ ...settings, delete_data_on_uninstall: val })} />
+                                        <ToggleControl label="Delete Quinrel data when the plugin is deleted" help="Disabled by default. Enable only if you want plugin settings, SEO metadata, logs, and plugin tables permanently removed on uninstall." checked={settings.delete_data_on_uninstall} onChange={(val) => setSettings({ ...settings, delete_data_on_uninstall: val })} />
                                     </div>
 
                                     <div className="pt-4 border-t border-slate-200">
@@ -2428,7 +2608,7 @@ const App = () => {
                                     {/* Export */}
                                     <div className="space-y-3">
                                         <h4 className="text-sm font-semibold text-slate-700 m-0">Export</h4>
-                                        <p className="text-xs text-slate-500 m-0">Download all Holvek settings as a JSON file. Save it as a backup or use it to clone settings to another site.</p>
+                                        <p className="text-xs text-slate-500 m-0">Download all Quinrel settings as a JSON file. Save it as a backup or use it to clone settings to another site.</p>
                                         {exportMsg && <div className={`text-xs px-3 py-2 rounded ${exportMsg.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>{exportMsg.text}</div>}
                                         <button type="button" onClick={downloadExport} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700">
                                             ⬇ Download Settings JSON
@@ -2438,7 +2618,7 @@ const App = () => {
                                     {/* Import */}
                                     <div className="space-y-3">
                                         <h4 className="text-sm font-semibold text-slate-700 m-0">Import</h4>
-                                        <p className="text-xs text-slate-500 m-0">Upload a previously exported Holvek settings file to restore or copy configuration. Existing API keys will not be overwritten.</p>
+                                        <p className="text-xs text-slate-500 m-0">Upload a previously exported Quinrel settings file to restore or copy configuration. Existing API keys will not be overwritten.</p>
                                         {importMsg && <div className={`text-xs px-3 py-2 rounded ${importMsg.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>{importMsg.text}</div>}
                                         <label className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded cursor-pointer border-2 border-dashed border-slate-300 hover:border-indigo-400 text-slate-600 hover:text-indigo-600 transition-colors ${importBusy ? 'opacity-50 pointer-events-none' : ''}`}>
                                             <input type="file" accept=".json,application/json" className="hidden" onChange={e => handleImportFile(e.target.files?.[0])} />
@@ -2493,24 +2673,26 @@ const App = () => {
                                 <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                                     <h3 className="text-lg font-medium text-slate-800 mb-2">robots.txt Editor</h3>
                                     <p className="text-sm text-slate-500 mb-4">
-                                        WordPress and other plugins build robots.txt. Holvek adds its sitemap lines, and AI crawler rules when you turn those on.
+                                        WordPress and other plugins build robots.txt. Quinrel adds its sitemap lines, and AI crawler rules when you turn those on.
                                     </p>
 
                                     {robotsStatus && (
-                                        <Notice status={robotsStatus.type} isDismissible={true} onRemove={() => setRobotsStatus(null)} className="mb-4">
-                                            {robotsStatus.message}
-                                        </Notice>
+                                        <div role="status" aria-live="polite">
+                                            <Notice status={robotsStatus.type} isDismissible={true} onRemove={() => setRobotsStatus(null)} className="mb-4">
+                                                {robotsStatus.message}
+                                            </Notice>
+                                        </div>
                                     )}
 
                                     {isLoadingRobots ? (
                                         <div className="p-8 text-center"><Spinner /></div>
                                     ) : (
                                         <>
-                                            <label htmlFor="holvek-robots-txt" className="block text-sm font-medium text-slate-700 mb-2">
+                                            <label htmlFor="quinrel-robots-txt" className="block text-sm font-medium text-slate-700 mb-2">
                                                 Custom robots.txt
                                             </label>
                                             <textarea
-                                                id="holvek-robots-txt"
+                                                id="quinrel-robots-txt"
                                                 value={robotsTxt}
                                                 onChange={(e) => setRobotsTxt(e.target.value)}
                                                 rows={12}
@@ -2520,9 +2702,9 @@ const App = () => {
                                                     background: '#fff', lineHeight: '1.6', resize: 'vertical'
                                                 }}
                                             />
-                                            <label htmlFor="holvek-robots-replace" className="flex items-start gap-2 text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded p-3 mt-4">
+                                            <label htmlFor="quinrel-robots-replace" className="flex items-start gap-2 text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded p-3 mt-4">
                                                 <input
-                                                    id="holvek-robots-replace"
+                                                    id="quinrel-robots-replace"
                                                     type="checkbox"
                                                     className="mt-1"
                                                     checked={robotsReplace && robotsTxt.trim() !== ''}
@@ -2559,9 +2741,11 @@ const App = () => {
                                         </p>
 
                                         {redirectsStatus && (
-                                            <Notice status={redirectsStatus.type} isDismissible={true} onRemove={() => setRedirectsStatus(null)} className="mb-4">
-                                                {redirectsStatus.message}
-                                            </Notice>
+                                            <div role="status" aria-live="polite">
+                                                <Notice status={redirectsStatus.type} isDismissible={true} onRemove={() => setRedirectsStatus(null)} className="mb-4">
+                                                    {redirectsStatus.message}
+                                                </Notice>
+                                            </div>
                                         )}
 
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
@@ -2742,10 +2926,10 @@ const App = () => {
                                                 <>
                                                     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                                                         <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
-                                                            <label htmlFor="holvek-htaccess-editor" className="text-xs font-mono font-semibold text-slate-600">.htaccess</label>
+                                                            <label htmlFor="quinrel-htaccess-editor" className="text-xs font-mono font-semibold text-slate-600">.htaccess</label>
                                                             <span className="text-xs text-slate-400">{htaccessContent.split('\n').length} lines{htaccess.writable ? '' : ' · read only'}</span>
                                                         </div>
-                                                        <textarea id="holvek-htaccess-editor" value={htaccessContent} onChange={e => setHtaccessContent(e.target.value)} disabled={!htaccess.writable || htaccessSaving} rows={20} spellCheck={false}
+                                                        <textarea id="quinrel-htaccess-editor" value={htaccessContent} onChange={e => setHtaccessContent(e.target.value)} disabled={!htaccess.writable || htaccessSaving} rows={20} spellCheck={false}
                                                             className="w-full font-mono text-xs p-4 border-0 outline-none resize-y bg-slate-900 text-green-300 leading-relaxed"
                                                             style={{ minHeight: '320px' }} />
                                                     </div>
@@ -2829,7 +3013,7 @@ const App = () => {
                         <div className="space-y-6 max-w-3xl">
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">HTML Sitemap Builder</h2>
-                                <p className="text-slate-500 text-sm mt-1">Configure and preview your visual HTML sitemap. Use the shortcode <code className="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-700 font-mono text-xs">[holvek_sitemap]</code> to embed it on any page.</p>
+                                <p className="text-slate-500 text-sm mt-1">Configure and preview your visual HTML sitemap. Use the shortcode <code className="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-700 font-mono text-xs">[quinrel_sitemap]</code> to embed it on any page.</p>
                             </div>
 
                             {sitemapLoading && <div className="flex items-center gap-3 p-6 bg-slate-50 rounded-lg"><Spinner /><span className="text-slate-500">Loading sitemap settings…</span></div>}
@@ -2872,8 +3056,8 @@ const App = () => {
                                     {/* Shortcode helper */}
                                     <div className="p-4 bg-slate-50 flex items-center gap-3">
                                         <span className="text-xs text-slate-500">Shortcode:</span>
-                                        <code className="bg-white border border-slate-200 text-indigo-700 font-mono text-xs px-3 py-1.5 rounded select-all">[holvek_sitemap]</code>
-                                        <span className="text-xs text-slate-400">or override per-instance: <code className="font-mono">[holvek_sitemap post_types="post" order="title"]</code></span>
+                                        <code className="bg-white border border-slate-200 text-indigo-700 font-mono text-xs px-3 py-1.5 rounded select-all">[quinrel_sitemap]</code>
+                                        <span className="text-xs text-slate-400">or override per-instance: <code className="font-mono">[quinrel_sitemap post_types="post" order="title"]</code></span>
                                     </div>
 
                                     {/* Preview */}
@@ -2907,21 +3091,23 @@ const App = () => {
                     {activeTab === 'sitemaps' && (
                         <div className="space-y-6 max-w-3xl">
                                     <h2 className="text-xl font-semibold m-0 text-slate-800">XML Sitemaps</h2>
-                            <p className="text-slate-600">Use this only when you intend Holvek to provide your sitemap. It is disabled by default so WordPress Core and existing SEO plugins keep control.</p>
+                            <p className="text-slate-600">Use this only when you intend Quinrel to provide your sitemap. It is disabled by default so WordPress Core and existing SEO plugins keep control.</p>
 
                             {isLoadingSitemaps ? (
                                 <div className="p-8 text-center"><Spinner /></div>
                             ) : (
                                 <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-6">
                                     {sitemapsStatus && (
-                                        <Notice status={sitemapsStatus.type} isDismissible={true} onRemove={() => setSitemapsStatus(null)}>
-                                            {sitemapsStatus.message}
-                                        </Notice>
+                                        <div role="status" aria-live="polite">
+                                            <Notice status={sitemapsStatus.type} isDismissible={true} onRemove={() => setSitemapsStatus(null)}>
+                                                {sitemapsStatus.message}
+                                            </Notice>
+                                        </div>
                                     )}
 
                                     <div className="space-y-4">
                                         <ToggleControl
-                                            label="Use Holvek as the sitemap provider"
+                                            label="Use Quinrel as the sitemap provider"
                                             help="Disables WordPress Core sitemaps while active. Do not enable when another SEO plugin owns your sitemap."
                                             checked={sitemapsData.enable_index_sitemap}
                                             onChange={(val) => setSitemapsData({ ...sitemapsData, enable_index_sitemap: val })}
@@ -3109,9 +3295,11 @@ const App = () => {
                             ) : (
                                 <div className="space-y-6">
                                     {schemaRulesStatus && (
-                                        <Notice status={schemaRulesStatus.type} isDismissible={true} onRemove={() => setSchemaRulesStatus(null)}>
-                                            {schemaRulesStatus.message}
-                                        </Notice>
+                                        <div role="status" aria-live="polite">
+                                            <Notice status={schemaRulesStatus.type} isDismissible={true} onRemove={() => setSchemaRulesStatus(null)}>
+                                                {schemaRulesStatus.message}
+                                            </Notice>
+                                        </div>
                                     )}
 
                                     {/* Active Display Rules */}
@@ -3337,9 +3525,13 @@ const App = () => {
                     {activeTab === 'llms' && (
                         <div className="space-y-6">
                             <h2 className="text-xl font-semibold m-0 text-slate-800">LLM Agent Config (llms.txt)</h2>
-                            <p className="text-slate-600 mb-6">{__('Holvek publishes an llms.txt file on this site. It does not submit the site to ChatGPT, Perplexity, or Claude, and it does not check whether they mention it.', 'holvek')}</p>
+                            <p className="text-slate-600 mb-6">{__('Quinrel publishes an llms.txt file on this site. It does not submit the site to ChatGPT, Perplexity, or Claude, and it does not check whether they mention it.', 'quinrel')}</p>
                             
-                            {llmsStatus && <Notice status={llmsStatus.type} onRemove={() => setLlmsStatus(null)}>{llmsStatus.message}</Notice>}
+                            {llmsStatus && (
+                                <div role="status" aria-live="polite">
+                                    <Notice status={llmsStatus.type} onRemove={() => setLlmsStatus(null)}>{llmsStatus.message}</Notice>
+                                </div>
+                            )}
 
                             <div className="bg-white p-6 border rounded shadow-sm space-y-4">
                                 <div>
@@ -3423,7 +3615,11 @@ const App = () => {
                                 </Button>
                             </div>
 
-                            {bulkMetaStatus && <Notice status={bulkMetaStatus.type} onRemove={() => setBulkMetaStatus(null)}>{bulkMetaStatus.message}</Notice>}
+                            {bulkMetaStatus && (
+                                <div role="status" aria-live="polite">
+                                    <Notice status={bulkMetaStatus.type} onRemove={() => setBulkMetaStatus(null)}>{bulkMetaStatus.message}</Notice>
+                                </div>
+                            )}
 
                             <div className="flex gap-4 items-end bg-white p-4 border rounded shadow-sm">
                                 <div>
@@ -3582,7 +3778,7 @@ const App = () => {
                                 {compressionConfig.enabled && (
                                     <label className="flex items-start gap-2 text-sm text-slate-700 bg-amber-50 border border-amber-200 rounded p-3">
                                         <input type="checkbox" checked={compressionAcknowledged} onChange={e => setCompressionAcknowledged(e.target.checked)} className="mt-1" />
-                                        <span>I understand that compression changes the displayed media file, and that Holvek will retain an original backup so I can restore it.</span>
+                                        <span>I understand that compression changes the displayed media file, and that Quinrel will retain an original backup so I can restore it.</span>
                                     </label>
                                 )}
                                 <div className="flex items-center gap-4">
@@ -3722,7 +3918,7 @@ const App = () => {
                                 <div className="mt-8 bg-slate-50 border border-slate-200 rounded-lg p-6">
                                     <h3 className="text-lg font-semibold text-slate-800 m-0">Third-Party Service Disclosures</h3>
                                     <p className="text-slate-600 text-sm mt-2 mb-4">
-                                        Holvek integrates with external APIs to provide advanced features. You should update your Privacy Policy if you use these features.
+                                        Quinrel integrates with external APIs to provide advanced features. You should update your Privacy Policy if you use these features.
                                     </p>
                                     <ul className="list-disc pl-5 text-sm text-slate-600 space-y-2">
                                         <li><strong>OpenAI / Anthropic:</strong> Receives post excerpts when using the LLM Writing Assistant.</li>
@@ -3731,7 +3927,7 @@ const App = () => {
                                         <li><strong>SerpApi:</strong> Receives your focus keywords for rank tracking.</li>
                                     </ul>
                                     <p className="text-xs text-slate-500 mt-4">
-                                        <em>A complete template has been automatically added to your <a href={holvekAdminConfig.apiUrl.replace('wp-json/holvek/v1', 'wp-admin/privacy.php')} className="text-indigo-600 underline">WordPress Privacy Policy Guide</a>.</em>
+                                        <em>A complete template has been automatically added to your <a href={quinrelAdminConfig.apiUrl.replace('wp-json/quinrel/v1', 'wp-admin/privacy.php')} className="text-indigo-600 underline">WordPress Privacy Policy Guide</a>.</em>
                                     </p>
                                 </div>
                                 </>
@@ -3743,7 +3939,7 @@ const App = () => {
                         <div className="space-y-6 max-w-4xl">
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">Roles & Capabilities</h2>
-                                <p className="text-slate-500 text-sm mt-1">Control which WordPress roles can access Holvek features. Administrators always retain full access.</p>
+                                <p className="text-slate-500 text-sm mt-1">Control which WordPress roles can access Quinrel features. Administrators always retain full access.</p>
                             </div>
 
                             {rolesLoading && <div className="flex items-center gap-3 p-6 bg-slate-50 rounded-lg"><Spinner /><span className="text-slate-500">Loading roles…</span></div>}
@@ -3791,7 +3987,7 @@ const App = () => {
 
                                     {/* Capability descriptions */}
                                     <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-3 text-xs text-slate-500">
-                                        <div>🛡 <strong className="text-slate-700">manage_seo</strong> — Full access to all Holvek settings, integrations, and configuration</div>
+                                        <div>🛡 <strong className="text-slate-700">manage_seo</strong> — Full access to all Quinrel settings, integrations, and configuration</div>
                                         <div>📊 <strong className="text-slate-700">view_seo_reports</strong> — Read-only access to GSC dashboard, GA4 analytics, link health reports</div>
                                         <div>↩️ <strong className="text-slate-700">manage_redirects</strong> — Create, edit, and delete redirect rules; import/export CSV</div>
                                         <div>✏️ <strong className="text-slate-700">edit_seo_meta</strong> — Edit per-post SEO meta title, description, canonical, OG fields</div>
@@ -3851,7 +4047,7 @@ const App = () => {
                                             <div className="space-y-3 pt-2 border-t border-slate-200">
                                                 {[
                                                     ['force_ssl', 'Force HTTPS across all sites', 'Adds HSTS headers and redirects HTTP to HTTPS network-wide'],
-                                                    ['block_ai_bots', 'Block AI bots network-wide', 'Applies the Holvek AI bot firewall to every site in the network'],
+                                                    ['block_ai_bots', 'Block AI bots network-wide', 'Applies the Quinrel AI bot firewall to every site in the network'],
                                                     ['allow_site_overrides', 'Allow site admins to override network defaults', 'When enabled, individual site admins can customize their own SEO settings'],
                                                 ].map(([key, label, help]) => (
                                                     <label key={key} className="flex items-start gap-3 cursor-pointer">
@@ -3904,7 +4100,7 @@ const App = () => {
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h2 className="text-xl font-semibold m-0 text-slate-800">Technical SEO Audit</h2>
-                                    <p className="text-slate-500 text-sm mt-1">{__('This audit runs on this site. It checks meta descriptions, image alt text, 404s, redirect chains, orphaned pages, noindex directives, the sitemap, robots.txt, the site icon, SSL, schema, duplicate titles, cornerstone staleness, and canonicals. It does not score AI mentions, Google presence, or competitors.', 'holvek')}</p>
+                                    <p className="text-slate-500 text-sm mt-1">{__('This audit runs on this site. It checks meta descriptions, image alt text, 404s, redirect chains, orphaned pages, noindex directives, the sitemap, robots.txt, the site icon, SSL, schema, duplicate titles, cornerstone staleness, and canonicals. It does not score AI mentions, Google presence, or competitors.', 'quinrel')}</p>
                                 </div>
                                 <button type="button" onClick={runSiteAudit} disabled={auditRunning} className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap">
                                     {auditRunning ? '⏳ Running…' : '▶ Run Audit'}
@@ -4077,9 +4273,9 @@ const App = () => {
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">Keyword Rank Tracker</h2>
                                 <p className="text-slate-500 text-sm mt-1">Track your Google ranking positions over time. Checks run daily via SerpApi.</p>
-                                {holvekAdminConfig.cloudConfigured !== '1' && (
+                                {quinrelAdminConfig.cloudConfigured !== '1' && (
                                     <p className="text-sm mt-3 mb-0 p-3 bg-slate-50 border border-slate-200 rounded text-slate-700">
-                                        {__('This site is not connected to Holvek, so cloud rank tracking is unavailable. You can keep using Holvek on this site.', 'holvek')}
+                                        {__('This site is not connected to Quinrel, so cloud rank tracking is unavailable. You can keep using Quinrel on this site.', 'quinrel')}
                                     </p>
                                 )}
                             </div>
@@ -4298,13 +4494,13 @@ const NavItem = ({ id, label, active, onClick, onKeyDown }) => (
     <button
         type="button"
         role="tab"
-        id={`holvek-tab-${id}`}
+        id={`quinrel-tab-${id}`}
         aria-selected={active}
-        aria-controls="holvek-tabpanel"
+        aria-controls="quinrel-tabpanel"
         tabIndex={active ? 0 : -1}
         onClick={onClick}
         onKeyDown={onKeyDown}
-        className={`holvek-tab text-left px-4 py-2 rounded font-medium transition-colors ${active ? 'bg-slate-100 text-brand-600' : 'text-slate-600 hover:bg-slate-50'}`}
+        className={`quinrel-tab whitespace-nowrap flex-shrink-0 lg:whitespace-normal text-left px-4 py-2 rounded font-medium transition-colors ${active ? 'bg-slate-100 text-brand-600' : 'text-slate-600 hover:bg-slate-50'}`}
     >
         {label}
     </button>

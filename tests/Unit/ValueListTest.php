@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Support\ValueList;
+use Quinrel\WordPress\Core\Support\ValueList;
 use PHPUnit\Framework\TestCase;
 
 class ValueListTest extends TestCase {
@@ -19,7 +19,7 @@ class ValueListTest extends TestCase {
 	}
 
 	public function testAMapIsNotAList(): void {
-		$map = array( 'name' => 'Holvek' );
+		$map = array( 'name' => 'Quinrel' );
 		$this->assertFalse( ValueList::isList( $map ) );
 		$this->assertSame( array_is_list( $map ), ValueList::isList( $map ) );
 	}

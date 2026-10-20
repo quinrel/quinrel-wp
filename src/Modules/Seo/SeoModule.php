@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Seo;
+namespace Quinrel\WordPress\Modules\Seo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Event\EventManager;
 
 class SeoModule {
 
@@ -25,6 +25,11 @@ class SeoModule {
 	}
 
 	public function boot(): void {
+		// Prevent duplicate canonical and robots tags from WordPress Core
+		$this->eventManager->removeAction( 'wp_head', 'rel_canonical', 10 );
+		$this->eventManager->removeAction( 'wp_head', 'wp_robots', 1 );
+		$this->eventManager->addFilter( 'wp_robots', array( $this->metaGenerator, 'filterWpRobots' ), 20, 1 );
+
 		// Hook into WordPress standard header output
 		$this->eventManager->addAction( 'wp_head', array( $this->metaGenerator, 'outputStandardMetaTags' ), 1 );
 		$this->eventManager->addAction( 'wp_head', array( $this->openGraphGenerator, 'outputSocialMetaTags' ), 2 );

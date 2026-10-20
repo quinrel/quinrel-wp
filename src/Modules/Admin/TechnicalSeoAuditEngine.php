@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Queue\QueueManager;
+use Quinrel\WordPress\Core\Queue\QueueManager;
 
 /**
  * TechnicalSeoAuditEngine
@@ -22,9 +22,9 @@ class TechnicalSeoAuditEngine {
 
 	public const CHECK_BATCH = 2;
 
-	private const RESULTS_OPTION  = 'holvek_audit_results';
-	private const PROGRESS_OPTION = 'holvek_audit_progress';
-	private const CRON_HOOK       = 'holvek_run_technical_audit';
+	private const RESULTS_OPTION  = 'quinrel_audit_results';
+	private const PROGRESS_OPTION = 'quinrel_audit_progress';
+	private const CRON_HOOK       = 'quinrel_run_technical_audit';
 
 	public function register(): void {
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
@@ -37,17 +37,17 @@ class TechnicalSeoAuditEngine {
 		$adminCap = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/audit/technical',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => fn() => rest_ensure_response( get_option( self::RESULTS_OPTION, null ) ?: array( 'message' => __( 'No audit has been run yet.', 'holvek' ) ) ),
+				'callback'            => fn() => rest_ensure_response( get_option( self::RESULTS_OPTION, null ) ?: array( 'message' => __( 'No audit has been run yet.', 'quinrel' ) ) ),
 				'permission_callback' => $adminCap,
 			)
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/audit/technical/run',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -57,7 +57,7 @@ class TechnicalSeoAuditEngine {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/audit/technical/progress',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -77,14 +77,14 @@ class TechnicalSeoAuditEngine {
 	}
 
 	public function scheduleRun( \WP_REST_Request $request ): \WP_REST_Response {
-		$this->setProgress( 'running', 0, __( 'Starting…', 'holvek' ), 0, array() );
+		$this->setProgress( 'running', 0, __( 'Starting…', 'quinrel' ), 0, array() );
 		$this->enqueueRun();
 
 		return rest_ensure_response(
 			array(
 				'success' => true,
 				'queued'  => true,
-				'message' => __( 'Audit scheduled.', 'holvek' ),
+				'message' => __( 'Audit scheduled.', 'quinrel' ),
 			)
 		);
 	}
@@ -119,7 +119,7 @@ class TechnicalSeoAuditEngine {
 
 		if ( $index >= $total ) {
 			$this->storeResults( $collected );
-			$this->setProgress( 'done', 100, __( 'Audit complete.', 'holvek' ), $total, array() );
+			$this->setProgress( 'done', 100, __( 'Audit complete.', 'quinrel' ), $total, array() );
 			return;
 		}
 
@@ -147,7 +147,7 @@ class TechnicalSeoAuditEngine {
 
 		if ( $end >= $total ) {
 			$this->storeResults( $collected );
-			$this->setProgress( 'done', 100, __( 'Audit complete.', 'holvek' ), $total, array() );
+			$this->setProgress( 'done', 100, __( 'Audit complete.', 'quinrel' ), $total, array() );
 			return;
 		}
 
@@ -156,24 +156,55 @@ class TechnicalSeoAuditEngine {
 	}
 
 	/**
+	 * Run all checks synchronously (for CLI or on-demand full audits).
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function runAllChecks(): array {
+		$definitions = $this->checkDefinitions();
+		$collected   = array();
+
+		foreach ( array_keys( $definitions ) as $checkId ) {
+			try {
+				$method = lcfirst( str_replace( '_', '', ucwords( $checkId, '_' ) ) );
+				$items  = method_exists( $this, $method ) ? $this->{$method}() : array();
+			} catch ( \Throwable $e ) {
+				$items = array( array( 'error' => $e->getMessage() ) );
+			}
+
+			$status                = $this->deriveStatus( $checkId, $items );
+			$collected[ $checkId ] = array(
+				'id'      => $checkId,
+				'name'    => ucwords( str_replace( '_', ' ', $checkId ) ),
+				'status'  => $status,
+				'message' => $this->buildMessage( $checkId, $items, $status ),
+				'items'   => array_slice( (array) $items, 0, 20 ),
+			);
+		}
+
+		$this->storeResults( array_values( $collected ) );
+		return $collected;
+	}
+
+	/**
 	 * @return array<string, string>
 	 */
 	private function checkDefinitions(): array {
 		return array(
-			'missing_meta_descriptions' => __( 'Checking meta descriptions…', 'holvek' ),
-			'missing_alt_text'          => __( 'Checking image alt text…', 'holvek' ),
-			'check_404_errors'          => __( 'Checking 404 errors…', 'holvek' ),
-			'redirect_chains'           => __( 'Checking redirect chains…', 'holvek' ),
-			'orphaned_pages'            => __( 'Checking orphaned pages…', 'holvek' ),
-			'noindex_important_pages'   => __( 'Checking noindex directives…', 'holvek' ),
-			'sitemap_health'            => __( 'Checking sitemap…', 'holvek' ),
-			'robots_txt'                => __( 'Checking robots.txt…', 'holvek' ),
-			'favicon'                   => __( 'Checking favicon…', 'holvek' ),
-			'ssl_certificate'           => __( 'Checking SSL…', 'holvek' ),
-			'schema_presence'           => __( 'Checking schema markup…', 'holvek' ),
-			'duplicate_titles'          => __( 'Checking for duplicate titles…', 'holvek' ),
-			'stale_cornerstone'         => __( 'Checking cornerstone content…', 'holvek' ),
-			'missing_canonicals'        => __( 'Checking canonical tags…', 'holvek' ),
+			'missing_meta_descriptions' => __( 'Checking meta descriptions…', 'quinrel' ),
+			'missing_alt_text'          => __( 'Checking image alt text…', 'quinrel' ),
+			'check_404_errors'          => __( 'Checking 404 errors…', 'quinrel' ),
+			'redirect_chains'           => __( 'Checking redirect chains…', 'quinrel' ),
+			'orphaned_pages'            => __( 'Checking orphaned pages…', 'quinrel' ),
+			'noindex_important_pages'   => __( 'Checking noindex directives…', 'quinrel' ),
+			'sitemap_health'            => __( 'Checking sitemap…', 'quinrel' ),
+			'robots_txt'                => __( 'Checking robots.txt…', 'quinrel' ),
+			'favicon'                   => __( 'Checking favicon…', 'quinrel' ),
+			'ssl_certificate'           => __( 'Checking SSL…', 'quinrel' ),
+			'schema_presence'           => __( 'Checking schema markup…', 'quinrel' ),
+			'duplicate_titles'          => __( 'Checking for duplicate titles…', 'quinrel' ),
+			'stale_cornerstone'         => __( 'Checking cornerstone content…', 'quinrel' ),
+			'missing_canonicals'        => __( 'Checking canonical tags…', 'quinrel' ),
 		);
 	}
 
@@ -211,11 +242,11 @@ class TechnicalSeoAuditEngine {
 				'meta_query'     => array(
 					'relation' => 'OR',
 					array(
-						'key'     => '_holvek_meta_description',
+						'key'     => '_quinrel_meta_description',
 						'compare' => 'NOT EXISTS',
 					),
 					array(
-						'key'     => '_holvek_meta_description',
+						'key'     => '_quinrel_meta_description',
 						'value'   => '',
 						'compare' => '=',
 					),
@@ -266,12 +297,12 @@ class TechnicalSeoAuditEngine {
 
 	private function check404Errors(): array {
 		global $wpdb;
-		$table  = $wpdb->prefix . 'holvek_404_logs';
+		$table  = $wpdb->prefix . 'quinrel_404_logs';
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 		if ( ! $exists ) {
 			return array();
 		}
-		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_404_logs" );
+		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_404_logs" );
 		return $count > 0 ? array(
 			array(
 				'count'   => $count,
@@ -282,7 +313,7 @@ class TechnicalSeoAuditEngine {
 
 	private function redirectChains(): array {
 		global $wpdb;
-		$table  = $wpdb->prefix . 'holvek_redirects';
+		$table  = $wpdb->prefix . 'quinrel_redirects';
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 		if ( ! $exists ) {
 			return array();
@@ -291,8 +322,8 @@ class TechnicalSeoAuditEngine {
 		// Find rows where target is itself a source (chains of 2+)
 		$chains = $wpdb->get_results(
 			"SELECT a.source, a.target, b.target AS next_target
-             FROM {$wpdb->prefix}holvek_redirects a
-             INNER JOIN {$wpdb->prefix}holvek_redirects b ON a.target = b.source
+             FROM {$wpdb->prefix}quinrel_redirects a
+             INNER JOIN {$wpdb->prefix}quinrel_redirects b ON a.target = b.source
              WHERE a.is_regex = 0 AND b.is_regex = 0
              LIMIT 20"
 		);
@@ -308,7 +339,7 @@ class TechnicalSeoAuditEngine {
 				'posts_per_page' => 10,
 				'meta_query'     => array(
 					array(
-						'key'     => '_holvek_inbound_links',
+						'key'     => '_quinrel_inbound_links',
 						'value'   => '0',
 						'compare' => '=',
 						'type'    => 'NUMERIC',
@@ -324,7 +355,7 @@ class TechnicalSeoAuditEngine {
 				'posts_per_page' => 1,
 				'meta_query'     => array(
 					array(
-						'key'     => '_holvek_inbound_links',
+						'key'     => '_quinrel_inbound_links',
 						'value'   => '0',
 						'compare' => '=',
 						'type'    => 'NUMERIC',
@@ -351,7 +382,7 @@ class TechnicalSeoAuditEngine {
 		$frontPageId = (int) get_option( 'page_on_front' );
 
 		if ( $frontPageId > 0 ) {
-			$noindex = get_post_meta( $frontPageId, '_holvek_noindex', true );
+			$noindex = get_post_meta( $frontPageId, '_quinrel_noindex', true );
 			if ( $noindex === 'yes' ) {
 				$issues[] = array(
 					'post_id' => $frontPageId,
@@ -365,15 +396,22 @@ class TechnicalSeoAuditEngine {
 	}
 
 	private function sitemapHealth(): array {
-		$sitemapUrl = home_url( '/sitemap.xml' );
-		$response   = wp_safe_remote_get( $sitemapUrl, array( 'timeout' => 10 ) );
+		$indexEnabled = \Quinrel\WordPress\Modules\Sitemap\SitemapSettings::get( 'enable_index_sitemap', 'no' ) === 'yes';
+		$sitemapUrl   = $indexEnabled ? home_url( '/sitemap.xml' ) : home_url( '/wp-sitemap.xml' );
+		$response     = wp_safe_remote_get( $sitemapUrl, array( 'timeout' => 10 ) );
 
 		if ( is_wp_error( $response ) ) {
-			return array( array( 'issue' => 'Sitemap unreachable: ' . $response->get_error_message() ) );
+			/* translators: %s: error message returned when fetching the sitemap URL. */
+			return array( array( 'issue' => sprintf( __( 'Sitemap unreachable: %s', 'quinrel' ), $response->get_error_message() ) ) );
 		}
 
 		$code = wp_remote_retrieve_response_code( $response );
-		return ( $code === 200 ) ? array() : array( array( 'issue' => "Sitemap returned HTTP $code." ) );
+		return ( 200 === $code ) ? array() : array(
+			array(
+				/* translators: %d: HTTP status code returned by the sitemap endpoint. */
+				'issue' => sprintf( __( 'Sitemap returned HTTP %d.', 'quinrel' ), (int) $code ),
+			),
+		);
 	}
 
 	private function robotsTxt(): array {
@@ -414,7 +452,7 @@ class TechnicalSeoAuditEngine {
 				'order'          => 'DESC',
 				'meta_query'     => array(
 					array(
-						'key'     => '_holvek_schema_type',
+						'key'     => '_quinrel_primary_schema',
 						'compare' => 'NOT EXISTS',
 					),
 				),
@@ -425,7 +463,8 @@ class TechnicalSeoAuditEngine {
 			? array(
 				array(
 					'count'   => $query->found_posts,
-					'message' => $query->found_posts . ' recent posts have no schema type set.',
+					/* translators: %d: number of recent posts without an explicit primary schema override. */
+					'message' => sprintf( __( '%d recent posts have no schema type set.', 'quinrel' ), (int) $query->found_posts ),
 				),
 			)
 			: array();
@@ -437,7 +476,7 @@ class TechnicalSeoAuditEngine {
 		$dupes = $wpdb->get_results(
 			"SELECT meta_value AS title, COUNT(*) AS count
              FROM $wpdb->postmeta
-             WHERE meta_key = '_holvek_meta_title'
+             WHERE meta_key = '_quinrel_meta_title'
                AND meta_value != ''
              GROUP BY meta_value
              HAVING count > 1
@@ -448,7 +487,7 @@ class TechnicalSeoAuditEngine {
 	}
 
 	private function staleCornerstone(): array {
-		$stale = (array) get_option( 'holvek_stale_cornerstone_ids', array() );
+		$stale = (array) get_option( 'quinrel_stale_cornerstone_ids', array() );
 		return empty( $stale ) ? array() : array(
 			array(
 				'count'   => count( $stale ),

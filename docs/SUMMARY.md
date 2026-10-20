@@ -1,7 +1,7 @@
 # Table of contents
 
 * [Introduction](README.md)
-* [About Holvek](about.md)
+* [About Quinrel](about.md)
 * [Features](features.md)
 * [Product Roadmap](roadmap.md)
 

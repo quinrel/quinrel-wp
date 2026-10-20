@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\Ai\UsageMeteringManager;
+use Quinrel\WordPress\Modules\Ai\UsageMeteringManager;
 use PHPUnit\Framework\TestCase;
 
 class AiUsageScopeTest extends TestCase {
@@ -36,11 +36,11 @@ class AiUsageScopeTest extends TestCase {
 		$this->actAsSubscriber();
 		$this->usage->registerRoutes();
 
-		$route = $GLOBALS['mock_rest_routes']['holvek/v1/ai/usage'];
+		$route = $GLOBALS['mock_rest_routes']['quinrel/v1/ai/usage'];
 		$this->assertTrue( ( $route['permission_callback'] )() );
 
 		$this->seedUsageRows();
-		$request = new \WP_REST_Request( 'GET', '/holvek/v1/ai/usage' );
+		$request = new \WP_REST_Request( 'GET', '/quinrel/v1/ai/usage' );
 		$request->set_param( 'user_id', 1 );
 		$request->set_param( 'period', 'month' );
 
@@ -66,15 +66,15 @@ class AiUsageScopeTest extends TestCase {
 		$this->usage->registerRoutes();
 		$this->seedUsageRows();
 
-		$site   = $GLOBALS['mock_rest_routes']['holvek/v1/ai/usage/site'];
-		$limits = $GLOBALS['mock_rest_routes']['holvek/v1/ai/usage/limits'];
+		$site   = $GLOBALS['mock_rest_routes']['quinrel/v1/ai/usage/site'];
+		$limits = $GLOBALS['mock_rest_routes']['quinrel/v1/ai/usage/limits'];
 
 		$this->assertFalse( ( $site['permission_callback'] )() );
 		$this->assertFalse( ( $limits[0]['permission_callback'] )() );
 		$this->assertFalse( ( $limits[1]['permission_callback'] )() );
 
 		$before = $GLOBALS['wpdb']->queries;
-		$result = $this->usage->getSiteUsageEndpoint( new \WP_REST_Request( 'GET', '/holvek/v1/ai/usage/site' ) );
+		$result = $this->usage->getSiteUsageEndpoint( new \WP_REST_Request( 'GET', '/quinrel/v1/ai/usage/site' ) );
 
 		$this->assertInstanceOf( \WP_Error::class, $result );
 		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
@@ -85,7 +85,7 @@ class AiUsageScopeTest extends TestCase {
 	public function testSeoManagerAndAdministratorCanReadSiteUsage(): void {
 		$this->usage->registerRoutes();
 		$this->seedUsageRows();
-		$site = $GLOBALS['mock_rest_routes']['holvek/v1/ai/usage/site']['permission_callback'];
+		$site = $GLOBALS['mock_rest_routes']['quinrel/v1/ai/usage/site']['permission_callback'];
 
 		$this->actAs( 7, array( 'manage_seo' => true, 'manage_options' => false ) );
 		$this->assertTrue( $site() );
@@ -100,7 +100,7 @@ class AiUsageScopeTest extends TestCase {
 
 	public function testLoggedOutUserCannotReadUsage(): void {
 		$this->usage->registerRoutes();
-		$route = $GLOBALS['mock_rest_routes']['holvek/v1/ai/usage']['permission_callback'];
+		$route = $GLOBALS['mock_rest_routes']['quinrel/v1/ai/usage']['permission_callback'];
 		$this->assertFalse( $route() );
 
 		$result = $this->usage->getMyUsage( new \WP_REST_Request() );

@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ImageSeo;
+namespace Quinrel\WordPress\Modules\ImageSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Modules\Schema\JsonLd;
+use Quinrel\WordPress\Modules\Schema\JsonLd;
 
 /**
  * ImageObjectSchema
@@ -19,8 +19,8 @@ use Holvek\WordPress\Modules\Schema\JsonLd;
  */
 class ImageObjectSchema {
 
-	private const ENABLED_OPTION = 'holvek_image_schema_enabled';
-	private const LICENSE_OPTION = 'holvek_image_license_url';
+	private const ENABLED_OPTION = 'quinrel_image_schema_enabled';
+	private const LICENSE_OPTION = 'quinrel_image_license_url';
 
 	public function register(): void {
 		add_action( 'wp_footer', array( $this, 'outputImageSchema' ), 15 );
@@ -178,7 +178,7 @@ class ImageObjectSchema {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/image-schema',
 			array(
 				array(

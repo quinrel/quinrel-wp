@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Social;
+namespace Quinrel\WordPress\Modules\Social;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Security\KeyVault;
+use Quinrel\WordPress\Core\Security\KeyVault;
 
 class SocialApiGateway {
 
@@ -20,7 +20,7 @@ class SocialApiGateway {
 		if ( empty( $encryptedToken ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'No access token available for this account.', 'holvek' ),
+				'message' => __( 'No access token available for this account.', 'quinrel' ),
 				'code'    => 401,
 			);
 		}
@@ -30,7 +30,7 @@ class SocialApiGateway {
 		if ( empty( $token ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Failed to decrypt access token.', 'holvek' ),
+				'message' => __( 'Failed to decrypt access token.', 'quinrel' ),
 				'code'    => 401,
 			);
 		}
@@ -39,7 +39,7 @@ class SocialApiGateway {
 		if ( empty( $payload['url'] ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Cannot share without a URL.', 'holvek' ),
+				'message' => __( 'Cannot share without a URL.', 'quinrel' ),
 				'code'    => 400,
 			);
 		}
@@ -59,7 +59,7 @@ class SocialApiGateway {
 			default:
 				return array(
 					'success' => false,
-					'message' => __( 'Unsupported network.', 'holvek' ),
+					'message' => __( 'Unsupported network.', 'quinrel' ),
 					'code'    => 400,
 				);
 		}
@@ -164,7 +164,7 @@ class SocialApiGateway {
 		if ( is_wp_error( $meResponse ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Failed to fetch LinkedIn profile.', 'holvek' ),
+				'message' => __( 'Failed to fetch LinkedIn profile.', 'quinrel' ),
 				'code'    => 500,
 			);
 		}
@@ -174,7 +174,7 @@ class SocialApiGateway {
 		if ( ! $urn ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Could not determine LinkedIn author URN.', 'holvek' ),
+				'message' => __( 'Could not determine LinkedIn author URN.', 'quinrel' ),
 				'code'    => 400,
 			);
 		}
@@ -294,7 +294,7 @@ class SocialApiGateway {
 		if ( is_wp_error( $boardsRes ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Failed to fetch Pinterest boards.', 'holvek' ),
+				'message' => __( 'Failed to fetch Pinterest boards.', 'quinrel' ),
 				'code'    => 500,
 			);
 		}
@@ -305,7 +305,7 @@ class SocialApiGateway {
 		if ( ! $boardId ) {
 			return array(
 				'success' => false,
-				'message' => __( 'No Pinterest boards found to pin to.', 'holvek' ),
+				'message' => __( 'No Pinterest boards found to pin to.', 'quinrel' ),
 				'code'    => 400,
 			);
 		}

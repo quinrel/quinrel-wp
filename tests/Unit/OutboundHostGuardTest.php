@@ -1,17 +1,17 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Ai\AiGateway;
-use Holvek\WordPress\Core\Ai\OllamaEndpoint;
-use Holvek\WordPress\Core\Api\BackendApiClient;
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Modules\Admin\AdminMenu;
-use Holvek\WordPress\Modules\Admin\AdminModule;
-use Holvek\WordPress\Modules\Indexing\BingIndexNowApi;
-use Holvek\WordPress\Modules\Schema\CompetitorScraper;
-use Holvek\WordPress\Modules\Schema\SchemaGenerator;
-use Holvek\WordPress\Modules\Schema\SchemaModule;
+use Quinrel\WordPress\Core\Ai\AiGateway;
+use Quinrel\WordPress\Core\Ai\OllamaEndpoint;
+use Quinrel\WordPress\Core\Api\BackendApiClient;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Modules\Admin\AdminMenu;
+use Quinrel\WordPress\Modules\Admin\AdminModule;
+use Quinrel\WordPress\Modules\Indexing\BingIndexNowApi;
+use Quinrel\WordPress\Modules\Schema\CompetitorScraper;
+use Quinrel\WordPress\Modules\Schema\SchemaGenerator;
+use Quinrel\WordPress\Modules\Schema\SchemaModule;
 use PHPUnit\Framework\TestCase;
 
 class OutboundHostGuardTest extends TestCase {
@@ -19,7 +19,7 @@ class OutboundHostGuardTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		unset( $GLOBALS['mock_filter_callbacks']['holvek_backend_api_url'] );
+		unset( $GLOBALS['mock_filter_callbacks']['quinrel_backend_api_url'] );
 		$GLOBALS['mock_http_log']       = array();
 		$GLOBALS['mock_http_responses'] = array();
 		unset( $GLOBALS['mock_http_response'] );
@@ -29,53 +29,53 @@ class OutboundHostGuardTest extends TestCase {
 			'edit_posts'     => true,
 		);
 		$GLOBALS['mock_current_user_id'] = 4;
-		delete_transient( 'holvek_schema_scrape_4' );
-		delete_option( 'holvek_backend_api_url' );
-		delete_option( 'holvek_api_key' );
-		delete_option( 'holvek_indexnow_endpoint' );
-		delete_option( 'holvek_indexnow_key' );
-		delete_option( 'holvek_auto_index' );
+		delete_transient( 'quinrel_schema_scrape_4' );
+		delete_option( 'quinrel_backend_api_url' );
+		delete_option( 'quinrel_api_key' );
+		delete_option( 'quinrel_indexnow_endpoint' );
+		delete_option( 'quinrel_indexnow_key' );
+		delete_option( 'quinrel_auto_index' );
 		delete_option( OllamaEndpoint::URL_OPTION );
 		delete_option( OllamaEndpoint::ACK_OPTION );
-		update_option( 'holvek_ai_provider', 'ollama' );
+		update_option( 'quinrel_ai_provider', 'ollama' );
 	}
 
 	protected function tearDown(): void {
-		unset( $GLOBALS['mock_filter_callbacks']['holvek_backend_api_url'] );
+		unset( $GLOBALS['mock_filter_callbacks']['quinrel_backend_api_url'] );
 		parent::tearDown();
 	}
 
 	public function testApiHostIgnoresTheSettingsOptionAndHonorsADeveloperFilter(): void {
-		update_option( 'holvek_backend_api_url', 'https://evil.example/v1' );
+		update_option( 'quinrel_backend_api_url', 'https://evil.example/v1' );
 		$client = new BackendApiClient();
 
-		$this->assertSame( 'https://api.holvek.com/v1', $client->getApiUrl() );
+		$this->assertSame( 'https://api.quinrel.com/v1', $client->getApiUrl() );
 
 		add_filter(
-			'holvek_backend_api_url',
+			'quinrel_backend_api_url',
 			static function (): string {
 				return 'https://staging.example.test/v1/';
 			}
 		);
 		$this->assertSame( 'https://staging.example.test/v1', $client->getApiUrl() );
 
-		unset( $GLOBALS['mock_filter_callbacks']['holvek_backend_api_url'] );
+		unset( $GLOBALS['mock_filter_callbacks']['quinrel_backend_api_url'] );
 		add_filter(
-			'holvek_backend_api_url',
+			'quinrel_backend_api_url',
 			static function (): string {
 				return 'http://staging.example.test/v1';
 			}
 		);
-		$this->assertSame( 'https://api.holvek.com/v1', $client->getApiUrl() );
+		$this->assertSame( 'https://api.quinrel.com/v1', $client->getApiUrl() );
 
-		unset( $GLOBALS['mock_filter_callbacks']['holvek_backend_api_url'] );
+		unset( $GLOBALS['mock_filter_callbacks']['quinrel_backend_api_url'] );
 		add_filter(
-			'holvek_backend_api_url',
+			'quinrel_backend_api_url',
 			static function (): string {
-				return 'https://user:secret@api.holvek.com/v1';
+				return 'https://user:secret@api.quinrel.com/v1';
 			}
 		);
-		$this->assertSame( 'https://api.holvek.com/v1', $client->getApiUrl() );
+		$this->assertSame( 'https://api.quinrel.com/v1', $client->getApiUrl() );
 	}
 
 	public function testIndexNowEndpointIsAnAllowList(): void {
@@ -94,7 +94,7 @@ class OutboundHostGuardTest extends TestCase {
 		$module->registerRoutes();
 		$this->assertSame(
 			array( $module, 'checkScrapePermission' ),
-			$GLOBALS['mock_rest_routes']['holvek/v1/schema/scrape']['permission_callback']
+			$GLOBALS['mock_rest_routes']['quinrel/v1/schema/scrape']['permission_callback']
 		);
 
 		$GLOBALS['mock_user_caps'] = array(
@@ -106,7 +106,7 @@ class OutboundHostGuardTest extends TestCase {
 		$this->assertSame( 'forbidden', $denied->get_error_code() );
 		$this->assertSame( 403, $denied->data['status'] );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
-		$this->assertFalse( get_transient( 'holvek_schema_scrape_4' ) );
+		$this->assertFalse( get_transient( 'quinrel_schema_scrape_4' ) );
 
 		$GLOBALS['mock_user_caps']['manage_options'] = true;
 		$request = $this->scrapeRequest( 'http://127.0.0.1/' );
@@ -159,7 +159,7 @@ class OutboundHostGuardTest extends TestCase {
 		$this->assertCount( 1, $GLOBALS['mock_http_log'] );
 		$this->assertSame( 'https://example.com/start', $GLOBALS['mock_http_log'][0]['url'] );
 		$this->assertSame( 0, $GLOBALS['mock_http_log'][0]['args']['redirection'] );
-		$this->assertStringContainsString( 'Holvek-WP/', $GLOBALS['mock_http_log'][0]['args']['user-agent'] );
+		$this->assertStringContainsString( 'Quinrel-WP/', $GLOBALS['mock_http_log'][0]['args']['user-agent'] );
 		$this->assertStringNotContainsString( 'Mozilla', $GLOBALS['mock_http_log'][0]['args']['user-agent'] );
 
 		$GLOBALS['mock_http_log'] = array();
@@ -214,10 +214,10 @@ class OutboundHostGuardTest extends TestCase {
 		$request = new \WP_REST_Request();
 		$request->set_json_params(
 			array(
-				'_plugin'  => 'holvek',
+				'_plugin'  => 'quinrel',
 				'settings' => array(
-					'holvek_ollama_url'         => 'https://evil.example:11434',
-					'holvek_breadcrumb_home_label' => 'Home',
+					'quinrel_ollama_url'         => 'https://evil.example:11434',
+					'quinrel_breadcrumb_home_label' => 'Home',
 				),
 			)
 		);
@@ -225,7 +225,7 @@ class OutboundHostGuardTest extends TestCase {
 		$result = $admin->importSettings( $request );
 		$this->assertSame( 1, $result->get_data()['imported'] );
 		$this->assertSame( 'http://localhost:11434', get_option( OllamaEndpoint::URL_OPTION ) );
-		$this->assertSame( 'Home', get_option( 'holvek_breadcrumb_home_label' ) );
+		$this->assertSame( 'Home', get_option( 'quinrel_breadcrumb_home_label' ) );
 
 		$save = new \WP_REST_Request();
 		$save->set_json_params( array( 'ollama_url' => 'https://ollama.example' ) );
@@ -235,9 +235,9 @@ class OutboundHostGuardTest extends TestCase {
 	}
 
 	private function pingEndpoint( string $configured ): string {
-		update_option( 'holvek_indexnow_key', 'indexnow-test-key' );
-		update_option( 'holvek_auto_index', 'yes' );
-		update_option( 'holvek_indexnow_endpoint', $configured );
+		update_option( 'quinrel_indexnow_key', 'indexnow-test-key' );
+		update_option( 'quinrel_auto_index', 'yes' );
+		update_option( 'quinrel_indexnow_endpoint', $configured );
 		$GLOBALS['mock_http_log'] = array();
 
 		( new BingIndexNowApi() )->ping( 'https://example.com/post/' );

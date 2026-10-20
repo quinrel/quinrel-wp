@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\TechnicalSeo;
+namespace Quinrel\WordPress\Modules\TechnicalSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Event\EventManager;
 
 /**
  * Boots technical SEO routines including redirects, 404 monitoring, and their admin REST routes.
@@ -39,8 +39,11 @@ class TechnicalSeoModule {
 		$this->eventManager->addAction( 'rest_api_init', array( $this->redirectManager, 'registerRoutes' ) );
 		$this->eventManager->addAction( 'rest_api_init', array( $this->errorMonitor, 'registerRoutes' ) );
 
+		// Auto-create 301 redirects when post slugs change
+		$this->eventManager->addAction( 'post_updated', array( $this->redirectManager, 'onPostUpdated' ), 10, 3 );
+
 		// Clean up cron schedule on deactivation
-		$this->eventManager->addAction( 'holvek_deactivation', array( 'Holvek\WordPress\Modules\TechnicalSeo\ErrorMonitor', 'deactivate' ) );
+		$this->eventManager->addAction( 'quinrel_deactivation', array( 'Quinrel\WordPress\Modules\TechnicalSeo\ErrorMonitor', 'deactivate' ) );
 
 		// Custom 404 page handler
 		$custom404 = new Custom404Handler();

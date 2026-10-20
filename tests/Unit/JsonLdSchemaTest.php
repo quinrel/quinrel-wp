@@ -1,9 +1,9 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\Schema\JsonLd;
-use Holvek\WordPress\Modules\Schema\SchemaGenerator;
+use Quinrel\WordPress\Modules\Schema\JsonLd;
+use Quinrel\WordPress\Modules\Schema\SchemaGenerator;
 use PHPUnit\Framework\TestCase;
 
 class JsonLdSchemaTest extends TestCase {
@@ -41,8 +41,8 @@ class JsonLdSchemaTest extends TestCase {
 	public function testCustomPropertyBreakoutIsEncodedAndBadJsonIsLeftOut(): void {
 		$postId = 81;
 		$this->storePost( $postId, 'Safe title', 'page' );
-		$GLOBALS['mock_post_meta'][ $postId ]['_holvek_primary_schema']           = 'custom';
-		$GLOBALS['mock_post_meta'][ $postId ]['_holvek_custom_schema_properties'] = wp_json_encode(
+		$GLOBALS['mock_post_meta'][ $postId ]['_quinrel_primary_schema']           = 'custom';
+		$GLOBALS['mock_post_meta'][ $postId ]['_quinrel_custom_schema_properties'] = wp_json_encode(
 			array(
 				array(
 					'key'   => 'brand',
@@ -58,7 +58,7 @@ class JsonLdSchemaTest extends TestCase {
 		$custom  = $this->nodeOfType( $decoded['@graph'], 'Thing' );
 		$this->assertSame( '</script><script>alert(1)</script>', $custom['brand'] );
 
-		$GLOBALS['mock_post_meta'][ $postId ]['_holvek_custom_schema_properties'] = '"just a string"';
+		$GLOBALS['mock_post_meta'][ $postId ]['_quinrel_custom_schema_properties'] = '"just a string"';
 		$rejected = json_decode( $this->scriptBody( $this->render( $postId ) ), true );
 		$thing    = $this->nodeOfType( $rejected['@graph'], 'Thing' );
 		$this->assertArrayNotHasKey( 'brand', $thing );
@@ -74,9 +74,9 @@ class JsonLdSchemaTest extends TestCase {
 	public function testCustomJsonAcceptsANodeAnArrayAndAGraph(): void {
 		$postId = 82;
 		$this->storePost( $postId, 'Course page', 'page' );
-		$GLOBALS['mock_post_meta'][ $postId ]['_holvek_primary_schema']     = 'custom';
-		$GLOBALS['mock_post_meta'][ $postId ]['_holvek_schema_custom_type'] = '</script>';
-		$GLOBALS['mock_post_meta'][ $postId ]['_holvek_custom_schema_properties'] = wp_json_encode(
+		$GLOBALS['mock_post_meta'][ $postId ]['_quinrel_primary_schema']     = 'custom';
+		$GLOBALS['mock_post_meta'][ $postId ]['_quinrel_schema_custom_type'] = '</script>';
+		$GLOBALS['mock_post_meta'][ $postId ]['_quinrel_custom_schema_properties'] = wp_json_encode(
 			array(
 				'@context' => 'https://schema.org',
 				'@graph'   => array(

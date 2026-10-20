@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\ImageSeo;
+namespace Quinrel\WordPress\Modules\ImageSeo;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,8 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ImageFilenameEnforcer {
 
-	private const ENFORCE_OPTION = 'holvek_filename_enforce';
-	private const PREFIX_OPTION  = 'holvek_filename_prefix';
+	private const ENFORCE_OPTION = 'quinrel_filename_enforce';
+	private const PREFIX_OPTION  = 'quinrel_filename_prefix';
 
 	/** Generic prefixes that carry no SEO value */
 	private const GENERIC_PREFIX_PATTERN = '/^(img|dsc|photo|pic|image|screenshot|capture|file|scan)([-_]?\d*)?[-_]?/i';
@@ -95,7 +95,7 @@ class ImageFilenameEnforcer {
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/settings/filename-enforce',
 			array(
 				array(
@@ -112,7 +112,7 @@ class ImageFilenameEnforcer {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/images/bulk-rename',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -158,7 +158,7 @@ class ImageFilenameEnforcer {
 
 		return new \WP_Error(
 			'existing_files_not_renamed',
-			__( 'Filename enforcement renames new uploads only. Existing media files are left unchanged.', 'holvek' ),
+			__( 'Filename enforcement renames new uploads only. Existing media files are left unchanged.', 'quinrel' ),
 			array( 'status' => 400 )
 		);
 	}

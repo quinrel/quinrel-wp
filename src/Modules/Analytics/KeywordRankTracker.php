@@ -1,13 +1,13 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Analytics;
+namespace Quinrel\WordPress\Modules\Analytics;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Api\BackendApiClient;
-use Holvek\WordPress\Core\Queue\QueueManager;
+use Quinrel\WordPress\Core\Api\BackendApiClient;
+use Quinrel\WordPress\Core\Queue\QueueManager;
 
 /**
  * KeywordRankTracker
@@ -19,9 +19,9 @@ class KeywordRankTracker {
 
 	public const KEYWORD_BATCH = 5;
 
-	private const KEYWORDS_OPTION = 'holvek_tracked_keywords';
-	private const HISTORY_TABLE   = 'holvek_rank_history';
-	private const CRON_HOOK       = 'holvek_rank_check';
+	private const KEYWORDS_OPTION = 'quinrel_tracked_keywords';
+	private const HISTORY_TABLE   = 'quinrel_rank_history';
+	private const CRON_HOOK       = 'quinrel_rank_check';
 
 	public function register(): void {
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
@@ -54,7 +54,9 @@ class KeywordRankTracker {
             KEY idx_keyword (keyword(191)),
             KEY idx_checked_at (checked_at)
         ) {$charset};";
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 	}
 
@@ -63,7 +65,7 @@ class KeywordRankTracker {
 		$adminCap  = fn() => current_user_can( 'manage_seo' ) || current_user_can( 'manage_options' );
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/rank-tracker/keywords',
 			array(
 				array(
@@ -80,7 +82,7 @@ class KeywordRankTracker {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/rank-tracker/history',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -97,7 +99,7 @@ class KeywordRankTracker {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/rank-tracker/check-now',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -138,7 +140,7 @@ class KeywordRankTracker {
 		if ( $keyword ) {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT keyword, position, url, checked_at FROM {$wpdb->prefix}holvek_rank_history WHERE checked_at >= %s AND keyword = %s ORDER BY keyword, checked_at DESC",
+					"SELECT keyword, position, url, checked_at FROM {$wpdb->prefix}quinrel_rank_history WHERE checked_at >= %s AND keyword = %s ORDER BY keyword, checked_at DESC",
 					$since,
 					$keyword
 				),
@@ -147,7 +149,7 @@ class KeywordRankTracker {
 		} else {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT keyword, position, url, checked_at FROM {$wpdb->prefix}holvek_rank_history WHERE checked_at >= %s ORDER BY keyword, checked_at DESC",
+					"SELECT keyword, position, url, checked_at FROM {$wpdb->prefix}quinrel_rank_history WHERE checked_at >= %s ORDER BY keyword, checked_at DESC",
 					$since
 				),
 				ARRAY_A
@@ -184,10 +186,10 @@ class KeywordRankTracker {
 		$keywords   = '' !== $keyword ? array( $keyword ) : ( is_array( $stored ) ? $stored : array() );
 
 		if ( array() === $keywords ) {
-			return new \WP_Error( 'no_keywords', __( 'No keywords to check.', 'holvek' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'no_keywords', __( 'No keywords to check.', 'quinrel' ), array( 'status' => 400 ) );
 		}
 
-		if ( (string) get_option( 'holvek_serpapi_key', '' ) === '' ) {
+		if ( (string) get_option( 'quinrel_serpapi_key', '' ) === '' ) {
 			return ( new BackendApiClient() )->trackRanks( $keywords );
 		}
 
@@ -197,7 +199,7 @@ class KeywordRankTracker {
 			array(
 				'success' => true,
 				'queued'  => true,
-				'message' => __( 'Rank check queued. Results appear in history after the background check finishes.', 'holvek' ),
+				'message' => __( 'Rank check queued. Results appear in history after the background check finishes.', 'quinrel' ),
 			)
 		);
 	}
@@ -249,7 +251,7 @@ class KeywordRankTracker {
 	}
 
 	private function checkKeywords( array $keywords ): array {
-		$apiKey  = (string) get_option( 'holvek_serpapi_key', '' );
+		$apiKey  = (string) get_option( 'quinrel_serpapi_key', '' );
 		$results = array();
 
 		if ( $apiKey === '' ) {
@@ -269,8 +271,8 @@ class KeywordRankTracker {
 						'api_key' => $apiKey,
 						'engine'  => 'google',
 						'q'       => rawurlencode( $keyword ),
-						'gl'      => get_option( 'holvek_rank_country', 'us' ),
-						'hl'      => get_option( 'holvek_rank_language', 'en' ),
+						'gl'      => get_option( 'quinrel_rank_country', 'us' ),
+						'hl'      => get_option( 'quinrel_rank_language', 'en' ),
 						'num'     => 100,
 					),
 					'https://serpapi.com/search.json'

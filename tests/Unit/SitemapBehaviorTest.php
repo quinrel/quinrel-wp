@@ -1,13 +1,14 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\Sitemap\NewsSitemapGenerator;
-use Holvek\WordPress\Modules\Sitemap\SitemapGenerator;
-use Holvek\WordPress\Modules\Sitemap\SitemapModule;
-use Holvek\WordPress\Modules\Sitemap\SitemapRouteManager;
-use Holvek\WordPress\Modules\Sitemap\VideoSitemapGenerator;
-use Holvek\WordPress\Plugin;
+use Quinrel\WordPress\Modules\Sitemap\NewsSitemapGenerator;
+use Quinrel\WordPress\Modules\Sitemap\SitemapGenerator;
+use Quinrel\WordPress\Modules\Sitemap\SitemapModule;
+use Quinrel\WordPress\Modules\Sitemap\SitemapRouteManager;
+use Quinrel\WordPress\Modules\Sitemap\SitemapSettings;
+use Quinrel\WordPress\Modules\Sitemap\VideoSitemapGenerator;
+use Quinrel\WordPress\Plugin;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -38,13 +39,14 @@ class SitemapBehaviorTest extends TestCase {
 		$GLOBALS['mock_transients']    = array();
 		$GLOBALS['mock_posts']         = array();
 		$GLOBALS['mock_post_meta']     = array();
+		SitemapSettings::clearCache();
 		unset(
 			$GLOBALS['mock_wpdb_results'],
 			$GLOBALS['mock_get_posts'],
 			$GLOBALS['mock_current_screen'],
 			$GLOBALS['mock_user_caps'],
-			$GLOBALS['mock_filter_callbacks']['holvek_sitemap_urls_per_file'],
-			$GLOBALS['mock_filter_callbacks']['holvek_sitemap_conflicting_plugins']
+			$GLOBALS['mock_filter_callbacks']['quinrel_sitemap_urls_per_file'],
+			$GLOBALS['mock_filter_callbacks']['quinrel_sitemap_conflicting_plugins']
 		);
 	}
 
@@ -74,8 +76,8 @@ class SitemapBehaviorTest extends TestCase {
 			$GLOBALS['mock_post_types'],
 			$GLOBALS['mock_current_screen'],
 			$GLOBALS['mock_user_caps'],
-			$GLOBALS['mock_filter_callbacks']['holvek_sitemap_urls_per_file'],
-			$GLOBALS['mock_filter_callbacks']['holvek_sitemap_conflicting_plugins'],
+			$GLOBALS['mock_filter_callbacks']['quinrel_sitemap_urls_per_file'],
+			$GLOBALS['mock_filter_callbacks']['quinrel_sitemap_conflicting_plugins'],
 			$GLOBALS['wp_rewrite']
 		);
 		parent::tearDown();
@@ -83,7 +85,7 @@ class SitemapBehaviorTest extends TestCase {
 
 	public function testIndexSplitsWhenAPeriodExceedsTheUrlLimit(): void {
 		add_filter(
-			'holvek_sitemap_urls_per_file',
+			'quinrel_sitemap_urls_per_file',
 			static function () {
 				return 2;
 			}
@@ -113,11 +115,11 @@ class SitemapBehaviorTest extends TestCase {
 	}
 
 	public function testNoindexPostsAndExcludedTypesStayOut(): void {
-		update_option( 'holvek_sitemap_exclude_types', array( 'product' ) );
-		update_option( 'holvek_sitemap_exclude_posts', '4' );
+		update_option( 'quinrel_sitemap_exclude_types', array( 'product' ) );
+		update_option( 'quinrel_sitemap_exclude_posts', '4' );
 		$GLOBALS['mock_post_types'] = array( 'post', 'page', 'product' );
 		$GLOBALS['mock_post_meta']  = array(
-			3 => array( '_holvek_noindex' => 'yes' ),
+			3 => array( '_quinrel_noindex' => 'yes' ),
 		);
 		$GLOBALS['mock_wpdb_results'] = static function ( string $query ): array {
 			if ( str_contains( $query, 'COUNT' ) ) {
@@ -179,7 +181,7 @@ class SitemapBehaviorTest extends TestCase {
 			if ( ! is_string( $query ) || ! str_contains( $query, 'COUNT' ) ) {
 				continue;
 			}
-			$sawNoindex = str_contains( $query, '_holvek_noindex' );
+			$sawNoindex = str_contains( $query, '_quinrel_noindex' );
 			$sawProduct = str_contains( $query, "'product'" );
 		}
 		$this->assertTrue( $sawNoindex );
@@ -188,7 +190,7 @@ class SitemapBehaviorTest extends TestCase {
 
 	public function testChunkQueryUsesTheConfiguredLimitAndPage(): void {
 		add_filter(
-			'holvek_sitemap_urls_per_file',
+			'quinrel_sitemap_urls_per_file',
 			static function () {
 				return 2;
 			}
@@ -206,6 +208,60 @@ class SitemapBehaviorTest extends TestCase {
 			}
 		}
 		$this->assertStringContainsString( 'LIMIT 2 OFFSET 2', $chunkQuery );
+		$this->assertStringContainsString( "p.post_date >= '2026-10-01 00:00:00'", $chunkQuery );
+		$this->assertStringContainsString( "p.post_date < '2026-11-01 00:00:00'", $chunkQuery );
+		$this->assertStringNotContainsString( 'YEAR(p.post_date)', $chunkQuery );
+	}
+
+	public function testSitemapSettingsCachesTableExistenceAndRowWithinRequest(): void {
+		$GLOBALS['wpdb']->queries = array();
+		SitemapSettings::clearCache();
+
+		SitemapSettings::get( 'enable_index_sitemap', 'yes' );
+		SitemapSettings::get( 'enable_news_sitemap', 'no' );
+		SitemapSettings::get( 'enable_video_sitemap', 'no' );
+
+		$showTablesCount = 0;
+		foreach ( $GLOBALS['wpdb']->queries as $query ) {
+			if ( is_string( $query ) && str_contains( $query, 'SHOW TABLES LIKE' ) ) {
+				++$showTablesCount;
+			}
+		}
+		$this->assertSame( 1, $showTablesCount );
+	}
+
+	public function testStaticFrontPageIsIncludedInSitemapChunkAtRootUrlWithPriorityOne(): void {
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', 10 );
+		$GLOBALS['mock_wpdb_results'] = static function ( string $query ): array {
+			if ( str_contains( $query, 'COUNT' ) ) {
+				return array();
+			}
+			return array(
+				(object) array(
+					'ID'                => 10,
+					'post_title'        => 'Home Page',
+					'post_type'         => 'page',
+					'post_modified_gmt' => '2026-10-01 12:00:00',
+					'thumbnail_id'      => '',
+				),
+				(object) array(
+					'ID'                => 11,
+					'post_title'        => 'About Us',
+					'post_type'         => 'page',
+					'post_modified_gmt' => '2026-10-01 12:00:00',
+					'thumbnail_id'      => '',
+				),
+			);
+		};
+
+		$chunk = ( new SitemapGenerator() )->chunkXml( '2026-10', 1 );
+
+		$this->assertStringContainsString( '<loc>https://example.com/</loc>', $chunk );
+		$this->assertStringContainsString( '<priority>1.0</priority>', $chunk );
+		$this->assertStringContainsString( '<changefreq>daily</changefreq>', $chunk );
+		$this->assertStringContainsString( '<loc>https://example.com/post-11/</loc>', $chunk );
+		$this->assertStringNotContainsString( '<loc>https://example.com/post-10/</loc>', $chunk );
 	}
 
 	public function testNewsSitemapKeepsTheLast48Hours(): void {
@@ -246,7 +302,7 @@ class SitemapBehaviorTest extends TestCase {
 				)
 			),
 		);
-		$GLOBALS['mock_post_meta'][5] = array( '_holvek_noindex' => 'yes' );
+		$GLOBALS['mock_post_meta'][5] = array( '_quinrel_noindex' => 'yes' );
 		$GLOBALS['mock_get_posts']    = static function (): array {
 			return array_values( $GLOBALS['mock_posts'] );
 		};
@@ -299,9 +355,9 @@ class SitemapBehaviorTest extends TestCase {
 	}
 
 	public function testActivationRegistersRulesAndFlushesOnce(): void {
-		update_option( 'holvek_enable_index_sitemap', 'yes' );
-		update_option( 'holvek_enable_news_sitemap', 'yes' );
-		update_option( 'holvek_enable_video_sitemap', 'yes' );
+		update_option( 'quinrel_enable_index_sitemap', 'yes' );
+		update_option( 'quinrel_enable_news_sitemap', 'yes' );
+		update_option( 'quinrel_enable_video_sitemap', 'yes' );
 		$GLOBALS['wp_rewrite']->extra_rules_top['^shop$'] = 'index.php?post_type=product';
 
 		$routes = new SitemapRouteManager(
@@ -315,7 +371,7 @@ class SitemapBehaviorTest extends TestCase {
 		$rules = $GLOBALS['wp_rewrite']->extra_rules_top;
 		$this->assertArrayHasKey( '^sitemap\.xml$', $rules );
 		$this->assertArrayHasKey( '^sitemap-posts-(\d{4}-\d{2})(?:-([2-9]|[1-9]\d+))?\.xml$', $rules );
-		$this->assertStringContainsString( 'holvek_sitemap_page=$matches[2]', $rules['^sitemap-posts-(\d{4}-\d{2})(?:-([2-9]|[1-9]\d+))?\.xml$'] );
+		$this->assertStringContainsString( 'quinrel_sitemap_page=$matches[2]', $rules['^sitemap-posts-(\d{4}-\d{2})(?:-([2-9]|[1-9]\d+))?\.xml$'] );
 		$this->assertArrayHasKey( '^sitemap-news\.xml$', $rules );
 		$this->assertArrayHasKey( '^video-sitemap\.xml$', $rules );
 		$this->assertArrayHasKey( '^shop$', $rules );
@@ -340,10 +396,10 @@ class SitemapBehaviorTest extends TestCase {
 
 	public function testConflictingSeoPluginAsksTheUserToDisableOne(): void {
 		update_option( 'active_plugins', array( 'wordpress-seo/wp-seo.php' ) );
-		update_option( 'holvek_enable_index_sitemap', 'yes' );
+		update_option( 'quinrel_enable_index_sitemap', 'yes' );
 
 		$module = new SitemapModule(
-			new \Holvek\WordPress\Core\Event\EventManager(),
+			new \Quinrel\WordPress\Core\Event\EventManager(),
 			new SitemapRouteManager(
 				new SitemapGenerator(),
 				new NewsSitemapGenerator(),
@@ -352,24 +408,24 @@ class SitemapBehaviorTest extends TestCase {
 		);
 		$text = $module->conflictNoticeText();
 		$this->assertStringContainsString( 'Yoast SEO', $text );
-		$this->assertStringContainsString( 'Disable the Holvek XML sitemap or disable the sitemap in the other plugin', $text );
+		$this->assertStringContainsString( 'Disable the Quinrel XML sitemap or disable the sitemap in the other plugin', $text );
 
-		update_option( 'holvek_enable_index_sitemap', 'no' );
+		update_option( 'quinrel_enable_index_sitemap', 'no' );
 		$this->assertSame( '', $module->conflictNoticeText() );
 
-		update_option( 'holvek_enable_index_sitemap', 'yes' );
+		update_option( 'quinrel_enable_index_sitemap', 'yes' );
 		$GLOBALS['mock_current_screen'] = (object) array( 'id' => 'dashboard' );
 		ob_start();
 		$module->renderConflictNotice();
 		$dashboard = ob_get_clean();
 		$this->assertSame( '', $dashboard );
 
-		$GLOBALS['mock_current_screen'] = (object) array( 'id' => 'toplevel_page_holvek' );
+		$GLOBALS['mock_current_screen'] = (object) array( 'id' => 'toplevel_page_quinrel' );
 		ob_start();
 		$module->renderConflictNotice();
-		$holvek = ob_get_clean();
-		$this->assertStringContainsString( 'Yoast SEO', $holvek );
-		$this->assertStringContainsString( 'notice-warning', $holvek );
+		$quinrel = ob_get_clean();
+		$this->assertStringContainsString( 'Yoast SEO', $quinrel );
+		$this->assertStringContainsString( 'notice-warning', $quinrel );
 
 		$GLOBALS['mock_user_caps'] = array(
 			'manage_seo'     => false,
@@ -381,7 +437,7 @@ class SitemapBehaviorTest extends TestCase {
 		$this->assertSame( '', $denied );
 
 		add_filter(
-			'holvek_sitemap_conflicting_plugins',
+			'quinrel_sitemap_conflicting_plugins',
 			static function (): array {
 				return array( 'Custom SEO' );
 			}
@@ -395,7 +451,7 @@ class SitemapBehaviorTest extends TestCase {
 	}
 
 	public function testPagedSitemapPathDoesNotConstructTheGenerator(): void {
-		update_option( 'holvek_db_version', HOLVEK_VERSION );
+		update_option( 'quinrel_db_version', QUINREL_VERSION );
 		$instance = ( new ReflectionClass( Plugin::class ) )->getProperty( 'instance' );
 		$instance->setAccessible( true );
 		$instance->setValue( null, null );

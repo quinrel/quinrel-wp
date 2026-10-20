@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\Admin\FrontendSeoInspector;
+use Quinrel\WordPress\Modules\Admin\FrontendSeoInspector;
 use PHPUnit\Framework\TestCase;
 
 class FrontendSeoInspectorAccessTest extends TestCase {
@@ -33,7 +33,7 @@ class FrontendSeoInspectorAccessTest extends TestCase {
 	public function testMissingPostReturns404AndDoesNotReadMeta(): void {
 		global $mock_post_meta;
 		$mock_post_meta[88] = array(
-			'_holvek_focus_keyword' => 'hidden keyword',
+			'_quinrel_focus_keyword' => 'hidden keyword',
 		);
 
 		$request = new \WP_REST_Request();
@@ -109,13 +109,13 @@ class FrontendSeoInspectorAccessTest extends TestCase {
 		( new FrontendSeoInspector() )->injectOverlay();
 		$html = ob_get_clean();
 
-		$this->assertStringContainsString( 'id="holvek-inspector-host"', $html );
+		$this->assertStringContainsString( 'id="quinrel-inspector-host"', $html );
 		$this->assertStringContainsString( '<script>', $html );
-		$this->assertStringContainsString( 'holvek-inspector-host', $html );
+		$this->assertStringContainsString( 'quinrel-inspector-host', $html );
 		$this->assertStringContainsString( '"postId":15', $html );
-		$this->assertStringContainsString( 'Holvek Inspector', $html );
+		$this->assertStringContainsString( 'Quinrel Inspector', $html );
 		$this->assertStringContainsString( 'SEO Inspector', $html );
-		$this->assertStringNotContainsString( '__HOLVEK_INSPECTOR_CONFIG__', $html );
+		$this->assertStringNotContainsString( '__QUINREL_INSPECTOR_CONFIG__', $html );
 	}
 
 	private function seedPost( int $postId, string $status ): void {
@@ -131,9 +131,9 @@ class FrontendSeoInspectorAccessTest extends TestCase {
 			)
 		);
 		$mock_post_meta[ $postId ] = array(
-			'_holvek_meta_title'       => 'A proper search title',
-			'_holvek_meta_description' => 'A proper search description that is long enough to pass the length check for this audit.',
-			'_holvek_focus_keyword'    => 'secret keyword',
+			'_quinrel_meta_title'       => 'A proper search title',
+			'_quinrel_meta_description' => 'A proper search description that is long enough to pass the length check for this audit.',
+			'_quinrel_focus_keyword'    => 'secret keyword',
 		);
 	}
 }

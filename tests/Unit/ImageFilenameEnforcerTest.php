@@ -1,9 +1,9 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use Holvek\WordPress\Modules\ImageSeo\ImageFilenameEnforcer;
+use Quinrel\WordPress\Modules\ImageSeo\ImageFilenameEnforcer;
 
 class ImageFilenameEnforcerTest extends TestCase
 {
@@ -70,7 +70,7 @@ class ImageFilenameEnforcerTest extends TestCase
 
     public function testEnforceFilenameWithCustomPrefix(): void
     {
-        update_option('holvek_filename_prefix', 'acme-corp');
+        update_option('quinrel_filename_prefix', 'acme-corp');
 
         $file = [
             'name' => 'product-box-shot.png',
@@ -84,7 +84,7 @@ class ImageFilenameEnforcerTest extends TestCase
 
     public function testEnforceFilenameDisabledViaOption(): void
     {
-        update_option('holvek_filename_enforce', 'no');
+        update_option('quinrel_filename_enforce', 'no');
 
         $file = [
             'name' => 'IMG_0001_Raw_Unchanged.PNG',

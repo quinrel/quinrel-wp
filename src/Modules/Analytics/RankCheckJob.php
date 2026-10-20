@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Analytics;
+namespace Quinrel\WordPress\Modules\Analytics;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

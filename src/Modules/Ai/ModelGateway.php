@@ -1,12 +1,12 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Ai;
+namespace Quinrel\WordPress\Modules\Ai;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use Holvek\WordPress\Core\Ai\AiGateway;
+use Quinrel\WordPress\Core\Ai\AiGateway;
 
 /**
  * ModelGateway: Unified abstraction layer for routing prompts across
@@ -30,7 +30,7 @@ class ModelGateway {
 		return array(
 			'success'  => $result['success'] ?? false,
 			'content'  => $result['text'] ?? '',
-			'provider' => get_option( 'holvek_ai_provider', 'openai' ),
+			'provider' => get_option( 'quinrel_ai_provider', 'openai' ),
 			'error'    => $result['message'] ?? null,
 		);
 	}

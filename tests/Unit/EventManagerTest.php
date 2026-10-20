@@ -1,8 +1,8 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Core\Event\EventManager;
 use PHPUnit\Framework\TestCase;
 
 class EventManagerTest extends TestCase {
@@ -12,17 +12,17 @@ class EventManagerTest extends TestCase {
 		$GLOBALS['mock_did_actions'] = array();
 	}
 
-	public function testFiredHooksUseOneHolvekPrefix(): void {
+	public function testFiredHooksUseOneQuinrelPrefix(): void {
 		$events = new EventManager();
-		$events->doAction( 'holvek_activation' );
+		$events->doAction( 'quinrel_activation' );
 		$events->doAction( 'Audit_Done' );
 		$events->doAction( 'wp-head' );
-		$events->doAction( 'holvek_' );
+		$events->doAction( 'quinrel_' );
 
 		$this->assertSame(
 			array(
-				'holvek_activation',
-				'holvek_audit_done',
+				'quinrel_activation',
+				'quinrel_audit_done',
 			),
 			$GLOBALS['mock_did_actions']
 		);

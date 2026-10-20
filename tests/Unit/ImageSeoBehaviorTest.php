@@ -1,10 +1,10 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\ImageSeo\ImageAltAudit;
-use Holvek\WordPress\Modules\ImageSeo\ImageCompressor;
-use Holvek\WordPress\Modules\ImageSeo\ImageFilenameEnforcer;
+use Quinrel\WordPress\Modules\ImageSeo\ImageAltAudit;
+use Quinrel\WordPress\Modules\ImageSeo\ImageCompressor;
+use Quinrel\WordPress\Modules\ImageSeo\ImageFilenameEnforcer;
 use PHPUnit\Framework\TestCase;
 
 class ImageSeoBehaviorTest extends TestCase {
@@ -13,7 +13,7 @@ class ImageSeoBehaviorTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->dir = sys_get_temp_dir() . '/holvek-image-seo-' . uniqid( '', true );
+		$this->dir = sys_get_temp_dir() . '/quinrel-image-seo-' . uniqid( '', true );
 		mkdir( $this->dir );
 		$GLOBALS['mock_user_caps']             = array(
 			'edit_post'      => true,
@@ -41,8 +41,8 @@ class ImageSeoBehaviorTest extends TestCase {
 			$GLOBALS['mock_wp_query']
 		);
 		unset(
-			$GLOBALS['mock_wp_options']['holvek_filename_enforce'],
-			$GLOBALS['mock_wp_options']['holvek_image_compression']
+			$GLOBALS['mock_wp_options']['quinrel_filename_enforce'],
+			$GLOBALS['mock_wp_options']['quinrel_image_compression']
 		);
 		if ( is_dir( $this->dir ) ) {
 			foreach ( glob( $this->dir . '/*' ) ?: array() as $file ) {
@@ -56,7 +56,7 @@ class ImageSeoBehaviorTest extends TestCase {
 	}
 
 	public function testUploadRenamesAndExistingFilesStayPut(): void {
-		update_option( 'holvek_filename_enforce', 'yes' );
+		update_option( 'quinrel_filename_enforce', 'yes' );
 		$enforcer = new ImageFilenameEnforcer();
 		$file     = array(
 			'name' => 'IMG_9999_summer_holiday_beach.JPG',
@@ -110,7 +110,7 @@ class ImageSeoBehaviorTest extends TestCase {
 		$GLOBALS['mock_attached_files'][44] = $path;
 		$GLOBALS['mock_post_mime'][44]      = 'image/jpeg';
 		update_option(
-			'holvek_image_compression',
+			'quinrel_image_compression',
 			array(
 				'enabled'  => true,
 				'quality'  => 82,
@@ -140,14 +140,14 @@ class ImageSeoBehaviorTest extends TestCase {
 		$result = ( new ImageCompressor() )->bulkCompress( $request );
 
 		$this->assertInstanceOf( \WP_REST_Response::class, $result );
-		$originalId = (int) get_post_meta( 44, '_holvek_original_attachment_id', true );
+		$originalId = (int) get_post_meta( 44, '_quinrel_original_attachment_id', true );
 		$this->assertGreaterThan( 0, $originalId );
 		$this->assertNotNull( get_post( $originalId ) );
 		$kept = get_attached_file( $originalId );
 		$this->assertIsString( $kept );
 		$this->assertFileExists( $kept );
 		$this->assertSame( 'original-bytes', file_get_contents( $kept ) );
-		$this->assertFileDoesNotExist( $path . '.holvek-original' );
+		$this->assertFileDoesNotExist( $path . '.quinrel-original' );
 		$this->assertSame( 'original-bytes', file_get_contents( $path ) );
 	}
 }

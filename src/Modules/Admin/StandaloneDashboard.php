@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Admin;
+namespace Quinrel\WordPress\Modules\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -10,16 +10,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Local answers for the first admin screen.
  *
  * The snapshot is read only when that screen asks for it. It does not run on
- * a front-end page view and it does not call Holvek, Google, or SerpApi.
+ * a front-end page view and it does not call Quinrel, Google, or SerpApi.
  */
 class StandaloneDashboard {
 
-	private const COUNTS_TRANSIENT = 'holvek_standalone_counts';
+	private const COUNTS_TRANSIENT = 'quinrel_standalone_counts';
 	private const COUNTS_TTL       = 15 * MINUTE_IN_SECONDS;
 
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/dashboard/standalone',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -30,7 +30,7 @@ class StandaloneDashboard {
 	}
 
 	/**
-	 * The Holvek screen is open to edit_seo_meta. Administrators also pass.
+	 * The Quinrel screen is open to edit_seo_meta. Administrators also pass.
 	 */
 	public function canRead(): bool {
 		return current_user_can( 'edit_seo_meta' ) || current_user_can( 'manage_options' );
@@ -45,7 +45,7 @@ class StandaloneDashboard {
 		if ( ! $this->canRead() ) {
 			return new \WP_Error(
 				'rest_forbidden',
-				__( 'You do not have permission to view Holvek results for this site.', 'holvek' ),
+				__( 'You do not have permission to view Quinrel results for this site.', 'quinrel' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -53,19 +53,19 @@ class StandaloneDashboard {
 		$counts    = $this->measuredCounts();
 		$redirects = $this->redirectTotal();
 		$indexable = (string) get_option( 'blog_public', '1' ) === '1';
-		$setupDone = (bool) get_option( 'holvek_setup_complete', false );
+		$setupDone = (bool) get_option( 'quinrel_setup_complete', false );
 
 		return rest_ensure_response(
 			array(
-				'summary'              => __( 'Holvek writes titles, meta descriptions, schema, the sitemap, and robots.txt on this site. Redirects and 404 logs stay on this site. A Holvek account is optional.', 'holvek' ),
+				'summary'              => __( 'Quinrel runs technical SEO on this site with no account. A connected account adds intelligence, quick fixes, and an action plan from the Quinrel API. A Quinrel account is optional.', 'quinrel' ),
 				'next_step'            => $setupDone ? 'active' : 'setup',
 				'next_step_message'    => $setupDone
-					? __( 'Your titles and sitemap are already active.', 'holvek' )
-					: __( 'Set up Holvek to choose a site type. Titles and the sitemap already work.', 'holvek' ),
+					? __( 'Technical SEO is already active on this site.', 'quinrel' )
+					: __( 'Set up Quinrel to choose a site type. Technical SEO already works on this site.', 'quinrel' ),
 				'indexable'            => $indexable,
 				'indexability'         => $indexable
-					? __( 'Search engines may index this site.', 'holvek' )
-					: __( 'Search engines are discouraged from indexing this site.', 'holvek' ),
+					? __( 'Search engines may index this site.', 'quinrel' )
+					: __( 'Search engines are discouraged from indexing this site.', 'quinrel' ),
 				'sitemap_url'          => esc_url_raw( home_url( '/sitemap.xml' ) ),
 				'missing_titles'       => $counts['missing_titles'],
 				'missing_alt'          => $counts['missing_alt'],
@@ -73,22 +73,22 @@ class StandaloneDashboard {
 				'not_found'            => $counts['not_found'],
 				'missing_titles_label' => sprintf(
 					/* translators: %d: number of published posts and pages with an empty title. */
-					__( '%d published posts or pages have an empty title.', 'holvek' ),
+					__( '%d published posts or pages have an empty title.', 'quinrel' ),
 					$counts['missing_titles']
 				),
 				'missing_alt_label'    => sprintf(
 					/* translators: %d: number of images with no alternative text. */
-					__( '%d images have no alternative text.', 'holvek' ),
+					__( '%d images have no alternative text.', 'quinrel' ),
 					$counts['missing_alt']
 				),
 				'redirects_label'      => sprintf(
 					/* translators: %d: number of saved redirects. */
-					__( '%d redirects are saved on this site.', 'holvek' ),
+					__( '%d redirects are saved on this site.', 'quinrel' ),
 					$redirects
 				),
 				'not_found_label'      => sprintf(
 					/* translators: %d: number of logged not-found requests. */
-					__( '%d not-found requests are logged on this site.', 'holvek' ),
+					__( '%d not-found requests are logged on this site.', 'quinrel' ),
 					$counts['not_found']
 				),
 			)
@@ -176,14 +176,14 @@ class StandaloneDashboard {
 	 * Logged 404s. The table is not probed when activation has not marked it.
 	 */
 	private function countNotFound(): int {
-		if ( get_option( 'holvek_404_table_exists', '' ) !== 'yes' ) {
+		if ( get_option( 'quinrel_404_table_exists', '' ) !== 'yes' ) {
 			return 0;
 		}
 
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is the site prefix plus the literal holvek_404_logs suffix.
-		$count = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}holvek_404_logs" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is the site prefix plus the literal quinrel_404_logs suffix.
+		$count = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_404_logs" );
 
 		return max( 0, (int) $count );
 	}
@@ -192,7 +192,7 @@ class StandaloneDashboard {
 	 * Read the autoloaded counters. A missing option is zero here so the dashboard does not scan the redirects table.
 	 */
 	private function redirectTotal(): int {
-		$stored = get_option( 'holvek_redirect_counts', null );
+		$stored = get_option( 'quinrel_redirect_counts', null );
 		if ( ! is_array( $stored ) || ! isset( $stored['exact'], $stored['regex'] ) ) {
 			return 0;
 		}

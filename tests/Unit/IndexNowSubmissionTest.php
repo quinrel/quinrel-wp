@@ -1,13 +1,13 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Core\Event\EventManager;
-use Holvek\WordPress\Modules\Admin\AdminMenu;
-use Holvek\WordPress\Modules\Admin\AdminModule;
-use Holvek\WordPress\Modules\Indexing\BingIndexNowApi;
-use Holvek\WordPress\Modules\Indexing\IndexingJob;
-use Holvek\WordPress\Modules\Indexing\IndexNowFlushJob;
+use Quinrel\WordPress\Core\Event\EventManager;
+use Quinrel\WordPress\Modules\Admin\AdminMenu;
+use Quinrel\WordPress\Modules\Admin\AdminModule;
+use Quinrel\WordPress\Modules\Indexing\BingIndexNowApi;
+use Quinrel\WordPress\Modules\Indexing\IndexingJob;
+use Quinrel\WordPress\Modules\Indexing\IndexNowFlushJob;
 use PHPUnit\Framework\TestCase;
 
 class IndexNowSubmissionTest extends TestCase {
@@ -20,13 +20,13 @@ class IndexNowSubmissionTest extends TestCase {
 		$GLOBALS['mock_http_responses'] = array();
 		$GLOBALS['mock_cron_events']    = array();
 		unset( $GLOBALS['mock_http_response'], $_SERVER['REQUEST_URI'] );
-		delete_option( 'holvek_indexnow_key' );
-		delete_option( 'holvek_auto_index' );
-		delete_option( 'holvek_indexnow_endpoint' );
+		delete_option( 'quinrel_indexnow_key' );
+		delete_option( 'quinrel_auto_index' );
+		delete_option( 'quinrel_indexnow_endpoint' );
 		delete_option( BingIndexNowApi::QUEUE_OPTION );
 		delete_option( BingIndexNowApi::FLUSH_PENDING );
-		delete_option( 'holvek_indexnow_log' );
-		delete_option( 'holvek_breadcrumb_home_label' );
+		delete_option( 'quinrel_indexnow_log' );
+		delete_option( 'quinrel_breadcrumb_home_label' );
 	}
 
 	protected function tearDown(): void {
@@ -60,16 +60,16 @@ class IndexNowSubmissionTest extends TestCase {
 			)
 		);
 
-		update_option( 'holvek_indexnow_key', self::KEY );
+		update_option( 'quinrel_indexnow_key', self::KEY );
 		$api->autoSubmitOnPublish( 'publish', 'draft', $post );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 		$this->assertSame( array(), $api->getQueue() );
-		$this->assertSame( self::KEY, get_option( 'holvek_indexnow_key' ) );
+		$this->assertSame( self::KEY, get_option( 'quinrel_indexnow_key' ) );
 
-		delete_option( 'holvek_indexnow_key' );
-		update_option( 'holvek_auto_index', 'yes' );
+		delete_option( 'quinrel_indexnow_key' );
+		update_option( 'quinrel_auto_index', 'yes' );
 		$api->autoSubmitOnPublish( 'publish', 'draft', $post );
-		$this->assertFalse( get_option( 'holvek_indexnow_key', false ) );
+		$this->assertFalse( get_option( 'quinrel_indexnow_key', false ) );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 		$this->assertSame( array(), $api->getQueue() );
 	}
@@ -91,7 +91,7 @@ class IndexNowSubmissionTest extends TestCase {
 		$this->assertSame( array( 'https://example.com/post-7/' ), $api->getQueue() );
 		$this->assertCount( 1, $this->flushEvents() );
 
-		update_post_meta( 8, '_holvek_noindex', 'yes' );
+		update_post_meta( 8, '_quinrel_noindex', 'yes' );
 		$api->autoSubmitOnPublish(
 			'publish',
 			'publish',
@@ -155,7 +155,7 @@ class IndexNowSubmissionTest extends TestCase {
 		$this->assertNotSame( 200, $api->getSubmissionLog()[0]['status_code'] );
 
 		$GLOBALS['mock_http_log'] = array();
-		update_option( 'holvek_auto_index', 'no' );
+		update_option( 'quinrel_auto_index', 'no' );
 		$api->flushQueue();
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 		$this->assertSame( array( 'https://example.com/keep/' ), $api->getQueue() );
@@ -184,8 +184,8 @@ class IndexNowSubmissionTest extends TestCase {
 
 	public function testSettingsRejectAnInvalidKeyAndDoNotInventOne(): void {
 		$admin = new AdminModule( new EventManager(), new AdminMenu() );
-		update_option( 'holvek_indexnow_key', self::KEY );
-		update_option( 'holvek_breadcrumb_home_label', 'Start' );
+		update_option( 'quinrel_indexnow_key', self::KEY );
+		update_option( 'quinrel_breadcrumb_home_label', 'Start' );
 
 		$rejected = new \WP_REST_Request();
 		$rejected->set_json_params(
@@ -197,19 +197,19 @@ class IndexNowSubmissionTest extends TestCase {
 		);
 		$result = $admin->updateSettings( $rejected );
 		$this->assertSame( 'invalid_indexnow_key', $result->get_error_code() );
-		$this->assertSame( self::KEY, get_option( 'holvek_indexnow_key' ) );
-		$this->assertSame( 'Start', get_option( 'holvek_breadcrumb_home_label' ) );
-		$this->assertFalse( get_option( 'holvek_auto_index', false ) );
+		$this->assertSame( self::KEY, get_option( 'quinrel_indexnow_key' ) );
+		$this->assertSame( 'Start', get_option( 'quinrel_breadcrumb_home_label' ) );
+		$this->assertFalse( get_option( 'quinrel_auto_index', false ) );
 
 		$enabled = new \WP_REST_Request();
 		$enabled->set_json_params( array( 'auto_index' => true ) );
 		$admin->updateSettings( $enabled );
-		$this->assertSame( 'yes', get_option( 'holvek_auto_index' ) );
-		$this->assertSame( self::KEY, get_option( 'holvek_indexnow_key' ) );
+		$this->assertSame( 'yes', get_option( 'quinrel_auto_index' ) );
+		$this->assertSame( self::KEY, get_option( 'quinrel_indexnow_key' ) );
 
-		delete_option( 'holvek_indexnow_key' );
+		delete_option( 'quinrel_indexnow_key' );
 		$admin->updateSettings( $enabled );
-		$this->assertFalse( get_option( 'holvek_indexnow_key', false ) );
+		$this->assertFalse( get_option( 'quinrel_indexnow_key', false ) );
 
 		$api = new BingIndexNowApi();
 		$request = new \WP_REST_Request();
@@ -219,9 +219,21 @@ class IndexNowSubmissionTest extends TestCase {
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 	}
 
+	public function testPluginActivationAutoGeneratesIndexNowKeyWhenUnset(): void {
+		delete_option( 'quinrel_indexnow_key' );
+		delete_option( 'quinrel_auto_index' );
+
+		\Quinrel\WordPress\Plugin::activate();
+
+		$generatedKey = get_option( 'quinrel_indexnow_key' );
+		$this->assertIsString( $generatedKey );
+		$this->assertSame( 32, strlen( $generatedKey ) );
+		$this->assertSame( 'yes', get_option( 'quinrel_auto_index' ) );
+	}
+
 	private function enabledApi(): BingIndexNowApi {
-		update_option( 'holvek_indexnow_key', self::KEY );
-		update_option( 'holvek_auto_index', 'yes' );
+		update_option( 'quinrel_indexnow_key', self::KEY );
+		update_option( 'quinrel_auto_index', 'yes' );
 		return new BingIndexNowApi();
 	}
 
@@ -238,7 +250,7 @@ class IndexNowSubmissionTest extends TestCase {
 			array_filter(
 				$events,
 				static fn( $event ) => is_array( $event )
-					&& 'holvek_process_job' === ( $event['hook'] ?? '' )
+					&& 'quinrel_process_job' === ( $event['hook'] ?? '' )
 					&& IndexNowFlushJob::class === ( $event['args'][0] ?? '' )
 			)
 		);

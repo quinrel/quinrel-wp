@@ -1,6 +1,6 @@
 <?php
 
-namespace Holvek\WordPress\Modules\Onboarding;
+namespace Quinrel\WordPress\Modules\Onboarding;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,16 +17,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class SetupWizard {
 
-	private const COMPLETED_OPTION = 'holvek_setup_complete';
+	private const COMPLETED_OPTION = 'quinrel_setup_complete';
 
-	private const DISMISSED_META = 'holvek_setup_notice_dismissed';
+	private const DISMISSED_META = 'quinrel_setup_notice_dismissed';
 
 	/**
 	 * Register hooks.
 	 */
 	public function register(): void {
 		add_action( 'admin_notices', array( $this, 'showWelcomeNotice' ) );
-		add_action( 'wp_ajax_holvek_dismiss_setup_notice', array( $this, 'dismissWelcomeNotice' ) );
+		add_action( 'wp_ajax_quinrel_dismiss_setup_notice', array( $this, 'dismissWelcomeNotice' ) );
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
 	}
 
@@ -40,21 +40,21 @@ class SetupWizard {
 		if ( ! current_user_can( 'manage_seo' ) && ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		if ( ! $this->isHolvekScreen() ) {
+		if ( ! $this->isQuinrelScreen() ) {
 			return;
 		}
 
-		$setupUrl = admin_url( 'admin.php?page=holvek#setup' );
-		$nonce    = wp_create_nonce( 'holvek_dismiss_setup_notice' );
+		$setupUrl = admin_url( 'admin.php?page=quinrel#setup' );
+		$nonce    = wp_create_nonce( 'quinrel_dismiss_setup_notice' );
 
-		echo '<div class="notice notice-info is-dismissible holvek-setup-notice" style="border-left-color: #3b82f6; padding: 16px 20px;" data-nonce="' . esc_attr( $nonce ) . '">';
+		echo '<div class="notice notice-info is-dismissible quinrel-setup-notice" style="border-left-color: #3b82f6; padding: 16px 20px;" data-nonce="' . esc_attr( $nonce ) . '">';
 		echo '<div>';
-		echo '<p style="margin:0; font-size:15px; font-weight:600; color:#0f172a;">' . esc_html__( 'Welcome to Holvek!', 'holvek' ) . '</p>';
+		echo '<p style="margin:0; font-size:15px; font-weight:600; color:#0f172a;">' . esc_html__( 'Welcome to Quinrel!', 'quinrel' ) . '</p>';
 		echo '<p style="margin:4px 0 0; color:#475569;">';
 		printf(
 			wp_kses(
 				/* translators: %s: setup wizard URL */
-				__( 'Your SEO is already working with smart defaults. <a href="%s" style="color:#3b82f6; font-weight:500;">Complete the 30-second setup</a> to customize site type and import existing SEO data.', 'holvek' ),
+				__( 'Your SEO is already working with smart defaults. <a href="%s" style="color:#3b82f6; font-weight:500;">Complete the 30-second setup</a> to customize site type and import existing SEO data.', 'quinrel' ),
 				array(
 					'a' => array(
 						'href'  => true,
@@ -68,7 +68,7 @@ class SetupWizard {
 		echo '</div>';
 		echo '</div>';
 		echo '<script>';
-		echo 'document.addEventListener("DOMContentLoaded",function(){var el=document.querySelector(".holvek-setup-notice");if(!el){return;}el.addEventListener("click",function(e){if(!e.target.classList.contains("notice-dismiss")){return;}var body=new FormData();body.append("action","holvek_dismiss_setup_notice");body.append("_ajax_nonce",el.dataset.nonce);fetch(window.ajaxurl,{method:"POST",body:body});});});';
+		echo 'document.addEventListener("DOMContentLoaded",function(){var el=document.querySelector(".quinrel-setup-notice");if(!el){return;}el.addEventListener("click",function(e){if(!e.target.classList.contains("notice-dismiss")){return;}var body=new FormData();body.append("action","quinrel_dismiss_setup_notice");body.append("_ajax_nonce",el.dataset.nonce);fetch(window.ajaxurl,{method:"POST",body:body});});});';
 		echo '</script>';
 	}
 
@@ -76,10 +76,10 @@ class SetupWizard {
 	 * Keep the welcome notice dismissed for this user.
 	 */
 	public function dismissWelcomeNotice(): void {
-		check_ajax_referer( 'holvek_dismiss_setup_notice' );
+		check_ajax_referer( 'quinrel_dismiss_setup_notice' );
 		if ( ! current_user_can( 'manage_seo' ) && ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Sorry, you are not allowed to do that.', 'holvek' ) ),
+				array( 'message' => __( 'Sorry, you are not allowed to do that.', 'quinrel' ) ),
 				403
 			);
 		}
@@ -88,14 +88,14 @@ class SetupWizard {
 	}
 
 	/**
-	 * Admin notices stay on Holvek screens.
+	 * Admin notices stay on Quinrel screens.
 	 */
-	private function isHolvekScreen(): bool {
+	private function isQuinrelScreen(): bool {
 		if ( ! function_exists( 'get_current_screen' ) ) {
 			return false;
 		}
 		$screen = get_current_screen();
-		return is_object( $screen ) && isset( $screen->id ) && str_contains( (string) $screen->id, 'holvek' );
+		return is_object( $screen ) && isset( $screen->id ) && str_contains( (string) $screen->id, 'quinrel' );
 	}
 
 	/**
@@ -103,7 +103,7 @@ class SetupWizard {
 	 */
 	public function registerRoutes(): void {
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/setup/auto-detect',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -114,7 +114,7 @@ class SetupWizard {
 		);
 
 		register_rest_route(
-			'holvek/v1',
+			'quinrel/v1',
 			'/setup/complete',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -137,12 +137,12 @@ class SetupWizard {
 		$socialProfiles = $this->detectSocialProfiles();
 
 		// Detect if other SEO plugins have data to import
-		$migrationManager = new \Holvek\WordPress\Modules\Migration\MigrationManager();
+		$migrationManager = new \Quinrel\WordPress\Modules\Migration\MigrationManager();
 		$detectedPlugins  = $migrationManager->detectPlugins();
 
 		// Check what's already configured
-		$hasGoogleKey = ! empty( get_option( 'holvek_google_indexing_key', '' ) );
-		$hasBingKey   = ! empty( get_option( 'holvek_indexnow_key', '' ) );
+		$hasGoogleKey = ! empty( get_option( 'quinrel_google_indexing_key', '' ) );
+		$hasBingKey   = ! empty( get_option( 'quinrel_indexnow_key', '' ) );
 
 		return rest_ensure_response(
 			array(
@@ -172,22 +172,27 @@ class SetupWizard {
 				array(
 					'success' => true,
 					'skipped' => true,
-					'message' => __( 'Setup skipped. Holvek keeps the current defaults.', 'holvek' ),
+					'message' => __( 'Setup skipped. Quinrel keeps the current defaults.', 'quinrel' ),
 				)
 			);
 		}
 
 		// Save site type (affects schema output)
 		if ( ! empty( $params['site_type'] ) ) {
-			update_option( 'holvek_site_type', sanitize_text_field( $params['site_type'] ) );
+			update_option( 'quinrel_site_type', sanitize_text_field( $params['site_type'] ) );
 		}
 
 		// Save social profiles
 		$socialFields = array( 'facebook', 'twitter', 'instagram', 'linkedin', 'youtube' );
 		foreach ( $socialFields as $field ) {
 			if ( isset( $params['social'][ $field ] ) ) {
-				update_option( 'holvek_social_' . $field, esc_url_raw( $params['social'][ $field ] ) );
+				update_option( 'quinrel_social_' . $field, esc_url_raw( $params['social'][ $field ] ) );
 			}
+		}
+
+		// Enable XML index sitemap when completing setup if not explicitly configured yet
+		if ( null === \Quinrel\WordPress\Modules\Sitemap\SitemapSettings::get( 'enable_index_sitemap', null ) ) {
+			\Quinrel\WordPress\Modules\Sitemap\SitemapSettings::set( 'enable_index_sitemap', 'yes' );
 		}
 
 		// Mark setup as complete — never show the notice again
@@ -199,7 +204,7 @@ class SetupWizard {
 		return rest_ensure_response(
 			array(
 				'success' => true,
-				'message' => __( 'Setup complete. Holvek is using the choices you saved.', 'holvek' ),
+				'message' => __( 'Setup complete. Quinrel is using the choices you saved.', 'quinrel' ),
 			)
 		);
 	}
@@ -261,9 +266,9 @@ class SetupWizard {
 			$profiles['twitter']  = $profiles['twitter'] ?: ( $rmOptions['twitter_author_names'] ?? '' );
 		}
 
-		// Check already-saved Holvek values
+		// Check already-saved Quinrel values
 		foreach ( $profiles as $key => &$val ) {
-			$existing = get_option( 'holvek_social_' . $key, '' );
+			$existing = get_option( 'quinrel_social_' . $key, '' );
 			if ( ! empty( $existing ) ) {
 				$val = $existing;
 			}

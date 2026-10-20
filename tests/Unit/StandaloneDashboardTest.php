@@ -1,9 +1,9 @@
 <?php
 
-namespace Holvek\WordPress\Tests\Unit;
+namespace Quinrel\WordPress\Tests\Unit;
 
-use Holvek\WordPress\Modules\Admin\StandaloneDashboard;
-use Holvek\WordPress\Modules\Admin\UpgradePromptManager;
+use Quinrel\WordPress\Modules\Admin\StandaloneDashboard;
+use Quinrel\WordPress\Modules\Admin\UpgradePromptManager;
 use PHPUnit\Framework\TestCase;
 
 class StandaloneDashboardTest extends TestCase {
@@ -28,7 +28,7 @@ class StandaloneDashboardTest extends TestCase {
 		$dashboard = new StandaloneDashboard();
 		$dashboard->registerRoutes();
 
-		$permission = $GLOBALS['mock_rest_routes']['holvek/v1/dashboard/standalone']['permission_callback'];
+		$permission = $GLOBALS['mock_rest_routes']['quinrel/v1/dashboard/standalone']['permission_callback'];
 		$this->assertFalse( $permission() );
 
 		$before = $GLOBALS['wpdb']->queries;
@@ -49,7 +49,7 @@ class StandaloneDashboardTest extends TestCase {
 			)
 		);
 		update_option( 'blog_public', '0' );
-		update_option( 'holvek_redirect_counts', array( 'exact' => 2, 'regex' => 3 ) );
+		update_option( 'quinrel_redirect_counts', array( 'exact' => 2, 'regex' => 3 ) );
 		$this->mockCounts();
 
 		$dashboard = new StandaloneDashboard();
@@ -65,23 +65,24 @@ class StandaloneDashboardTest extends TestCase {
 		$this->assertSame( 5, $data['redirects'] );
 		$this->assertSame( 0, $data['not_found'] );
 		$this->assertSame( 'setup', $data['next_step'] );
-		$this->assertSame( 'Set up Holvek to choose a site type. Titles and the sitemap already work.', $data['next_step_message'] );
-		$this->assertStringContainsString( 'A Holvek account is optional.', $data['summary'] );
+		$this->assertSame( 'Set up Quinrel to choose a site type. Technical SEO already works on this site.', $data['next_step_message'] );
+		$this->assertStringContainsString( 'A Quinrel account is optional.', $data['summary'] );
+		$this->assertStringContainsString( 'intelligence, quick fixes, and an action plan from the Quinrel API', $data['summary'] );
 		$this->assertStringContainsString( '4 published posts or pages have an empty title.', $data['missing_titles_label'] );
 		$this->assertStringContainsString( '7 images have no alternative text.', $data['missing_alt_label'] );
-		$this->assertStringNotContainsString( 'holvek_404_logs', $sql );
-		$this->assertStringNotContainsString( 'holvek_redirects', $sql );
+		$this->assertStringNotContainsString( 'quinrel_404_logs', $sql );
+		$this->assertStringNotContainsString( 'quinrel_redirects', $sql );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 
-		delete_transient( 'holvek_standalone_counts' );
-		update_option( 'holvek_404_table_exists', 'yes' );
+		delete_transient( 'quinrel_standalone_counts' );
+		update_option( 'quinrel_404_table_exists', 'yes' );
 		$GLOBALS['wpdb']->queries = array();
 		$withLogs                 = $dashboard->snapshot( new \WP_REST_Request() )->get_data();
 		$loggedSql                = implode( "\n", $GLOBALS['wpdb']->queries );
 
 		$this->assertSame( 11, $withLogs['not_found'] );
-		$this->assertStringContainsString( 'holvek_404_logs', $loggedSql );
-		$this->assertStringNotContainsString( 'holvek_redirects', $loggedSql );
+		$this->assertStringContainsString( 'quinrel_404_logs', $loggedSql );
+		$this->assertStringNotContainsString( 'quinrel_redirects', $loggedSql );
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 	}
 
@@ -92,7 +93,7 @@ class StandaloneDashboardTest extends TestCase {
 				'manage_options' => true,
 			)
 		);
-		update_option( 'holvek_setup_complete', true );
+		update_option( 'quinrel_setup_complete', true );
 		update_option( 'blog_public', '1' );
 		$this->mockCounts();
 
@@ -101,7 +102,7 @@ class StandaloneDashboardTest extends TestCase {
 		$this->assertTrue( $data['indexable'] );
 		$this->assertSame( 'Search engines may index this site.', $data['indexability'] );
 		$this->assertSame( 'active', $data['next_step'] );
-		$this->assertSame( 'Your titles and sitemap are already active.', $data['next_step_message'] );
+		$this->assertSame( 'Technical SEO is already active on this site.', $data['next_step_message'] );
 	}
 
 	public function testRepeatReadsUseTheCountCacheAndDoNotScanRedirects(): void {
@@ -134,9 +135,9 @@ class StandaloneDashboardTest extends TestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertSame( '', $html );
-		$this->assertStringNotContainsString( 'Unlock Holvek Pro', $html );
+		$this->assertStringNotContainsString( 'Unlock Quinrel Pro', $html );
 
-		update_option( 'holvek_user_tier', 'free' );
+		update_option( 'quinrel_user_tier', 'free' );
 		$listed = $manager->listFeatures( new \WP_REST_Request() )->get_data();
 		$byKey  = array();
 		foreach ( $listed['features'] as $feature ) {
@@ -155,7 +156,7 @@ class StandaloneDashboardTest extends TestCase {
 		$this->assertStringNotContainsString( 'Client Reporting', $encoded );
 		$this->assertStringNotContainsString( 'AI Visibility', $encoded );
 
-		update_option( 'holvek_user_tier', 'enterprise' );
+		update_option( 'quinrel_user_tier', 'enterprise' );
 		$this->assertFalse( $manager->isFeatureAvailable( 'ai_visibility_tracker' ) );
 		$this->assertTrue( $manager->isFeatureAvailable( 'gsc_integration' ) );
 
@@ -184,9 +185,11 @@ class StandaloneDashboardTest extends TestCase {
 
 		$this->assertStringNotContainsString( '{!showSetup &&', $app );
 		$this->assertStringContainsString( '/dashboard/standalone', $app );
-		$this->assertStringContainsString( 'Your titles and sitemap are already active.', $app );
+		$this->assertStringContainsString( 'Technical SEO is already active on this site.', $app );
+		$this->assertStringContainsString( 'Quinrel Cloud', $app );
+		$this->assertStringContainsString( 'This screen does not invent those results.', $app );
 		$this->assertStringContainsString( 'Connect Google Search Console', $app );
-		$this->assertStringContainsString( 'Connecting Holvek is optional.', $app );
+		$this->assertStringContainsString( 'Connecting Quinrel is optional.', $app );
 		$this->assertStringContainsString( 'gscOpen', $app );
 		$this->assertStringNotContainsString( 'StandaloneDashboard', $htmlBoot );
 		$this->assertStringNotContainsString( 'dashboard/standalone', $htmlBoot );
@@ -202,7 +205,7 @@ class StandaloneDashboardTest extends TestCase {
 	private function mockCounts(): void {
 		$GLOBALS['mock_wpdb_var'] = static function ( $query ) {
 			$query = (string) $query;
-			if ( str_contains( $query, 'holvek_404_logs' ) ) {
+			if ( str_contains( $query, 'quinrel_404_logs' ) ) {
 				return '11';
 			}
 			if ( str_contains( $query, '_wp_attachment_image_alt' ) ) {
@@ -217,11 +220,11 @@ class StandaloneDashboardTest extends TestCase {
 
 	private function resetState(): void {
 		delete_option( 'blog_public' );
-		delete_option( 'holvek_setup_complete' );
-		delete_option( 'holvek_redirect_counts' );
-		delete_option( 'holvek_404_table_exists' );
-		delete_option( 'holvek_user_tier' );
-		delete_transient( 'holvek_standalone_counts' );
+		delete_option( 'quinrel_setup_complete' );
+		delete_option( 'quinrel_redirect_counts' );
+		delete_option( 'quinrel_404_table_exists' );
+		delete_option( 'quinrel_user_tier' );
+		delete_transient( 'quinrel_standalone_counts' );
 		$GLOBALS['mock_http_log']    = array();
 		$GLOBALS['mock_rest_routes'] = array();
 		$GLOBALS['wpdb']->queries    = array();
