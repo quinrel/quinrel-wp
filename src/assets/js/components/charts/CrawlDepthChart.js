@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-const { __, sprintf } = wp.i18n;
+import { __, sprintf } from '@wordpress/i18n';
 
 export const CrawlDepthChart = ({ apiBase, nonce, onActionComplete }) => {
     const [isHealing, setIsHealing] = useState(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-const { __, sprintf } = wp.i18n;
+import { __, sprintf } from '@wordpress/i18n';
 
 export const IndexationFunnelChart = ({ apiBase, nonce, onActionComplete }) => {
     const [funnelData, setFunnelData] = useState(null);

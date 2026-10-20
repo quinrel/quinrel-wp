@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-const { __, sprintf } = wp.i18n;
+import { __, sprintf } from '@wordpress/i18n';
 
 export const CoreWebVitalsGauge = ({ apiBase, nonce, onActionComplete }) => {
     const [strategy, setStrategy] = useState('mobile');

@@ -13,6 +13,7 @@ import {
     AiBotIcon,
     SettingsIcon,
     WandIcon,
+    AuditIcon,
 } from './QuinrelIcons';
 
 export const ActionItemsTodo = ({
