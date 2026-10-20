@@ -3,6 +3,8 @@ import { __ } from '@wordpress/i18n';
 import { Button, TextControl, TextareaControl, Notice, Spinner, ToggleControl } from '@wordpress/components';
 
 import SetupWizard from './components/SetupWizard';
+import QuinrelHeader from './components/QuinrelHeader';
+import PillarNavigation from './components/PillarNavigation';
 import GscTrendChart from './components/GscTrendChart';
 import Ga4TrendChart from './components/Ga4TrendChart';
 import Ga4ChannelChart from './components/Ga4ChannelChart';
@@ -31,6 +33,7 @@ function ollamaHostIsLoopback(url) {
 }
 
 const App = () => {
+    // Visibility & Discovery Intelligence for WordPress, with technical SEO included.
     const quinrelAdminConfig = window.quinrelAdminConfig || {};
     const [showSetup, setShowSetup] = useState(window.location.hash === '#setup');
     const [setupFinished, setSetupFinished] = useState(quinrelAdminConfig.setupComplete === '1');
@@ -1755,14 +1758,16 @@ const App = () => {
 
     return (
         <>
-        <div className="quinrel-wrapper mt-5 p-4 md:p-6 bg-white rounded-lg shadow-sm border border-gray-200">
-            <header className="mb-6 border-b pb-4">
-                <h1 className="text-2xl font-bold text-slate-900 m-0">Quinrel</h1>
-                <p className="text-slate-500 m-0 mt-1">{__('Visibility & Discovery Intelligence for WordPress, with technical SEO included.', 'quinrel')}</p>
-            </header>
+        <div className="quinrel-wrapper mt-5 p-4 sm:p-6 bg-slate-50/50 rounded-2xl shadow-sm border border-slate-200/90">
+            <QuinrelHeader
+                onOpenSetup={() => setShowSetup(true)}
+                onRunAudit={() => setActiveTab('site_audit')}
+                sitemapUrl={standalone?.sitemap_url || '/sitemap.xml'}
+                cloudConnected={cloudConnected}
+            />
 
             {activeCompetitor && !competitorDismissed && (
-                <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" role="alert">
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs" role="alert">
                     <div className="flex items-start gap-3">
                         <span className="text-xl" aria-hidden="true">⚠️</span>
                         <div>
@@ -1771,60 +1776,61 @@ const App = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
-                        <button type="button" onClick={() => setShowSetup(true)} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded shadow-sm">
+                        <button type="button" onClick={() => setShowSetup(true)} className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer">
                             {__('Import & Switch', 'quinrel')}
                         </button>
-                        <button type="button" onClick={deactivateCompetitorFromApp} className="px-3 py-1.5 bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-semibold rounded">
+                        <button type="button" onClick={deactivateCompetitorFromApp} className="px-3.5 py-1.5 bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-semibold rounded-lg transition-colors cursor-pointer">
                             {sprintf(__('Deactivate %s', 'quinrel'), activeCompetitor.name)}
                         </button>
-                        <button type="button" onClick={() => setCompetitorDismissed(true)} aria-label={__('Dismiss', 'quinrel')} className="text-amber-600 hover:text-amber-800 text-sm font-bold ml-1">
+                        <button type="button" onClick={() => setCompetitorDismissed(true)} aria-label={__('Dismiss', 'quinrel')} className="text-amber-600 hover:text-amber-800 text-sm font-bold ml-1 cursor-pointer">
                             ✕
                         </button>
                     </div>
                 </div>
             )}
 
-            <div className="flex flex-col gap-6 lg:flex-row">
-                <aside className="lg:w-64 lg:flex-shrink-0">
-                    <nav className="flex flex-row gap-4 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0 space-y-0 lg:space-y-4" role="tablist" aria-orientation="vertical" aria-label={__('Quinrel settings', 'quinrel')}>
-                        {navPillars.map((pillar) => (
-                            <div key={pillar.title} className="flex-shrink-0">
-                                <div className="hidden lg:block px-3 py-1 text-[11px] font-bold tracking-wider uppercase text-slate-400">
-                                    {pillar.title}
-                                </div>
-                                <div className="flex flex-row lg:flex-col gap-1 mt-1">
-                                    {pillar.items.map((item) => (
-                                        <NavItem
-                                            key={item.id}
-                                            id={item.id}
-                                            label={item.label}
-                                            active={activeTab === item.id}
-                                            onClick={() => setActiveTab(item.id)}
-                                            onKeyDown={onNavKeyDown}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </nav>
-                </aside>
+            {/* ══════════ 4-PILLAR MASTER NAVIGATION & CONTEXTUAL SUBNAV ══════════ */}
+            <PillarNavigation
+                navPillars={navPillars}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+            />
 
-                <main id="quinrel-tabpanel" className="flex-1" role="tabpanel" aria-labelledby={`quinrel-tab-${activeNav.id}`}>
+            {/* ══════════ FULL WIDTH CANVAS TAB PANEL ══════════ */}
+            <main id="quinrel-tabpanel" className="w-full bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/90 shadow-xs" role="tabpanel" aria-labelledby={`quinrel-subtab-${activeNav.id}`}>
                 <p className="quinrel-sr" role="status" aria-live="polite">{activeNav.label}</p>
                 {/* ══════════════ GSC DASHBOARD ══════════════ */}
                     {activeTab === 'dashboard' && (
                         <div className="space-y-6">
-                            <section className="space-y-4" aria-labelledby="quinrel-site-heading">
-                                <div>
-                                    <h2 id="quinrel-site-heading" className="text-xl font-semibold m-0 text-slate-800">{__('This site', 'quinrel')}</h2>
-                                    <p className="text-sm text-slate-600 mt-2 mb-0">{summary}</p>
+                            <section className="space-y-5" aria-labelledby="quinrel-site-heading">
+                                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-7 shadow-sm border border-slate-800">
+                                    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                                        <div className="space-y-2 max-w-2xl">
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                                    {__('Engine Active', 'quinrel')}
+                                                </span>
+                                                <span className="text-xs text-slate-400">
+                                                    {setupFinished ? __('Full site optimization verified', 'quinrel') : __('Initial setup recommended', 'quinrel')}
+                                                </span>
+                                            </div>
+                                            <h2 id="quinrel-site-heading" className="text-xl sm:text-2xl font-bold tracking-tight text-white m-0">{__('This site', 'quinrel')}</h2>
+                                            <p className="text-sm text-slate-300 mt-2 mb-0 leading-relaxed">{summary}</p>
+                                            <p className="text-sm text-indigo-200 font-medium m-0 pt-1">{nextMessage}</p>
+                                        </div>
+                                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto flex-shrink-0">
+                                            {!setupFinished && (
+                                                <button type="button" onClick={() => setShowSetup(true)} className="flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-brand-500 hover:from-indigo-600 hover:to-brand-600 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer">
+                                                    {__('Set up Quinrel', 'quinrel')}
+                                                </button>
+                                            )}
+                                            <button type="button" onClick={() => setActiveTab('site_audit')} className="flex-1 sm:flex-none px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded-xl border border-white/10 transition-colors cursor-pointer">
+                                                {__('Run Site Audit', 'quinrel')}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p className="text-sm text-slate-800 m-0">{nextMessage}</p>
-                                {!setupFinished && (
-                                    <button type="button" onClick={() => setShowSetup(true)} className="px-4 py-2 bg-brand-500 text-white rounded font-medium">
-                                        {__('Set up Quinrel', 'quinrel')}
-                                    </button>
-                                )}
                                 {showSetup && (
                                     <SetupWizard onComplete={() => {
                                         setShowSetup(false);
@@ -1835,17 +1841,17 @@ const App = () => {
                                 {standaloneLoading && <p role="status" className="text-sm text-slate-500 m-0">{__('Loading the local results.', 'quinrel')}</p>}
                                 {standaloneError && <p role="alert" className="text-sm text-amber-800 m-0">{standaloneError}</p>}
                                 {standalone && (
-                                    <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 m-0">
-                                        <div className="border border-indigo-100 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 rounded-lg p-5 col-span-1 md:col-span-2">
+                                    <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 m-0">
+                                        <div className="border border-indigo-100 bg-gradient-to-br from-indigo-50/70 via-purple-50/30 to-white rounded-2xl p-5 col-span-1 md:col-span-2 lg:col-span-3 shadow-2xs">
                                             <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center gap-2">
                                                     <span className="flex h-2.5 w-2.5 relative">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                                                     </span>
-                                                    <dt className="text-sm font-semibold text-slate-800 m-0">{__('AI Search Engine Crawlers (Live Activity)', 'quinrel')}</dt>
+                                                    <dt className="text-sm font-bold text-slate-900 m-0">{__('AI Search Engine Crawlers (Live Activity)', 'quinrel')}</dt>
                                                 </div>
-                                                <dd className="text-xs text-slate-500 m-0">
+                                                <dd className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full m-0">
                                                     {aiBotActivity && aiBotActivity.total > 0 ? `${aiBotActivity.total} ${__('total AI visits', 'quinrel')}` : __('Awaiting first crawler hit', 'quinrel')}
                                                 </dd>
                                             </div>
@@ -1853,76 +1859,76 @@ const App = () => {
                                                 {__('Real-time tracking of AI models and LLM search agents crawling your site via llms.txt and semantic schema.', 'quinrel')}
                                             </p>
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                <div className="bg-white p-3 rounded border border-slate-200">
-                                                    <div className="text-xs text-slate-500 font-medium">ChatGPT / GPTBot</div>
-                                                    <div className="text-lg font-bold text-slate-800">{aiBotActivity ? aiBotActivity.gptbot : 0}</div>
+                                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                                                    <div className="text-xs text-slate-500 font-semibold">ChatGPT / GPTBot</div>
+                                                    <div className="text-xl font-bold text-slate-900 mt-1">{aiBotActivity ? aiBotActivity.gptbot : 0}</div>
                                                 </div>
-                                                <div className="bg-white p-3 rounded border border-slate-200">
-                                                    <div className="text-xs text-slate-500 font-medium">Claude / Anthropic</div>
-                                                    <div className="text-lg font-bold text-slate-800">{aiBotActivity ? aiBotActivity.claudebot : 0}</div>
+                                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                                                    <div className="text-xs text-slate-500 font-semibold">Claude / Anthropic</div>
+                                                    <div className="text-xl font-bold text-slate-900 mt-1">{aiBotActivity ? aiBotActivity.claudebot : 0}</div>
                                                 </div>
-                                                <div className="bg-white p-3 rounded border border-slate-200">
-                                                    <div className="text-xs text-slate-500 font-medium">PerplexityBot</div>
-                                                    <div className="text-lg font-bold text-slate-800">{aiBotActivity ? aiBotActivity.perplexitybot : 0}</div>
+                                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                                                    <div className="text-xs text-slate-500 font-semibold">PerplexityBot</div>
+                                                    <div className="text-xl font-bold text-slate-900 mt-1">{aiBotActivity ? aiBotActivity.perplexitybot : 0}</div>
                                                 </div>
-                                                <div className="bg-white p-3 rounded border border-slate-200">
-                                                    <div className="text-xs text-slate-500 font-medium">Google & Apple AI</div>
-                                                    <div className="text-lg font-bold text-slate-800">{aiBotActivity ? (aiBotActivity.google_extended + aiBotActivity.applebot) : 0}</div>
+                                                <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                                                    <div className="text-xs text-slate-500 font-semibold">Google & Apple AI</div>
+                                                    <div className="text-xl font-bold text-slate-900 mt-1">{aiBotActivity ? (aiBotActivity.google_extended + aiBotActivity.applebot) : 0}</div>
                                                 </div>
                                             </div>
                                             {aiBotActivity && aiBotActivity.last_seen && (
-                                                <div className="text-xs text-slate-500 mt-3">
+                                                <div className="text-xs text-slate-500 mt-3 pt-3 border-t border-indigo-100">
                                                     {`${__('Last AI crawler hit:', 'quinrel')} ${aiBotActivity.last_seen} (${String(aiBotActivity.last_bot).toUpperCase()})`}
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Indexability', 'quinrel')}</dt>
-                                            <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.indexability}</dd>
+                                        <div className="bg-white rounded-xl p-4.5 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+                                            <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">{__('Indexability', 'quinrel')}</dt>
+                                            <dd className="text-base font-semibold text-slate-900 mt-1 mb-0">{standalone.indexability}</dd>
                                             {standalone.indexable === false && (
-                                                <dd className="mt-3 mb-0">
-                                                    <a href="options-reading.php" className="text-sm font-medium text-indigo-700 underline">{__('Open Reading settings', 'quinrel')}</a>
+                                                <dd className="mt-3.5 pt-3 border-t border-slate-100 mb-0">
+                                                    <a href="options-reading.php" className="text-xs font-semibold text-amber-700 underline">{__('Open Reading settings', 'quinrel')}</a>
                                                 </dd>
                                             )}
                                         </div>
-                                        <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Sitemap', 'quinrel')}</dt>
-                                            <dd className="text-sm mt-1 mb-0 break-all">
-                                                <a href={standalone.sitemap_url} className="text-indigo-700 underline">{standalone.sitemap_url}</a>
+                                        <div className="bg-white rounded-xl p-4.5 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+                                            <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">{__('Sitemap', 'quinrel')}</dt>
+                                            <dd className="text-xs mt-1 mb-0 break-all">
+                                                <a href={standalone.sitemap_url} className="font-semibold text-indigo-700 underline">{standalone.sitemap_url}</a>
                                             </dd>
                                         </div>
-                                        <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Missing titles', 'quinrel')}</dt>
-                                            <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.missing_titles_label}</dd>
-                                            <dd className="mt-3 mb-0">
-                                                <button type="button" onClick={() => setActiveTab('bulk_meta')} className="text-sm font-medium text-indigo-700 underline bg-transparent border-0 p-0 cursor-pointer">{__('Edit titles', 'quinrel')}</button>
+                                        <div className="bg-white rounded-xl p-4.5 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+                                            <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">{__('Missing titles', 'quinrel')}</dt>
+                                            <dd className="text-base font-semibold text-slate-900 mt-1 mb-0">{standalone.missing_titles_label}</dd>
+                                            <dd className="mt-3.5 pt-3 border-t border-slate-100 mb-0">
+                                                <button type="button" onClick={() => setActiveTab('bulk_meta')} className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 underline bg-transparent border-0 p-0 cursor-pointer">{__('Edit titles', 'quinrel')}</button>
                                             </dd>
                                         </div>
-                                        <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Missing alt text', 'quinrel')}</dt>
-                                            <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.missing_alt_label}</dd>
-                                            <dd className="mt-3 mb-0">
-                                                <button type="button" onClick={() => setActiveTab('image_seo')} className="text-sm font-medium text-indigo-700 underline bg-transparent border-0 p-0 cursor-pointer">{__('Review images', 'quinrel')}</button>
+                                        <div className="bg-white rounded-xl p-4.5 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+                                            <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">{__('Missing alt text', 'quinrel')}</dt>
+                                            <dd className="text-base font-semibold text-slate-900 mt-1 mb-0">{standalone.missing_alt_label}</dd>
+                                            <dd className="mt-3.5 pt-3 border-t border-slate-100 mb-0">
+                                                <button type="button" onClick={() => setActiveTab('image_seo')} className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 underline bg-transparent border-0 p-0 cursor-pointer">{__('Review images', 'quinrel')}</button>
                                             </dd>
                                         </div>
-                                        <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Redirects', 'quinrel')}</dt>
-                                            <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.redirects_label}</dd>
-                                            <dd className="mt-3 mb-0">
-                                                <button type="button" onClick={() => { setTechSubTab('redirects'); setActiveTab('technical'); }} className="text-sm font-medium text-indigo-700 underline bg-transparent border-0 p-0 cursor-pointer">{__('Open redirects', 'quinrel')}</button>
+                                        <div className="bg-white rounded-xl p-4.5 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+                                            <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">{__('Redirects', 'quinrel')}</dt>
+                                            <dd className="text-base font-semibold text-slate-900 mt-1 mb-0">{standalone.redirects_label}</dd>
+                                            <dd className="mt-3.5 pt-3 border-t border-slate-100 mb-0">
+                                                <button type="button" onClick={() => { setTechSubTab('redirects'); setActiveTab('technical'); }} className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 underline bg-transparent border-0 p-0 cursor-pointer">{__('Open redirects', 'quinrel')}</button>
                                             </dd>
                                         </div>
-                                        <div className="border rounded-lg p-4">
-                                            <dt className="text-sm font-medium text-slate-500">{__('Not found', 'quinrel')}</dt>
-                                            <dd className="text-sm text-slate-900 mt-1 mb-0">{standalone.not_found_label}</dd>
-                                            <dd className="mt-3 mb-0">
-                                                <button type="button" onClick={() => { setTechSubTab('404s'); setActiveTab('technical'); }} className="text-sm font-medium text-indigo-700 underline bg-transparent border-0 p-0 cursor-pointer">{__('Open the 404 log', 'quinrel')}</button>
+                                        <div className="bg-white rounded-xl p-4.5 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+                                            <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">{__('Not found', 'quinrel')}</dt>
+                                            <dd className="text-base font-semibold text-slate-900 mt-1 mb-0">{standalone.not_found_label}</dd>
+                                            <dd className="mt-3.5 pt-3 border-t border-slate-100 mb-0">
+                                                <button type="button" onClick={() => { setTechSubTab('404s'); setActiveTab('technical'); }} className="text-xs font-semibold text-indigo-700 hover:text-indigo-900 underline bg-transparent border-0 p-0 cursor-pointer">{__('Open the 404 log', 'quinrel')}</button>
                                             </dd>
                                         </div>
                                     </dl>
                                 )}
                             </section>
-                            <section className="border rounded-lg p-4 space-y-3" aria-labelledby="quinrel-cloud-heading">
+                            <section className="border border-slate-200/90 bg-white rounded-2xl p-5 sm:p-6 space-y-4 shadow-2xs" aria-labelledby="quinrel-cloud-heading">
                                     <h3 id="quinrel-cloud-heading" className="text-base font-semibold text-slate-800 m-0">{__('Quinrel Cloud', 'quinrel')}</h3>
                                     <p className="text-sm text-slate-800 m-0">
                                         {cloudConnected
@@ -1983,7 +1989,7 @@ const App = () => {
                                     )}
                             </section>
 
-                            <section className="space-y-4 border rounded-lg p-4" aria-labelledby="quinrel-gsc-heading">
+                            <section className="space-y-4 border border-slate-200/90 bg-white rounded-2xl p-5 sm:p-6 shadow-2xs" aria-labelledby="quinrel-gsc-heading">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <h3 id="quinrel-gsc-heading" className="text-base font-semibold m-0 text-slate-800">{__('Search Console', 'quinrel')}</h3>
@@ -4400,7 +4406,6 @@ const App = () => {
                     )}
 
                 </main>
-            </div>
         </div>
         </>
     );

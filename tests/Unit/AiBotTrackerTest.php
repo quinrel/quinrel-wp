@@ -85,3 +85,4 @@ class AiBotTrackerTest extends TestCase
         $this->assertSame(1, $data['data']['gptbot']);
     }
 }
+

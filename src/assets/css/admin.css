@@ -5,10 +5,23 @@
 .quinrel-wrapper {
 	/* Namespace our tailwind utilities to prevent conflicts with WP Admin */
 	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	letter-spacing: -0.01em;
 }
 
 .quinrel-wrapper * {
 	box-sizing: border-box;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-none::-webkit-scrollbar {
+	display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-none {
+	-ms-overflow-style: none;  /* IE and Edge */
+	scrollbar-width: none;  /* Firefox */
 }
 
 /* Form validation error state */
@@ -26,7 +39,7 @@
 .quinrel-wrapper select:focus-visible,
 .quinrel-wrapper textarea:focus-visible,
 .quinrel-wrapper summary:focus-visible {
-	outline: 2px solid #1e293b;
+	outline: 2px solid #4f46e5;
 	outline-offset: 2px;
 }
 
