@@ -2511,7 +2511,7 @@ const App = () => {
 
 
                     {activeTab === 'technical' && (
-                        <div className="space-y-6 max-w-4xl">
+                        <div className="space-y-6 w-full">
                             <div className="flex justify-between items-center border-b pb-4">
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">Technical SEO</h2>
                                 <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
@@ -2890,7 +2890,7 @@ const App = () => {
 
                     {/* ══════════════ HTML SITEMAP TAB ══════════════ */}
                     {activeTab === 'html_sitemap' && (
-                        <div className="space-y-6 max-w-3xl">
+                        <div className="space-y-6 w-full">
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">HTML Sitemap Builder</h2>
                                 <p className="text-slate-500 text-sm mt-1">Configure and preview your visual HTML sitemap. Use the shortcode <code className="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-700 font-mono text-xs">[quinrel_sitemap]</code> to embed it on any page.</p>
@@ -2969,7 +2969,7 @@ const App = () => {
                     )}
 
                     {activeTab === 'sitemaps' && (
-                        <div className="space-y-6 max-w-3xl">
+                        <div className="space-y-6 w-full">
                                     <h2 className="text-xl font-semibold m-0 text-slate-800">XML Sitemaps</h2>
                             <p className="text-slate-600">Use this only when you intend Quinrel to provide your sitemap. It is disabled by default so WordPress Core and existing SEO plugins keep control.</p>
 
@@ -3164,7 +3164,7 @@ const App = () => {
                     )}
 
                     {activeTab === 'schema' && (
-                        <div className="space-y-6 max-w-3xl">
+                        <div className="space-y-6 w-full">
                             <h2 className="text-xl font-semibold m-0 text-slate-800">Schema Markup Templates</h2>
                             <p className="text-slate-600">
                                 Build conditional rules to dynamically inject schemas like Article, Recipe, Event, and FAQPage across your site based on post types or categories.
@@ -3622,7 +3622,7 @@ const App = () => {
 
                     {/* ══════════════ IMAGE SEO TAB ══════════════ */}
                     {activeTab === 'image_seo' && (
-                        <div className="space-y-8 max-w-4xl">
+                        <div className="space-y-8 w-full">
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">Image SEO</h2>
                                 <p className="text-slate-500 text-sm mt-1">Create reversible JPEG and PNG optimizations, then audit missing alt text across your media library.</p>
@@ -3755,7 +3755,7 @@ const App = () => {
 
                     {/* ══════════════ COMPLIANCE TAB ══════════════ */}
                     {activeTab === 'compliance' && (
-                        <div className="space-y-6 max-w-3xl">
+                        <div className="space-y-6 w-full">
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">Cookie & Compliance</h2>
                                 <p className="text-slate-500 text-sm mt-1">Configure a lightweight cookie notice. It records a visitor’s choice but does not block or manage third-party scripts.</p>
@@ -3816,7 +3816,7 @@ const App = () => {
                     )}
                     {/* ══════════════ NETWORK SEO TAB (Multisite only) ══════════════ */}
                     {activeTab === 'network_seo' && isMultisite && (
-                        <div className="space-y-6 max-w-4xl">
+                        <div className="space-y-6 w-full">
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">Network SEO</h2>
                                 <p className="text-slate-500 text-sm mt-1">Configure network-wide SEO defaults for your WordPress Multisite. Individual sites can override these when allowed.</p>
@@ -3903,7 +3903,7 @@ const App = () => {
 
                     {/* ══════════════ SITE AUDIT TAB ══════════════ */}
                     {activeTab === 'site_audit' && (
-                        <div className="space-y-6 max-w-4xl">
+                        <div className="space-y-6 w-full">
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h2 className="text-xl font-semibold m-0 text-slate-800">Technical SEO Audit</h2>
@@ -3937,20 +3937,24 @@ const App = () => {
                             </div>
 
                             {/* Dynamic Sub-View Rendering */}
-                            {(auditSubView === 'overview' || auditSubView === 'cwv') && (
-                                <CoreWebVitalsGauge apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
-                            )}
+                            {auditSubView === 'overview' ? (
+                                <div className="space-y-6">
+                                    <CoreWebVitalsGauge apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                                    
+                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                        <IndexationFunnelChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                                        <CrawlDepthChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                                    </div>
 
-                            {(auditSubView === 'overview' || auditSubView === 'funnel') && (
-                                <IndexationFunnelChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
-                            )}
-
-                            {(auditSubView === 'overview' || auditSubView === 'crawl') && (
-                                <CrawlDepthChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
-                            )}
-
-                            {(auditSubView === 'overview' || auditSubView === 'a11y') && (
-                                <AccessibilityBreakdownChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                                    <AccessibilityBreakdownChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {auditSubView === 'cwv' && <CoreWebVitalsGauge apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />}
+                                    {auditSubView === 'funnel' && <IndexationFunnelChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />}
+                                    {auditSubView === 'crawl' && <CrawlDepthChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />}
+                                    {auditSubView === 'a11y' && <AccessibilityBreakdownChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />}
+                                </div>
                             )}
 
                             {(auditSubView === 'overview' || auditSubView === 'checks') && (
@@ -4035,7 +4039,7 @@ const App = () => {
 
                     {/* ══════════════ BROKEN LINKS TAB ══════════════ */}
                     {activeTab === 'broken_links' && (
-                        <div className="space-y-6 max-w-5xl">
+                        <div className="space-y-6 w-full">
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h2 className="text-xl font-semibold m-0 text-slate-800">Broken Link Checker</h2>
@@ -4119,7 +4123,7 @@ const App = () => {
 
                     {/* ══════════════ KEYWORD RANK TRACKER TAB ══════════════ */}
                     {activeTab === 'rank_tracker' && (
-                        <div className="space-y-6 max-w-4xl">
+                        <div className="space-y-6 w-full">
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">Keyword Rank Tracker</h2>
                                 <p className="text-slate-500 text-sm mt-1">Track your Google ranking positions over time. Checks run daily via SerpApi.</p>
@@ -4138,9 +4142,9 @@ const App = () => {
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-5 gap-6">
-                                {/* Keyword manager — left 2/5 */}
-                                <div className="col-span-2 space-y-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                                {/* Keyword manager — left 2/5 on desktop */}
+                                <div className="col-span-1 lg:col-span-2 space-y-4">
                                     <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
                                         <h3 className="text-sm font-semibold text-slate-700 m-0">Tracked Keywords <span className="text-slate-400 font-normal">({rankKeywords.length}/100)</span></h3>
 
@@ -4189,8 +4193,8 @@ const App = () => {
                                     </div>
                                 </div>
 
-                                {/* History panel — right 3/5 */}
-                                <div className="col-span-3">
+                                {/* History panel — right 3/5 on desktop */}
+                                <div className="col-span-1 lg:col-span-3">
                                     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                                         <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
                                             <span className="text-sm font-semibold text-slate-700">Position History</span>

@@ -53,15 +53,15 @@ export const CoreWebVitalsGauge = ({ apiBase, nonce, onActionComplete }) => {
             </div>
 
             {/* 4 Lighthouse Metric Radial Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                 {[
                     { label: __('Performance', 'quinrel'), score: scores.perf },
                     { label: __('Accessibility', 'quinrel'), score: scores.a11y },
                     { label: __('Best Practices', 'quinrel'), score: scores.best },
                     { label: __('SEO', 'quinrel'), score: scores.seo },
                 ].map((m, i) => (
-                    <div key={i} className="p-4 rounded-xl bg-slate-50/70 border border-slate-100 flex flex-col items-center justify-center text-center">
-                        <div className="relative w-20 h-20 flex items-center justify-center mb-2">
+                    <div key={i} className="p-5 sm:p-6 rounded-2xl bg-slate-50/70 border border-slate-200/80 flex flex-col items-center justify-center text-center shadow-2xs hover:shadow-xs transition-shadow">
+                        <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center mb-3">
                             <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="38" fill="transparent" stroke="#e2e8f0" strokeWidth="8" />
                                 <circle
@@ -77,35 +77,35 @@ export const CoreWebVitalsGauge = ({ apiBase, nonce, onActionComplete }) => {
                                     className="transition-all duration-1000 ease-out"
                                 />
                             </svg>
-                            <span className="absolute text-lg font-black text-slate-900">{m.score}</span>
+                            <span className="absolute text-xl sm:text-2xl font-black text-slate-900">{m.score}</span>
                         </div>
-                        <span className="text-xs font-bold text-slate-800">{m.label}</span>
-                        <span className="text-[10px] text-emerald-600 font-semibold uppercase mt-0.5 tracking-wider">{__('Good (Green)', 'quinrel')}</span>
+                        <span className="text-sm font-bold text-slate-800">{m.label}</span>
+                        <span className="text-[11px] text-emerald-600 font-semibold uppercase mt-0.5 tracking-wider">{__('Good (Green)', 'quinrel')}</span>
                     </div>
                 ))}
             </div>
 
             {/* Core Web Vitals Field Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                 {cwvMetrics.map((cwv, i) => (
-                    <div key={i} className="p-3.5 rounded-xl border border-slate-200/80 bg-white space-y-1.5">
+                    <div key={i} className="p-4 sm:p-5 rounded-2xl border border-slate-200/80 bg-white space-y-2 shadow-2xs hover:shadow-xs transition-shadow">
                         <div className="flex justify-between items-center text-xs">
                             <span className="font-bold text-slate-700 truncate">{cwv.name.split(' ')[0]}</span>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 {cwv.status}
                             </span>
                         </div>
                         <div className="flex items-baseline justify-between">
-                            <span className="text-xl font-black text-slate-900 tracking-tight">{cwv.value}</span>
-                            <span className="text-[10px] text-slate-400">{cwv.target}</span>
+                            <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{cwv.value}</span>
+                            <span className="text-xs text-slate-400 font-medium">{cwv.target}</span>
                         </div>
                         {/* Sparkline mini-graph */}
-                        <div className="h-6 w-full flex items-end gap-1 pt-1">
+                        <div className="h-8 w-full flex items-end gap-1.5 pt-2">
                             {cwv.trend.map((val, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex-1 bg-indigo-500/20 hover:bg-indigo-500 rounded-xs transition-colors"
-                                    style={{ height: `${20 + idx * 15}%` }}
+                                    className="flex-1 bg-indigo-500/25 hover:bg-indigo-600 rounded-xs transition-colors cursor-pointer"
+                                    style={{ height: `${20 + idx * 16}%` }}
                                     title={`Snapshot ${idx + 1}`}
                                 />
                             ))}
@@ -114,20 +114,22 @@ export const CoreWebVitalsGauge = ({ apiBase, nonce, onActionComplete }) => {
                 ))}
             </div>
 
-            {/* Opportunities Bar */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2.5">
-                <span className="text-xs font-bold text-slate-800 block">{__('Active Autonomous Core Web Vitals Optimizers', 'quinrel')}</span>
-                <div className="space-y-2">
+            {/* Opportunities Grid */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">{__('Active Autonomous Core Web Vitals Optimizers', 'quinrel')}</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {opportunities.map((opp, i) => (
-                        <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between text-xs p-2 rounded-lg bg-white border border-slate-200/70 gap-2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-emerald-500 font-bold">✓</span>
-                                <span className="text-slate-700 font-medium">{opp.title}</span>
-                                <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                    {sprintf(__('Saved %s', 'quinrel'), opp.savings)}
-                                </span>
+                        <div key={i} className="flex flex-col justify-between text-xs p-4 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:shadow-xs transition-shadow gap-3">
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                                    <span>✓</span>
+                                    <span className="text-[11px] uppercase tracking-wider font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                        {sprintf(__('Saved %s', 'quinrel'), opp.savings)}
+                                    </span>
+                                </div>
+                                <p className="text-slate-800 font-semibold m-0 text-sm leading-snug">{opp.title}</p>
                             </div>
-                            <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md self-start sm:self-auto">
+                            <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md self-start border border-indigo-100">
                                 {opp.action}
                             </span>
                         </div>
