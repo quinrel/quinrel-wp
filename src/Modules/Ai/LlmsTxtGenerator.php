@@ -51,10 +51,16 @@ class LlmsTxtGenerator {
 	}
 
 	public function serveFile(): void {
-		if ( ! get_query_var( 'quinrel_llms_txt' ) ) {
-			return;
+		$isLlmsQuery = (bool) get_query_var( 'quinrel_llms_txt' );
+		if ( ! $isLlmsQuery ) {
+			$reqUri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+			$path   = (string) wp_parse_url( $reqUri, PHP_URL_PATH );
+			if ( ! preg_match( '#/llms\.txt$#i', $path ) ) {
+				return;
+			}
 		}
 
+		status_header( 200 );
 		header( 'Content-Type: text/plain; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex' );
 

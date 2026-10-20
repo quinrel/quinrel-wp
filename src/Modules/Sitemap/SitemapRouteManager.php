@@ -121,7 +121,7 @@ class SitemapRouteManager {
 		}
 
 		// ── Main Sitemap Index ──
-		if ( preg_match( '#/sitemap\.xml$#', $path ) ) {
+		if ( preg_match( '#/(sitemap|sitemap_index)\.xml$#', $path ) ) {
 			$this->dispatch( 'index', '', 1 );
 		}
 

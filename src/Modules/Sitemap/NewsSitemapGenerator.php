@@ -14,6 +14,7 @@ class NewsSitemapGenerator {
 	private const WINDOW_SECONDS = 48 * HOUR_IN_SECONDS;
 
 	public function serveSitemap(): void {
+		status_header( 200 );
 		header( 'Content-Type: text/xml; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, follow', true );
 

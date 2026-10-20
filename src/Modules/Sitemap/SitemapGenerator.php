@@ -33,6 +33,7 @@ class SitemapGenerator {
 	 * @param int         $page  Page within that month. Page 1 has no suffix.
 	 */
 	public function serveSitemap( ?string $chunk = null, int $page = 1 ): void {
+		status_header( 200 );
 		header( 'Content-Type: text/xml; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, follow', true );
 
