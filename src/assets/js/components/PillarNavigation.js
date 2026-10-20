@@ -25,6 +25,7 @@ import {
     CloudIcon,
     SpeedIcon,
     DatabaseIcon,
+    GoogleIcon,
 } from './QuinrelIcons';
 
 const TOOL_ICONS = {
@@ -46,7 +47,9 @@ const TOOL_ICONS = {
     compliance: ComplianceIcon,
     roles: RolesIcon,
     settings: SettingsIcon,
+    settings_general: SettingsIcon,
     settings_cloud: CloudIcon,
+    settings_gsc: GoogleIcon,
     settings_webmasters: AnalyticsIcon,
     settings_indexing: LinkIcon,
     settings_performance: SpeedIcon,

@@ -69,6 +69,26 @@ class GoogleSearchConsoleIntegration {
 
 		register_rest_route(
 			'quinrel/v1',
+			'/gsc/sites',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'getSites' ),
+				'permission_callback' => $adminCap,
+			)
+		);
+
+		register_rest_route(
+			'quinrel/v1',
+			'/gsc/property',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'setProperty' ),
+				'permission_callback' => $adminCap,
+			)
+		);
+
+		register_rest_route(
+			'quinrel/v1',
 			'/gsc/performance',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -166,12 +186,66 @@ class GoogleSearchConsoleIntegration {
 	}
 
 	public function getStatus( \WP_REST_Request $request ): \WP_REST_Response {
-		$token = get_option( self::TOKEN_OPTION );
+		$token  = get_option( self::TOKEN_OPTION );
+		$config = $this->getConfig();
 		return rest_ensure_response(
 			array(
-				'connected'  => ! empty( $token['access_token'] ),
-				'expires_at' => $token['expires_at'] ?? null,
-				'site_url'   => home_url(),
+				'connected'         => ! empty( $token['access_token'] ),
+				'expires_at'        => $token['expires_at'] ?? null,
+				'site_url'          => home_url(),
+				'selected_property' => $config['selected_property'] ?? home_url( '/' ),
+			)
+		);
+	}
+
+	public function getSites( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$token = $this->getValidToken();
+		if ( is_wp_error( $token ) ) {
+			return $token;
+		}
+
+		$response = wp_safe_remote_get(
+			'https://www.googleapis.com/webmasters/v3/sites',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $token,
+					'Accept'        => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$data  = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$sites = is_array( $data ) && isset( $data['siteEntry'] ) ? $data['siteEntry'] : array();
+
+		return rest_ensure_response(
+			array(
+				'sites' => $sites,
+			)
+		);
+	}
+
+	public function setProperty( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$property = sanitize_text_field( $request->get_param( 'property' ) ?? '' );
+		if ( empty( $property ) ) {
+			return new \WP_Error( 'missing_property', __( 'Property identifier is required.', 'quinrel' ), array( 'status' => 400 ) );
+		}
+
+		$config                      = $this->getConfig();
+		$config['selected_property'] = $property;
+		update_option( self::CONFIG_OPTION, $config, false );
+
+		delete_transient( 'gsc_perf_summary' );
+
+		return rest_ensure_response(
+			array(
+				'success'           => true,
+				'selected_property' => $property,
+				'message'           => __( 'Google Search Console property updated successfully.', 'quinrel' ),
 			)
 		);
 	}
@@ -230,7 +304,9 @@ class GoogleSearchConsoleIntegration {
 			);
 		}
 
-		$siteUrl  = rawurlencode( home_url( '/' ) );
+		$config   = $this->getConfig();
+		$propUrl  = ! empty( $config['selected_property'] ) ? $config['selected_property'] : home_url( '/' );
+		$siteUrl  = rawurlencode( $propUrl );
 		$response = wp_safe_remote_post(
 			"https://www.googleapis.com/webmasters/v3/sites/{$siteUrl}/searchAnalytics/query",
 			array(
@@ -267,7 +343,9 @@ class GoogleSearchConsoleIntegration {
 			return $token;
 		}
 
-		$siteUrl = rawurlencode( home_url( '/' ) );
+		$config  = $this->getConfig();
+		$propUrl = ! empty( $config['selected_property'] ) ? $config['selected_property'] : home_url( '/' );
+		$siteUrl = rawurlencode( $propUrl );
 		$today   = gmdate( 'Y-m-d' );
 		$periods = array(
 			'recent' => array( gmdate( 'Y-m-d', strtotime( '-28 days' ) ), $today ),

@@ -56,15 +56,22 @@ const App = () => {
     const [settingsSubTab, setSettingsSubTab] = useState(() => {
         const init = quinrelAdminConfig.initialTab || '';
         if (init === 'roles' || init === 'settings_roles') return 'roles';
+        if (init === 'settings' || init === 'settings_general') return 'general';
+        if (init === 'settings_cloud') return 'cloud';
+        if (init === 'settings_gsc') return 'gsc';
         if (init.startsWith('settings_')) return init.replace('settings_', '');
-        return 'cloud';
+        return 'general';
     });
 
     useEffect(() => {
         if (activeTab === 'roles' || activeTab === 'settings_roles') {
             setSettingsSubTab('roles');
-        } else if (activeTab === 'settings' || activeTab === 'settings_cloud') {
+        } else if (activeTab === 'settings' || activeTab === 'settings_general') {
+            setSettingsSubTab('general');
+        } else if (activeTab === 'settings_cloud') {
             setSettingsSubTab('cloud');
+        } else if (activeTab === 'settings_gsc') {
+            setSettingsSubTab('gsc');
         } else if (activeTab.startsWith('settings_')) {
             setSettingsSubTab(activeTab.replace('settings_', ''));
         }
@@ -1760,8 +1767,10 @@ const App = () => {
         {
             title: __('Settings', 'quinrel'),
             items: [
-                { id: 'settings', label: __('General & Cloud', 'quinrel') },
-                { id: 'settings_webmasters', label: __('Search Console & Bing', 'quinrel') },
+                { id: 'settings_general', label: __('General & Breadcrumbs', 'quinrel') },
+                { id: 'settings_cloud', label: __('Quinrel Cloud', 'quinrel') },
+                { id: 'settings_gsc', label: __('Google Search Console', 'quinrel') },
+                { id: 'settings_webmasters', label: __('Bing & Verification', 'quinrel') },
                 { id: 'settings_indexing', label: __('Indexing & Instant Push', 'quinrel') },
                 { id: 'settings_performance', label: __('Performance & Speed', 'quinrel') },
                 { id: 'settings_ai', label: __('AI Engine Vault', 'quinrel') },
@@ -1777,7 +1786,8 @@ const App = () => {
     const activeNav = navItems.find((item) =>
         item.id === activeTab ||
         (activeTab === 'roles' && item.id === 'settings_roles') ||
-        (activeTab === 'settings' && item.id === 'settings')
+        (activeTab === 'settings' && item.id === 'settings_general') ||
+        (activeTab.startsWith('settings_') && item.id === activeTab)
     ) || navItems[0];
     const onNavKeyDown = (event) => {
         if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
@@ -2000,7 +2010,7 @@ const App = () => {
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={() => { setActiveTab('settings'); setSettingsSubTab('cloud'); }}
+                                        onClick={() => { setActiveTab('settings_cloud'); setSettingsSubTab('cloud'); }}
                                         className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer self-start sm:self-auto"
                                     >
                                         {__('Manage in Settings →', 'quinrel')}
@@ -2061,161 +2071,14 @@ const App = () => {
                                 )}
                             </section>
 
-                            <section className="space-y-4 border border-slate-200/90 bg-white rounded-2xl p-5 sm:p-6 shadow-2xs" aria-labelledby="quinrel-gsc-heading">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <h3 id="quinrel-gsc-heading" className="text-base font-semibold m-0 text-slate-800">{__('Search Console', 'quinrel')}</h3>
-                                        <p className="text-sm text-slate-600 mt-1 mb-0">{__('Search Console is optional. Titles, the sitemap, and robots.txt are already published without it.', 'quinrel')}</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => { setActiveTab('settings'); setSettingsSubTab('webmasters'); }}
-                                        className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer self-start sm:self-auto"
-                                    >
-                                        {__('Configure in Settings →', 'quinrel')}
-                                    </button>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <button type="button" onClick={() => { setActiveTab('settings'); setSettingsSubTab('webmasters'); }} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            {/* Google Search Console has dedicated home under Settings → Google Search Console */}
+                            {false && (
+                                <div>
+                                    <button type="button" onClick={() => { setActiveTab('settings_gsc'); setSettingsSubTab('gsc'); }}>
                                         {__('Connect Google Search Console', 'quinrel')}
                                     </button>
-                                    {!gscOpen ? (
-                                        <button type="button" onClick={() => setGscOpen(true)} className="px-4 py-2 bg-white border border-slate-300 rounded font-medium text-slate-800 cursor-pointer hover:bg-slate-50 transition-colors text-sm">
-                                            {__('Show Search Console', 'quinrel')}
-                                        </button>
-                                    ) : (
-                                        <button type="button" onClick={() => setGscOpen(false)} className="px-4 py-2 bg-slate-100 border border-slate-300 rounded font-medium text-slate-700 cursor-pointer hover:bg-slate-200 transition-colors text-sm">
-                                            {__('Hide Search Console', 'quinrel')}
-                                        </button>
-                                    )}
+                                    {gscOpen}
                                 </div>
-                            </section>
-
-                            {gscOpen && (
-                            <section className="border border-slate-200/90 bg-white rounded-2xl p-5 sm:p-6 space-y-6 shadow-2xs" aria-label={__('Google Search Console Data', 'quinrel')}>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-base font-bold m-0 text-slate-800">{__('Google Search Console Live Performance', 'quinrel')}</h3>
-                                    {gscData?.period && <p className="text-xs text-slate-500 mt-1 mb-0">{gscData.period.start} → {gscData.period.end} &nbsp;·&nbsp; {gscData.cached ? '⚡ Cached' : '🔄 Live'}</p>}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <button type="button" onClick={() => { setGscData(null); setCannData(null); }} className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold bg-transparent border-none cursor-pointer p-0">↺ Refresh</button>
-                                    <span className="text-slate-300">|</span>
-                                    <button type="button" onClick={() => setGscOpen(false)} className="text-xs text-slate-500 hover:text-slate-700 font-semibold bg-transparent border-none cursor-pointer p-0">{__('Close', 'quinrel')}</button>
-                                </div>
-                            </div>
-
-                            {gscLoading && <div className="flex items-center gap-3 p-6 bg-slate-50 rounded-lg"><Spinner /><span className="text-slate-500">Connecting to Google Search Console…</span></div>}
-                            {gscError && <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">⚠ {gscError}</div>}
-
-                            {gscData?.summary && (
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <StatCard title="Total Clicks" value={fmtNum(gscData.summary.clicks)} type="success" />
-                                    <StatCard title="Impressions" value={fmtNum(gscData.summary.impressions)} />
-                                    <StatCard title="Avg. CTR" value={gscData.summary.avg_ctr + '%'} />
-                                    <StatCard title="Avg. Position" value={String(gscData.summary.avg_position)} type="success" />
-                                </div>
-                            )}
-
-                            {gscData && (
-                                <div className="flex gap-2 border-b border-slate-200">
-                                    {[['overview','📋 Overview'],['pages','📄 Top Pages'],['cannibalization','⚠ Cannibalization']].map(([id, label]) => (
-                                        <button type="button" key={id} onClick={() => setGscSubTab(id)}
-                                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors bg-transparent cursor-pointer ${gscSubTab === id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>{label}</button>
-                                    ))}
-                                </div>
-                            )}
-
-                            {gscData && gscSubTab === 'overview' && (
-                                <div className="space-y-6">
-                                    {gscData.trend?.length > 0 && (
-                                        <div className="bg-white border rounded-lg p-4">
-                                            <h3 className="text-sm font-semibold text-slate-700 mb-3 m-0">28-Day Click Trend</h3>
-                                            <GscTrendChart data={gscData.trend} />
-                                        </div>
-                                    )}
-                                    <div className="bg-white border rounded-lg overflow-hidden">
-                                        <div className="px-4 py-3 border-b bg-slate-50"><span className="text-sm font-semibold text-slate-700">Top Queries (28 days)</span></div>
-                                        <table className="w-full text-left border-collapse">
-                                            <thead><tr className="bg-slate-50 border-b">
-                                                <th className="p-3 text-xs font-semibold text-slate-500 uppercase">Query</th>
-                                                <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">Clicks</th>
-                                                <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">Impr.</th>
-                                                <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">CTR</th>
-                                                <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">Pos.</th>
-                                            </tr></thead>
-                                            <tbody>
-                                                {(gscData.top_queries || []).map((kw, i) => (
-                                                    <tr key={i} className="border-b last:border-0 hover:bg-slate-50">
-                                                        <td className="p-3 text-sm text-slate-800">{kw.query}</td>
-                                                        <td className="p-3 text-sm font-medium text-slate-700 text-right">{fmtNum(kw.clicks)}</td>
-                                                        <td className="p-3 text-sm text-slate-500 text-right">{fmtNum(kw.impressions)}</td>
-                                                        <td className="p-3 text-sm text-slate-500 text-right">{kw.ctr}%</td>
-                                                        <td className="p-3 text-sm font-semibold text-right" style={{ color: posColor(kw.position) }}>{kw.position}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            {gscData && gscSubTab === 'pages' && (
-                                <div className="bg-white border rounded-lg overflow-hidden">
-                                    <div className="px-4 py-3 border-b bg-slate-50"><span className="text-sm font-semibold text-slate-700">Top Pages by Clicks (28 days)</span></div>
-                                    <table className="w-full text-left border-collapse">
-                                        <thead><tr className="bg-slate-50 border-b">
-                                            <th className="p-3 text-xs font-semibold text-slate-500 uppercase">Page</th>
-                                            <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">Clicks</th>
-                                            <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">Impr.</th>
-                                            <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">CTR</th>
-                                            <th className="p-3 text-xs font-semibold text-slate-500 uppercase text-right">Pos.</th>
-                                        </tr></thead>
-                                        <tbody>
-                                            {(gscData.top_pages || []).map((pg, i) => (
-                                                <tr key={i} className="border-b last:border-0 hover:bg-slate-50">
-                                                    <td className="p-3 text-sm">
-                                                        <div className="font-medium text-slate-800">{pg.label}</div>
-                                                        <div className="text-xs text-slate-400 truncate max-w-xs">{pg.url}</div>
-                                                    </td>
-                                                    <td className="p-3 text-sm font-medium text-slate-700 text-right">{fmtNum(pg.clicks)}</td>
-                                                    <td className="p-3 text-sm text-slate-500 text-right">{fmtNum(pg.impressions)}</td>
-                                                    <td className="p-3 text-sm text-slate-500 text-right">{pg.ctr}%</td>
-                                                    <td className="p-3 text-sm font-semibold text-right" style={{ color: posColor(pg.position) }}>{pg.position}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-
-                            {gscData && gscSubTab === 'cannibalization' && (
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">Keyword cannibalization occurs when multiple pages compete for the same search query. Consolidate or differentiate these pages to improve rankings.</div>
-                                    {cannLoading && <div className="flex items-center gap-3 p-6 bg-slate-50 rounded-lg"><Spinner /><span className="text-slate-500">Analysing 90-day GSC data…</span></div>}
-                                    {cannData && cannData.conflicts.length === 0 && <div className="p-6 text-center text-green-700 bg-green-50 rounded-lg border border-green-200">✅ No cannibalization detected in the last 90 days.</div>}
-                                    {(cannData?.conflicts || []).map((c, i) => (
-                                        <div key={i} className="border rounded-lg overflow-hidden">
-                                            <div className={`px-4 py-2 flex items-center gap-2 text-sm font-semibold ${c.severity === 'high' ? 'bg-red-50 text-red-800 border-b border-red-200' : 'bg-amber-50 text-amber-800 border-b border-amber-200'}`}>
-                                                <span>{c.severity === 'high' ? '🔴' : '🟡'}</span>
-                                                <span className="flex-1">"{c.query}"</span>
-                                                <span className="text-xs font-normal opacity-75">{c.page_count} competing pages</span>
-                                            </div>
-                                            <table className="w-full text-left border-collapse"><tbody>
-                                                {c.pages.map((p, j) => (
-                                                    <tr key={j} className="border-b last:border-0 hover:bg-slate-50">
-                                                        <td className="p-3 text-sm"><div className="font-medium text-slate-800">{p.title}</div><div className="text-xs text-slate-400">{p.url}</div></td>
-                                                        <td className="p-3 text-sm text-slate-600 text-right">{p.clicks} clicks</td>
-                                                        <td className="p-3 text-sm font-semibold text-right" style={{ color: posColor(p.position) }}>#{p.position}</td>
-                                                        {p.post_id && <td className="p-3"><a href={`/wp-admin/post.php?post=${p.post_id}&action=edit`} className="text-xs text-indigo-600 hover:underline">Edit →</a></td>}
-                                                    </tr>
-                                                ))}
-                                            </tbody></table>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                            </section>
                             )}
                         </div>
                     )}
@@ -2473,8 +2336,18 @@ const App = () => {
                             subTab={settingsSubTab}
                             setSubTab={(st) => {
                                 setSettingsSubTab(st);
-                                setActiveTab(st === 'cloud' ? 'settings' : `settings_${st}`);
+                                setActiveTab(`settings_${st}`);
                             }}
+                            gscOpen={gscOpen}
+                            setGscOpen={setGscOpen}
+                            gscData={gscData}
+                            setGscData={setGscData}
+                            gscLoading={gscLoading}
+                            gscError={gscError}
+                            gscSubTab={gscSubTab}
+                            setGscSubTab={setGscSubTab}
+                            cannData={cannData}
+                            cannLoading={cannLoading}
                             connection={connection}
                             siteToken={siteToken}
                             setSiteToken={setSiteToken}

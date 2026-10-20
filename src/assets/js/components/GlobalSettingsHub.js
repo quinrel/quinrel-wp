@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { __ } from '@wordpress/i18n';
 import { TextControl, TextareaControl, ToggleControl, Button, Spinner, Notice } from '@wordpress/components';
 import {
@@ -12,6 +12,8 @@ import {
     CheckCircleIcon,
     AlertCircleIcon,
     ExternalLinkIcon,
+    GoogleIcon,
+    SettingsIcon,
 } from './QuinrelIcons';
 
 export const GlobalSettingsHub = ({
@@ -37,6 +39,17 @@ export const GlobalSettingsHub = ({
     connectionError,
     connectionMessage,
     postConnection,
+    // Google Search Console (Live Telemetry)
+    gscOpen,
+    setGscOpen,
+    gscData,
+    setGscData,
+    gscLoading,
+    gscError,
+    gscSubTab,
+    setGscSubTab,
+    cannData,
+    cannLoading,
     // AI Vault
     isTestingAi,
     testAiConnection,
@@ -68,10 +81,134 @@ export const GlobalSettingsHub = ({
     const [manualUrlMsg, setManualUrlMsg] = useState(null);
     const [gscConnecting, setGscConnecting] = useState(false);
     const [gscActionMsg, setGscActionMsg] = useState(null);
+    const [gscProperties, setGscProperties] = useState([]);
+    const [loadingGscProperties, setLoadingGscProperties] = useState(false);
+    const [selectedProperty, setSelectedProperty] = useState(settings.gsc_property || '');
+    const [showCustomGscDrawer, setShowCustomGscDrawer] = useState(!settings.gsc_client_id);
+    const [gscSyncing, setGscSyncing] = useState(false);
+    const [gscSyncMsg, setGscSyncMsg] = useState(null);
+    const [cloudAutoConnecting, setCloudAutoConnecting] = useState(false);
+    const [showManualCloudDrawer, setShowManualCloudDrawer] = useState(false);
 
     const isCloudConnected = connection
         ? connection.connected === true
         : quinrelAdminConfig.cloudConfigured === '1';
+
+    const SUBTABS = [
+        { id: 'general', label: __('General & Breadcrumbs', 'quinrel'), icon: SettingsIcon },
+        { id: 'cloud', label: __('Quinrel Cloud', 'quinrel'), icon: CloudIcon, badge: isCloudConnected ? __('Connected', 'quinrel') : null },
+        { id: 'gsc', label: __('Google Search Console', 'quinrel'), icon: GoogleIcon, badge: settings.gsc_connected ? __('Connected', 'quinrel') : null },
+        { id: 'webmasters', label: __('Bing & Verification', 'quinrel'), icon: AnalyticsIcon },
+        { id: 'indexing', label: __('Indexing & Instant Push', 'quinrel'), icon: LinkIcon },
+        { id: 'performance', label: __('Performance & Speed', 'quinrel'), icon: SpeedIcon },
+        { id: 'ai', label: __('AI Engine Vault', 'quinrel'), icon: AiBotIcon },
+        { id: 'roles', label: __('Roles & Capabilities', 'quinrel'), icon: RolesIcon },
+        { id: 'advanced', label: __('Advanced & Data', 'quinrel'), icon: DatabaseIcon },
+    ];
+
+    const currentTab = subTab || 'general';
+
+    useEffect(() => {
+        if (settings.gsc_connected && currentTab === 'gsc') {
+            setLoadingGscProperties(true);
+            fetch(`${quinrelAdminConfig.apiUrl}/gsc/sites`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.sites && Array.isArray(data.sites)) {
+                        setGscProperties(data.sites);
+                    }
+                })
+                .catch(() => {})
+                .finally(() => setLoadingGscProperties(false));
+        }
+    }, [settings.gsc_connected, currentTab]);
+
+    const handlePropertyChange = async (e) => {
+        const prop = e.target.value;
+        setSelectedProperty(prop);
+        setSettings(prev => ({ ...prev, gsc_property: prop }));
+        try {
+            await fetch(`${quinrelAdminConfig.apiUrl}/gsc/property`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': quinrelAdminConfig.nonce,
+                },
+                body: JSON.stringify({ property: prop }),
+            });
+            setGscActionMsg({
+                type: 'success',
+                message: __('Search Console property updated successfully.', 'quinrel'),
+            });
+        } catch (err) {}
+    };
+
+    const handleSyncGsc = async () => {
+        setGscSyncing(true);
+        setGscSyncMsg(null);
+        try {
+            const resp = await fetch(`${quinrelAdminConfig.apiUrl}/gsc/performance?days=28`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+                if (setGscData && data.rows) {
+                    setGscData(data);
+                }
+                setGscSyncMsg({
+                    type: 'success',
+                    message: __('Telemetry synchronized live with Google Search Console.', 'quinrel'),
+                });
+            } else {
+                setGscSyncMsg({
+                    type: 'error',
+                    message: data.message || __('Failed to sync telemetry.', 'quinrel'),
+                });
+            }
+        } catch (err) {
+            setGscSyncMsg({
+                type: 'error',
+                message: __('Network error during synchronization.', 'quinrel'),
+            });
+        } finally {
+            setGscSyncing(false);
+        }
+    };
+
+    const handleAutoConnectCloud = async () => {
+        setCloudAutoConnecting(true);
+        try {
+            const resp = await fetch(`${quinrelAdminConfig.apiUrl}/connection/auto-connect`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': quinrelAdminConfig.nonce,
+                },
+            });
+            const data = await resp.json();
+            if (resp.ok && data.connected) {
+                setSaveStatus({
+                    type: 'success',
+                    message: __('Quinrel Cloud connected automatically! Autonomous intelligence features are now active.', 'quinrel'),
+                });
+                if (postConnection) postConnection('/connection/verify');
+            } else if (data.auth_url) {
+                window.location.href = data.auth_url;
+            } else {
+                setSaveStatus({
+                    type: 'error',
+                    message: data.message || __('Could not complete automated connection. Please try manual token entry.', 'quinrel'),
+                });
+                setShowManualCloudDrawer(true);
+            }
+        } catch (e) {
+            setShowManualCloudDrawer(true);
+        } finally {
+            setCloudAutoConnecting(false);
+        }
+    };
 
     const handleConnectGsc = async () => {
         setGscConnecting(true);
@@ -86,14 +223,16 @@ export const GlobalSettingsHub = ({
             } else {
                 setGscActionMsg({
                     type: 'error',
-                    message: data.message || __('Failed to generate Google Search Console authorization URL. Verify your Client ID and Client Secret.', 'quinrel'),
+                    message: data.message || __('Failed to generate Google Search Console authorization URL. Verify your Client ID and Client Secret below.', 'quinrel'),
                 });
+                setShowCustomGscDrawer(true);
             }
         } catch (e) {
             setGscActionMsg({
                 type: 'error',
                 message: __('Network error connecting to Google Search Console.', 'quinrel'),
             });
+            setShowCustomGscDrawer(true);
         } finally {
             setGscConnecting(false);
         }
@@ -175,18 +314,6 @@ export const GlobalSettingsHub = ({
             message: __('Generated random 32-character IndexNow key. Click "Save Settings" to apply.', 'quinrel'),
         });
     };
-
-    const SUBTABS = [
-        { id: 'cloud', label: __('General & Cloud', 'quinrel'), icon: CloudIcon, badge: isCloudConnected ? __('Connected', 'quinrel') : null },
-        { id: 'webmasters', label: __('Search Console & Bing', 'quinrel'), icon: AnalyticsIcon },
-        { id: 'indexing', label: __('Indexing & Instant Push', 'quinrel'), icon: LinkIcon },
-        { id: 'performance', label: __('Performance & Speed', 'quinrel'), icon: SpeedIcon },
-        { id: 'ai', label: __('AI Engine Vault', 'quinrel'), icon: AiBotIcon },
-        { id: 'roles', label: __('Roles & Capabilities', 'quinrel'), icon: RolesIcon },
-        { id: 'advanced', label: __('Advanced & Data', 'quinrel'), icon: DatabaseIcon },
-    ];
-
-    const currentTab = subTab || 'cloud';
 
     return (
         <div className="quinrel-settings-hub space-y-6">
@@ -279,172 +406,10 @@ export const GlobalSettingsHub = ({
             ) : (
                 <div className="space-y-6">
                     {/* ══════════════════════════════════════════════════════════════
-                        TAB 1: GENERAL & QUINREL CLOUD
+                        TAB 1: GENERAL & BREADCRUMBS
                        ══════════════════════════════════════════════════════════════ */}
-                    {currentTab === 'cloud' && (
-                        <div id="settings-panel-cloud" role="tabpanel" aria-labelledby="settings-tab-cloud" className="space-y-6">
-                            {/* Cloud Connection Panel */}
-                            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5" aria-labelledby="quinrel-cloud-hdr">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h3 id="quinrel-cloud-hdr" className="text-base font-bold text-slate-900 m-0">
-                                                {__('Quinrel Cloud Intelligent Engine', 'quinrel')}
-                                            </h3>
-                                            <span
-                                                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                                                    isCloudConnected
-                                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                                        : 'bg-slate-100 text-slate-600 border border-slate-200'
-                                                }`}
-                                            >
-                                                {isCloudConnected ? __('● Connected', 'quinrel') : __('○ Not Connected', 'quinrel')}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-slate-500 mt-1 mb-0">
-                                            {__('Connect this WordPress site to Quinrel Cloud for autonomous AI audits, self-healing links, and actionable growth recommendations.', 'quinrel')}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <a
-                                            href="https://quinrel.com/dashboard"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors text-decoration-none"
-                                        >
-                                            <span>{__('Quinrel Cloud Portal', 'quinrel')}</span>
-                                            <ExternalLinkIcon className="w-3 h-3 text-slate-400" />
-                                        </a>
-                                    </div>
-                                </div>
-
-                                {connectionLoading && (
-                                    <div className="p-4 bg-slate-50 rounded-xl flex items-center gap-2 text-xs text-slate-600">
-                                        <Spinner />
-                                        <span>{__('Checking connection state...', 'quinrel')}</span>
-                                    </div>
-                                )}
-                                {connectionError && (
-                                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800" role="alert">
-                                        {connectionError}
-                                    </div>
-                                )}
-                                {connectionMessage && (
-                                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800" role="status">
-                                        {connectionMessage}
-                                    </div>
-                                )}
-
-                                {connection && connection.api_base && (
-                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 font-mono flex items-center justify-between">
-                                        <span>{__('Endpoint:', 'quinrel')} {connection.api_base}</span>
-                                        {connection.tier && (
-                                            <span className="font-sans font-bold uppercase text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
-                                                {connection.tier} {__('Tier', 'quinrel')}
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-
-                                {!isCloudConnected ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-                                        {/* Option A: Site Token */}
-                                        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
-                                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 m-0">
-                                                {__('Connect via Site Token', 'quinrel')}
-                                            </h4>
-                                            <p className="text-xs text-slate-500 m-0">
-                                                {__('Copy your site token from your Quinrel Cloud project dashboard.', 'quinrel')}
-                                            </p>
-                                            <input
-                                                type="password"
-                                                autoComplete="off"
-                                                spellCheck={false}
-                                                placeholder="qnl_live_..."
-                                                value={siteToken}
-                                                onChange={(e) => setSiteToken(e.target.value)}
-                                                className="w-full text-xs font-mono px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-2xs focus:border-indigo-500 focus:outline-none"
-                                            />
-                                            <button
-                                                type="button"
-                                                disabled={connectionBusy || !siteToken.trim()}
-                                                onClick={() => postConnection('/connection/site-token', { site_token: siteToken.trim() })}
-                                                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
-                                            >
-                                                {connectionBusy ? __('Connecting...', 'quinrel') : __('Connect with Site Token', 'quinrel')}
-                                            </button>
-                                        </div>
-
-                                        {/* Option B: Authorization Code */}
-                                        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
-                                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 m-0">
-                                                {__('Connect via Auth Code', 'quinrel')}
-                                            </h4>
-                                            <p className="text-xs text-slate-500 m-0">
-                                                {__('One-time authorization code generated during manual registration.', 'quinrel')}
-                                            </p>
-                                            <input
-                                                type="password"
-                                                autoComplete="off"
-                                                spellCheck={false}
-                                                placeholder="qauth_..."
-                                                value={authorizationCode}
-                                                onChange={(e) => setAuthorizationCode(e.target.value)}
-                                                className="w-full text-xs font-mono px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-2xs focus:border-indigo-500 focus:outline-none"
-                                            />
-                                            <button
-                                                type="button"
-                                                disabled={connectionBusy || !authorizationCode.trim()}
-                                                onClick={() => postConnection('/connection/authorization-code', { code: authorizationCode.trim() })}
-                                                className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
-                                            >
-                                                {connectionBusy ? __('Connecting...', 'quinrel') : __('Connect with Auth Code', 'quinrel')}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2.5">
-                                            <CheckCircleIcon className="w-5 h-5 text-emerald-600" />
-                                            <div>
-                                                <strong className="text-xs font-bold text-emerald-900">
-                                                    {__('Your site is securely connected to Quinrel Cloud.', 'quinrel')}
-                                                </strong>
-                                                <p className="text-xs text-emerald-700 m-0 mt-0.5">
-                                                    {__('Real-time synchronization and cloud intelligence features are fully functional.', 'quinrel')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                            <button
-                                                type="button"
-                                                disabled={connectionBusy}
-                                                onClick={() => postConnection('/connection/verify')}
-                                                className="px-3 py-1.5 bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                                            >
-                                                {__('Verify Credential', 'quinrel')}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                disabled={connectionBusy}
-                                                onClick={() => postConnection('/connection/rotate')}
-                                                className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                                            >
-                                                {__('Rotate', 'quinrel')}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                disabled={connectionBusy}
-                                                onClick={() => postConnection('/connection/revoke')}
-                                                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                                            >
-                                                {__('Disconnect', 'quinrel')}
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </section>
-
+                    {currentTab === 'general' && (
+                        <div id="settings-panel-general" role="tabpanel" aria-labelledby="settings-tab-general" className="space-y-6">
                             {/* Breadcrumbs Configuration */}
                             <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4" aria-labelledby="quinrel-breadcrumbs-hdr">
                                 <div>
@@ -564,32 +529,275 @@ export const GlobalSettingsHub = ({
                     )}
 
                     {/* ══════════════════════════════════════════════════════════════
-                        TAB 2: SEARCH CONSOLE & BING WEBMASTER
+                        TAB 2: QUINREL CLOUD (AUTOMATED 1-CLICK CONNECTION)
                        ══════════════════════════════════════════════════════════════ */}
-                    {currentTab === 'webmasters' && (
-                        <div id="settings-panel-webmasters" role="tabpanel" aria-labelledby="settings-tab-webmasters" className="space-y-6">
-                            {/* Google Search Console OAuth Panel */}
-                            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5" aria-labelledby="quinrel-gsc-hdr">
+                    {currentTab === 'cloud' && (
+                        <div id="settings-panel-cloud" role="tabpanel" aria-labelledby="settings-tab-cloud" className="space-y-6">
+                            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5" aria-labelledby="quinrel-cloud-hdr">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <h3 id="quinrel-gsc-hdr" className="text-base font-bold text-slate-900 m-0">
-                                                {__('Google Search Console OAuth2 Integration', 'quinrel')}
+                                            <h3 id="quinrel-cloud-hdr" className="text-base font-bold text-slate-900 m-0">
+                                                {__('Quinrel Cloud Intelligent Engine', 'quinrel')}
                                             </h3>
                                             <span
                                                 className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                                                    settings.gsc_connected
+                                                    isCloudConnected
                                                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                                                         : 'bg-slate-100 text-slate-600 border border-slate-200'
                                                 }`}
                                             >
-                                                {settings.gsc_connected ? __('● Connected', 'quinrel') : __('○ Not Connected', 'quinrel')}
+                                                {isCloudConnected ? __('● Connected', 'quinrel') : __('○ Not Connected', 'quinrel')}
                                             </span>
                                         </div>
                                         <p className="text-xs text-slate-500 mt-1 mb-0">
-                                            {__('Fetch real-world search queries, clicks, impressions, CTR, and average rank positions directly from Google.', 'quinrel')}
+                                            {__('Connect this WordPress site to Quinrel Cloud for autonomous AI audits, self-healing links, and actionable growth recommendations.', 'quinrel')}
                                         </p>
                                     </div>
+                                    <div className="flex items-center gap-2">
+                                        <a
+                                            href="https://quinrel.com/dashboard"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors text-decoration-none"
+                                        >
+                                            <span>{__('Quinrel Cloud Portal', 'quinrel')}</span>
+                                            <ExternalLinkIcon className="w-3 h-3 text-slate-400" />
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {connectionLoading && (
+                                    <div className="p-4 bg-slate-50 rounded-xl flex items-center gap-2 text-xs text-slate-600">
+                                        <Spinner />
+                                        <span>{__('Checking connection state...', 'quinrel')}</span>
+                                    </div>
+                                )}
+                                {connectionError && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800" role="alert">
+                                        {connectionError}
+                                    </div>
+                                )}
+                                {connectionMessage && (
+                                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800" role="status">
+                                        {connectionMessage}
+                                    </div>
+                                )}
+
+                                {connection && connection.api_base && (
+                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 font-mono flex items-center justify-between">
+                                        <span>{__('Endpoint:', 'quinrel')} {connection.api_base}</span>
+                                        {connection.tier && (
+                                            <span className="font-sans font-bold uppercase text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
+                                                {connection.tier} {__('Tier', 'quinrel')}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+
+                                {!isCloudConnected ? (
+                                    <div className="space-y-5">
+                                        {/* Primary 1-Click Automated Connection Hero */}
+                                        <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/60 border border-indigo-100/80 shadow-2xs space-y-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-bold text-slate-900 m-0 flex items-center gap-2">
+                                                        <span className="text-base">⚡</span>
+                                                        <span>{__('1-Click Automated Cloud Connection', 'quinrel')}</span>
+                                                    </h4>
+                                                    <p className="text-xs text-slate-600 m-0 max-w-xl">
+                                                        {__('Pair this site with Quinrel Cloud automatically without copying or pasting API keys or tokens. Connecting Quinrel is optional.', 'quinrel')}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    disabled={cloudAutoConnecting || connectionBusy}
+                                                    onClick={handleAutoConnectCloud}
+                                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    {cloudAutoConnecting ? (
+                                                        <>
+                                                            <Spinner />
+                                                            <span>{__('Pairing Site...', 'quinrel')}</span>
+                                                        </>
+                                                    ) : (
+                                                        <span>{__('Connect to Quinrel Cloud (Automated)', 'quinrel')}</span>
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <p className="text-[11px] text-slate-500 m-0">
+                                                {__('Technical SEO on this site keeps titles, sitemaps, redirects, and 404 logs completely functional without an account.', 'quinrel')}
+                                            </p>
+                                        </div>
+
+                                        {/* Collapsible Advanced Manual Token Drawer */}
+                                        <div className="border border-slate-200 rounded-xl overflow-hidden">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowManualCloudDrawer(v => !v)}
+                                                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center justify-between cursor-pointer border-none transition-colors"
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span>⚙️</span>
+                                                    <span>{__('Advanced: Manual Token Entry & Authorization Codes', 'quinrel')}</span>
+                                                </span>
+                                                <span className="text-slate-400 font-mono">{showManualCloudDrawer ? '▲' : '▼'}</span>
+                                            </button>
+
+                                            {showManualCloudDrawer && (
+                                                <div className="p-5 bg-white space-y-4 border-t border-slate-200">
+                                                    <p className="text-xs text-slate-500 m-0">
+                                                        {__('The settings screen cannot change the Quinrel API host. Connecting Quinrel is optional.', 'quinrel')}
+                                                    </p>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+                                                        {/* Option A: Site Token */}
+                                                        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
+                                                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 m-0">
+                                                                {__('Connect via Site Token', 'quinrel')}
+                                                            </h4>
+                                                            <p className="text-xs text-slate-500 m-0">
+                                                                {__('Copy your site token from your Quinrel Cloud project dashboard.', 'quinrel')}
+                                                            </p>
+                                                            <input
+                                                                type="password"
+                                                                autoComplete="off"
+                                                                spellCheck={false}
+                                                                placeholder="qnl_live_..."
+                                                                value={siteToken}
+                                                                onChange={(e) => setSiteToken(e.target.value)}
+                                                                className="w-full text-xs font-mono px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-2xs focus:border-indigo-500 focus:outline-none"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                disabled={connectionBusy || !siteToken.trim()}
+                                                                onClick={() => postConnection('/connection/site-token', { site_token: siteToken.trim() })}
+                                                                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                                                            >
+                                                                {connectionBusy ? __('Connecting...', 'quinrel') : __('Connect with site token', 'quinrel')}
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Option B: Authorization Code */}
+                                                        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
+                                                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 m-0">
+                                                                {__('Connect via Auth Code', 'quinrel')}
+                                                            </h4>
+                                                            <p className="text-xs text-slate-500 m-0">
+                                                                {__('One-time authorization code generated during manual registration.', 'quinrel')}
+                                                            </p>
+                                                            <input
+                                                                type="password"
+                                                                autoComplete="off"
+                                                                spellCheck={false}
+                                                                placeholder="qauth_..."
+                                                                value={authorizationCode}
+                                                                onChange={(e) => setAuthorizationCode(e.target.value)}
+                                                                className="w-full text-xs font-mono px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-2xs focus:border-indigo-500 focus:outline-none"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                disabled={connectionBusy || !authorizationCode.trim()}
+                                                                onClick={() => postConnection('/connection/authorization-code', { code: authorizationCode.trim() })}
+                                                                className="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                                                            >
+                                                                {connectionBusy ? __('Connecting...', 'quinrel') : __('Connect with authorization code', 'quinrel')}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2.5">
+                                            <CheckCircleIcon className="w-5 h-5 text-emerald-600" />
+                                            <div>
+                                                <strong className="text-xs font-bold text-emerald-900">
+                                                    {__('Your site is securely connected to Quinrel Cloud.', 'quinrel')}
+                                                </strong>
+                                                <p className="text-xs text-emerald-700 m-0 mt-0.5">
+                                                    {__('Real-time synchronization and cloud intelligence features are fully functional.', 'quinrel')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            <button
+                                                type="button"
+                                                disabled={connectionBusy}
+                                                onClick={() => postConnection('/connection/verify')}
+                                                className="px-3 py-1.5 bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                                            >
+                                                {__('Check saved credential', 'quinrel')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={connectionBusy}
+                                                onClick={() => postConnection('/connection/rotate')}
+                                                className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                                            >
+                                                {__('Rotate credential', 'quinrel')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={connectionBusy}
+                                                onClick={() => postConnection('/connection/revoke')}
+                                                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                                            >
+                                                {__('Disconnect', 'quinrel')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
+                        </div>
+                    )}
+
+                    {/* ══════════════════════════════════════════════════════════════
+                        TAB 3: GOOGLE SEARCH CONSOLE (SITE KIT-STYLE 1-CLICK FLOW)
+                       ══════════════════════════════════════════════════════════════ */}
+                    {currentTab === 'gsc' && (
+                        <div id="settings-panel-gsc" role="tabpanel" aria-labelledby="settings-tab-gsc" className="space-y-6">
+                            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6" aria-labelledby="quinrel-gsc-hdr">
+                                {/* Header */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                                    <div className="flex items-start sm:items-center gap-3">
+                                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex-shrink-0">
+                                            <GoogleIcon className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 id="quinrel-gsc-hdr" className="text-base font-bold text-slate-900 m-0">
+                                                    {__('Google Search Console', 'quinrel')}
+                                                </h3>
+                                                <span
+                                                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                                        settings.gsc_connected
+                                                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                                            : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                                    }`}
+                                                >
+                                                    {settings.gsc_connected ? __('● Connected', 'quinrel') : __('○ Not Connected', 'quinrel')}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-1 mb-0">
+                                                {__('Stream search queries, organic clicks, impressions, CTR, and average rank positions directly from Google.', 'quinrel')}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {settings.gsc_connected && (
+                                        <div className="flex items-center gap-2">
+                                            <a
+                                                href="https://search.google.com/search-console"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors text-decoration-none"
+                                            >
+                                                <span>{__('Google Search Console ↗', 'quinrel')}</span>
+                                            </a>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {gscActionMsg && (
@@ -605,57 +813,211 @@ export const GlobalSettingsHub = ({
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <TextControl
-                                        label={__('Google OAuth Client ID', 'quinrel')}
-                                        value={settings.gsc_client_id || ''}
-                                        onChange={(val) => setSettings({ ...settings, gsc_client_id: val })}
-                                        placeholder="1234567890-xxx.apps.googleusercontent.com"
-                                    />
-                                    <TextControl
-                                        label={__('Google OAuth Client Secret', 'quinrel')}
-                                        value={settings.gsc_client_secret || ''}
-                                        type="password"
-                                        onChange={(val) => setSettings({ ...settings, gsc_client_secret: val })}
-                                        placeholder={settings.gsc_client_secret ? '••••••••••••' : 'GOCSPX-...'}
-                                    />
-                                </div>
-
-                                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                    <div>
-                                        <strong>{__('OAuth Redirect URI:', 'quinrel')}</strong>{' '}
-                                        <code className="bg-white px-2 py-0.5 rounded border border-slate-200 font-mono select-all">
-                                            {`${quinrelAdminConfig.apiUrl}/gsc/callback`}
-                                        </code>
+                                {gscSyncMsg && (
+                                    <div
+                                        className={`p-3 rounded-xl text-xs ${
+                                            gscSyncMsg.type === 'success'
+                                                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                                : 'bg-red-50 text-red-800 border border-red-200'
+                                        }`}
+                                        role="status"
+                                    >
+                                        {gscSyncMsg.message}
                                     </div>
-                                    <span className="text-[11px] text-slate-500">
-                                        {__('Add this exact URI to Google Cloud Console authorized redirect URIs.', 'quinrel')}
-                                    </span>
-                                </div>
+                                )}
 
-                                <div className="flex items-center gap-3 pt-2">
-                                    {!settings.gsc_connected ? (
-                                        <button
-                                            type="button"
-                                            disabled={gscConnecting || !settings.gsc_client_id}
-                                            onClick={handleConnectGsc}
-                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
-                                        >
-                                            {gscConnecting ? __('Authorizing...', 'quinrel') : __('Connect Google Search Console', 'quinrel')}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            disabled={gscConnecting}
-                                            onClick={handleDisconnectGsc}
-                                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
-                                        >
-                                            {__('Disconnect GSC', 'quinrel')}
-                                        </button>
-                                    )}
-                                </div>
+                                {!settings.gsc_connected ? (
+                                    <div className="space-y-6">
+                                        {/* Site Kit-Style 1-Click Connect Banner */}
+                                        <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/50 border border-blue-100 shadow-2xs space-y-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                                                <div className="space-y-1.5">
+                                                    <h4 className="text-sm font-bold text-slate-900 m-0 flex items-center gap-2">
+                                                        <GoogleIcon className="w-4 h-4" />
+                                                        <span>{__('Site Kit-Style Google Authorization', 'quinrel')}</span>
+                                                    </h4>
+                                                    <p className="text-xs text-slate-600 m-0 max-w-xl">
+                                                        {__('Connect your Google account with 1 click to verify ownership and unlock real-time organic search telemetry for this WordPress site.', 'quinrel')}
+                                                    </p>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    disabled={gscConnecting}
+                                                    onClick={handleConnectGsc}
+                                                    className="inline-flex items-center justify-center gap-2.5 px-6 py-3 bg-white hover:bg-slate-50 text-slate-800 text-xs sm:text-sm font-bold rounded-xl border border-slate-300 shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 flex-shrink-0"
+                                                >
+                                                    <GoogleIcon className="w-4 h-4" />
+                                                    {gscConnecting ? (
+                                                        <>
+                                                            <Spinner />
+                                                            <span>{__('Connecting with Google...', 'quinrel')}</span>
+                                                        </>
+                                                    ) : (
+                                                        <span>{__('Connect Google Search Console', 'quinrel')}</span>
+                                                    )}
+                                                </button>
+                                            </div>
+
+                                            <div className="pt-2 border-t border-blue-100/60 flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
+                                                <span>✓ {__('Read-only Webmasters scope', 'quinrel')}</span>
+                                                <span>✓ {__('Direct Google OAuth 2.0 flow', 'quinrel')}</span>
+                                                <span>✓ {__('No tracking or third-party brokers', 'quinrel')}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Collapsible Advanced GCP Credentials Drawer */}
+                                        <div className="border border-slate-200 rounded-xl overflow-hidden">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCustomGscDrawer(v => !v)}
+                                                className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center justify-between cursor-pointer border-none transition-colors"
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <span>⚙️</span>
+                                                    <span>{__('Advanced: Custom Google Cloud OAuth Credentials (GCP Console)', 'quinrel')}</span>
+                                                </span>
+                                                <span className="text-slate-400 font-mono">{showCustomGscDrawer ? '▲' : '▼'}</span>
+                                            </button>
+
+                                            {showCustomGscDrawer && (
+                                                <div className="p-5 bg-white space-y-4 border-t border-slate-200">
+                                                    <p className="text-xs text-slate-500 m-0">
+                                                        {__('If you have your own Google Cloud Platform OAuth application, provide your Client ID and Client Secret below. Ensure the Authorized Redirect URI is added in your Google Cloud Console.', 'quinrel')}
+                                                    </p>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <TextControl
+                                                            label={__('Google OAuth Client ID', 'quinrel')}
+                                                            value={settings.gsc_client_id || ''}
+                                                            onChange={(val) => setSettings({ ...settings, gsc_client_id: val })}
+                                                            placeholder="1234567890-xxx.apps.googleusercontent.com"
+                                                        />
+                                                        <TextControl
+                                                            label={__('Google OAuth Client Secret', 'quinrel')}
+                                                            value={settings.gsc_client_secret || ''}
+                                                            type="password"
+                                                            onChange={(val) => setSettings({ ...settings, gsc_client_secret: val })}
+                                                            placeholder={settings.gsc_client_secret ? '••••••••••••' : 'GOCSPX-...'}
+                                                        />
+                                                    </div>
+
+                                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                        <div>
+                                                            <strong>{__('Authorized Redirect URI:', 'quinrel')}</strong>{' '}
+                                                            <code className="bg-white px-2 py-0.5 rounded border border-slate-200 font-mono select-all">
+                                                                {`${quinrelAdminConfig.apiUrl}/gsc/callback`}
+                                                            </code>
+                                                        </div>
+                                                        <span className="text-[11px] text-slate-500">
+                                                            {__('Copy this exact URI to Google Cloud Console authorized redirect URIs.', 'quinrel')}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {/* Connected Property Management */}
+                                        <div className="p-5 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                <div className="flex items-center gap-2.5">
+                                                    <CheckCircleIcon className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                                                    <div>
+                                                        <strong className="text-xs font-bold text-emerald-900">
+                                                            {__('Google Search Console is connected and streaming data.', 'quinrel')}
+                                                        </strong>
+                                                        <p className="text-xs text-emerald-700 m-0 mt-0.5">
+                                                            {__('Quinrel reads search performance metrics and alerts you of declining keywords and cannibalization.', 'quinrel')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        disabled={gscSyncing}
+                                                        onClick={handleSyncGsc}
+                                                        className="px-3.5 py-1.5 bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5"
+                                                    >
+                                                        {gscSyncing ? <Spinner /> : <span>🔄</span>}
+                                                        <span>{gscSyncing ? __('Syncing...', 'quinrel') : __('Sync Now', 'quinrel')}</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={gscConnecting}
+                                                        onClick={handleDisconnectGsc}
+                                                        className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
+                                                    >
+                                                        {__('Disconnect', 'quinrel')}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Property Selector */}
+                                            <div className="pt-3 border-t border-emerald-200/80">
+                                                <label htmlFor="quinrel-gsc-property-select" className="block text-xs font-semibold text-emerald-950 mb-1.5">
+                                                    {__('Active Search Console Property:', 'quinrel')}
+                                                </label>
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                                    <select
+                                                        id="quinrel-gsc-property-select"
+                                                        value={selectedProperty}
+                                                        onChange={handlePropertyChange}
+                                                        disabled={loadingGscProperties}
+                                                        className="w-full sm:max-w-md text-xs px-3 py-2 bg-white border border-emerald-300 rounded-lg shadow-2xs focus:border-indigo-500 focus:outline-none"
+                                                    >
+                                                        <option value="">{loadingGscProperties ? __('Loading verified properties…', 'quinrel') : __('Default Site URL (Auto)', 'quinrel')}</option>
+                                                        {gscProperties.map((entry, idx) => (
+                                                            <option key={idx} value={entry.siteUrl || entry}>
+                                                                {entry.siteUrl || entry} {entry.permissionLevel ? `(${entry.permissionLevel})` : ''}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <span className="text-[11px] text-emerald-700">
+                                                        {__('Select Domain Property or URL prefix property matching this installation.', 'quinrel')}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Performance Preview inside GSC Tab */}
+                                        {gscData?.summary && (
+                                            <div className="space-y-3 pt-2">
+                                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 m-0">
+                                                    {__('28-Day Google Performance Snapshot', 'quinrel')}
+                                                </h4>
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                                                        <div className="text-xs font-semibold text-slate-400">{__('Clicks', 'quinrel')}</div>
+                                                        <div className="text-2xl font-bold text-emerald-600 mt-1">{gscData.summary.clicks || 0}</div>
+                                                    </div>
+                                                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                                                        <div className="text-xs font-semibold text-slate-400">{__('Impressions', 'quinrel')}</div>
+                                                        <div className="text-2xl font-bold text-slate-900 mt-1">{gscData.summary.impressions || 0}</div>
+                                                    </div>
+                                                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                                                        <div className="text-xs font-semibold text-slate-400">{__('Avg. CTR', 'quinrel')}</div>
+                                                        <div className="text-2xl font-bold text-slate-900 mt-1">{gscData.summary.avg_ctr || 0}%</div>
+                                                    </div>
+                                                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                                                        <div className="text-xs font-semibold text-slate-400">{__('Avg. Position', 'quinrel')}</div>
+                                                        <div className="text-2xl font-bold text-indigo-600 mt-1">{gscData.summary.avg_position || 0}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </section>
+                        </div>
+                    )}
 
+                    {/* ══════════════════════════════════════════════════════════════
+                        TAB 4: SEARCH ENGINE VERIFICATION & BING WEBMASTER
+                       ══════════════════════════════════════════════════════════════ */}
+                    {currentTab === 'webmasters' && (
+                        <div id="settings-panel-webmasters" role="tabpanel" aria-labelledby="settings-tab-webmasters" className="space-y-6">
                             {/* Bing Webmaster Tools */}
                             <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4" aria-labelledby="quinrel-bing-hdr">
                                 <div>
@@ -689,7 +1051,7 @@ export const GlobalSettingsHub = ({
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <TextControl
-                                        label={__('Google Search Console Verification', 'quinrel')}
+                                        label={__('Google Search Console Verification Tag', 'quinrel')}
                                         value={settings.google_verify || ''}
                                         onChange={(val) => setSettings({ ...settings, google_verify: val })}
                                         placeholder="e.g. AbC123xyz..."

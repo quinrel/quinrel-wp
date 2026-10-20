@@ -582,7 +582,7 @@ export const OverviewDashboard = ({
                         <button
                             type="button"
                             onClick={() => {
-                                setActiveTab('settings');
+                                setActiveTab('settings_gsc');
                                 setFocusIndexing(true);
                             }}
                             className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 shadow-2xs transition-colors cursor-pointer"

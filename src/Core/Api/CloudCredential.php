@@ -93,6 +93,16 @@ class CloudCredential {
 				'permission_callback' => $permission,
 			)
 		);
+
+		register_rest_route(
+			'quinrel/v1',
+			'/connection/auto-connect',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'autoConnect' ),
+				'permission_callback' => $permission,
+			)
+		);
 	}
 
 	public function canManage(): bool {
@@ -215,6 +225,43 @@ class CloudCredential {
 		);
 		if ( is_wp_error( $exchanged ) ) {
 			return $exchanged;
+		}
+
+		return $this->storeExchanged( $exchanged );
+	}
+
+	/**
+	 * Automatically pair this site with Quinrel Cloud without manual token copy/paste.
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function autoConnect( \WP_REST_Request $request ) {
+		if ( ! $this->canManage() ) {
+			return $this->forbidden();
+		}
+
+		$siteUrl  = home_url( '/' );
+		$siteName = get_bloginfo( 'name' );
+
+		$exchanged = $this->request(
+			'POST',
+			'/auth/auto-connect',
+			array(
+				'site_url'  => $siteUrl,
+				'site_name' => $siteName,
+				'admin_url' => admin_url(),
+			),
+			''
+		);
+
+		if ( is_wp_error( $exchanged ) ) {
+			return rest_ensure_response(
+				array(
+					'requires_redirect' => true,
+					'auth_url'          => 'https://api.quinrel.com/oauth/authorize?site_url=' . rawurlencode( $siteUrl ) . '&return_url=' . rawurlencode( admin_url( 'admin.php?page=quinrel&tab=settings_cloud' ) ),
+					'message'           => __( 'Redirecting to Quinrel Cloud for automated 1-click authorization…', 'quinrel' ),
+				)
+			);
 		}
 
 		return $this->storeExchanged( $exchanged );
