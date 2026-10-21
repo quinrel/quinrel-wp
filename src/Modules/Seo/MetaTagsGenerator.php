@@ -30,6 +30,15 @@ class MetaTagsGenerator {
 			printf( '<meta name="robots" content="%s" />' . "\n", esc_attr( $robots ) );
 		}
 
+		// Machine-readable AI training opt-out and EU DSM TDM-Reservation directives
+		$aiOptOut    = get_option( 'quinrel_ai_training_optout', 'no' ) === 'yes';
+		$postAiAllow = is_singular() ? get_post_meta( get_the_ID(), '_quinrel_ai_training_allow', true ) : '';
+
+		if ( ( $aiOptOut && 'yes' !== $postAiAllow ) || 'no' === $postAiAllow ) {
+			echo '<meta name="robots" content="noai, noimageai" />' . "\n";
+			echo '<meta name="tdm-reservation" content="1" />' . "\n";
+		}
+
 		// Webmaster Tools Verification Meta Tags
 		$googleVerify = get_option( 'quinrel_google_verify', '' );
 		if ( ! empty( $googleVerify ) ) {

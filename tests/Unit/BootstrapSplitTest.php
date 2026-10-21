@@ -200,6 +200,12 @@ class BootstrapSplitTest extends TestCase {
 		$this->assertFalse( $this->hasService( $llms, 'llms_txt_generator' ) );
 		$this->assertFalse( $this->hasService( $llms, 'bing_indexnow_api' ) );
 
+		$llmsFull = $this->bootAt( '/llms-full.txt', false, false );
+		$this->assertGreaterThan( $plainRedirects, $this->hookCount( 'template_redirect' ) );
+		$this->assertSame( $plainInits, $this->hookCount( 'init' ) );
+		$this->assertFalse( $this->hasService( $llmsFull, 'llms_txt_generator' ) );
+		$this->assertFalse( $this->hasService( $llmsFull, 'bing_indexnow_api' ) );
+
 		$robots = $this->bootAt( '/robots.txt', false, false );
 		$this->assertSame( $plainInits, $this->hookCount( 'init' ) );
 		$this->assertFalse( $this->hasService( $robots, 'bing_indexnow_api' ) );

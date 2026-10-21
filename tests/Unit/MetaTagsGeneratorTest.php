@@ -317,4 +317,46 @@ class MetaTagsGeneratorTest extends TestCase
         $this->assertStringContainsString('name="twitter:description" content="Twitter Specific Description."', $output);
         $this->assertStringContainsString('name="twitter:image" content="https://example.com/uploads/twitter-card.png"', $output);
     }
+
+    public function testAiTrainingOptOutMetaTags(): void
+    {
+        global $mock_is_singular, $mock_current_post_id, $mock_posts, $mock_post_meta;
+        $mock_is_singular = true;
+        $mock_current_post_id = 150;
+        $mock_posts[150] = (object)[
+            'ID' => 150,
+            'post_title' => 'AI Protected Article',
+            'post_content' => 'Content here',
+            'post_excerpt' => '',
+            'post_type' => 'post',
+        ];
+
+        // Case 1: Sitewide opt-out enabled
+        update_option('quinrel_ai_training_optout', 'yes');
+        ob_start();
+        $this->generator->outputStandardMetaTags();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('name="robots" content="noai, noimageai"', $output);
+        $this->assertStringContainsString('name="tdm-reservation" content="1"', $output);
+
+        // Case 2: Post explicitly allows AI training (overrides sitewide)
+        $mock_post_meta[150] = ['_quinrel_ai_training_allow' => 'yes'];
+        ob_start();
+        $this->generator->outputStandardMetaTags();
+        $outputOverride = ob_get_clean();
+
+        $this->assertStringNotContainsString('name="robots" content="noai, noimageai"', $outputOverride);
+        $this->assertStringNotContainsString('name="tdm-reservation" content="1"', $outputOverride);
+
+        // Case 3: Sitewide disabled, but post explicitly opts out
+        update_option('quinrel_ai_training_optout', 'no');
+        $mock_post_meta[150] = ['_quinrel_ai_training_allow' => 'no'];
+        ob_start();
+        $this->generator->outputStandardMetaTags();
+        $outputPostOptOut = ob_get_clean();
+
+        $this->assertStringContainsString('name="robots" content="noai, noimageai"', $outputPostOptOut);
+        $this->assertStringContainsString('name="tdm-reservation" content="1"', $outputPostOptOut);
+    }
 }

@@ -37,6 +37,22 @@ class RobotsTxtEditor {
 		'YouBot',
 	);
 
+	// Crawlers used exclusively for training data scraping
+	private const AI_TRAINING_BOTS = array(
+		'GPTBot',
+		'CCBot',
+		'Google-Extended',
+		'Anthropic-AI',
+		'ClaudeBot',
+		'cohere-ai',
+		'Omgilibot',
+		'Omgili',
+		'YouBot',
+		'Bytespider',
+		'Diffbot',
+		'FacebookBot',
+	);
+
 	/**
 	 * Register hooks.
 	 */
@@ -132,11 +148,44 @@ class RobotsTxtEditor {
 	public function getAiBots( \WP_REST_Request $request ): \WP_REST_Response {
 		return rest_ensure_response(
 			array(
-				'builtin' => self::AI_BOTS,
-				'custom'  => (array) get_option( self::CUSTOM_BOTS_OPTION, array() ),
-				'merged'  => $this->getMergedBotList(),
+				'builtin'  => self::AI_BOTS,
+				'training' => self::AI_TRAINING_BOTS,
+				'custom'   => (array) get_option( self::CUSTOM_BOTS_OPTION, array() ),
+				'merged'   => $this->getMergedBotList(),
 			)
 		);
+	}
+
+	/**
+	 * Retrieve list of training bots combined with custom additions.
+	 */
+	public function getTrainingBotsList(): array {
+		$custom = (array) get_option( self::CUSTOM_BOTS_OPTION, array() );
+		$bots   = array();
+
+		foreach ( array_merge( self::AI_TRAINING_BOTS, $custom ) as $bot ) {
+			$token = $this->botToken( $bot );
+			if ( '' !== $token ) {
+				$bots[] = $token;
+			}
+		}
+
+		return array_values( array_unique( $bots ) );
+	}
+
+	public function userAgentMatchesTrainingBot( string $userAgent ): bool {
+		if ( '' === $userAgent ) {
+			return false;
+		}
+
+		foreach ( $this->getTrainingBotsList() as $bot ) {
+			$pattern = '/(^|[^A-Za-z0-9])' . preg_quote( $bot, '/' ) . '([^A-Za-z0-9]|$)/i';
+			if ( 1 === preg_match( $pattern, $userAgent ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public function updateAiBots( \WP_REST_Request $request ): \WP_REST_Response {
@@ -167,11 +216,15 @@ class RobotsTxtEditor {
 	// ── robots.txt endpoints ──────────────────────────────────────────────────
 
 	public function getRobotsTxt( \WP_REST_Request $request ): \WP_REST_Response {
+		$blockAi = get_option( 'quinrel_block_ai_bots', 'no' ) === 'yes';
+		$policy  = get_option( 'quinrel_ai_bot_policy', $blockAi ? 'block_all' : 'allow_all' );
+
 		return rest_ensure_response(
 			array(
 				'content'           => (string) get_option( self::OPTION_KEY, '' ),
 				'replace_generated' => $this->replacesGeneratedFile(),
-				'block_ai_bots'     => get_option( 'quinrel_block_ai_bots', 'no' ) === 'yes',
+				'block_ai_bots'     => $blockAi,
+				'ai_bot_policy'     => $policy,
 				'training_optout'   => get_option( self::TRAINING_OPT_OUT_OPT, 'no' ) === 'yes',
 			)
 		);
@@ -233,8 +286,16 @@ class RobotsTxtEditor {
 			update_option( self::REPLACE_OPTION, ( $replace && '' !== trim( $nextContent ) ) ? 'yes' : 'no', true );
 		}
 
-		if ( isset( $params['block_ai_bots'] ) ) {
-			update_option( 'quinrel_block_ai_bots', ! empty( $params['block_ai_bots'] ) ? 'yes' : 'no', true );
+		if ( isset( $params['ai_bot_policy'] ) ) {
+			$policy = sanitize_key( (string) $params['ai_bot_policy'] );
+			if ( in_array( $policy, array( 'allow_all', 'search_only', 'block_all' ), true ) ) {
+				update_option( 'quinrel_ai_bot_policy', $policy, true );
+				update_option( 'quinrel_block_ai_bots', 'block_all' === $policy ? 'yes' : 'no', true );
+			}
+		} elseif ( isset( $params['block_ai_bots'] ) ) {
+			$block = ! empty( $params['block_ai_bots'] ) ? 'yes' : 'no';
+			update_option( 'quinrel_block_ai_bots', $block, true );
+			update_option( 'quinrel_ai_bot_policy', 'yes' === $block ? 'block_all' : 'allow_all', true );
 		}
 
 		return rest_ensure_response(
@@ -289,12 +350,23 @@ class RobotsTxtEditor {
 			return;
 		}
 
-		if ( get_option( 'quinrel_block_ai_bots', 'no' ) !== 'yes' ) {
+		$blockAi = get_option( 'quinrel_block_ai_bots', 'no' ) === 'yes';
+		$policy  = get_option( 'quinrel_ai_bot_policy', $blockAi ? 'block_all' : 'allow_all' );
+
+		if ( 'allow_all' === $policy && ! $blockAi ) {
 			return;
 		}
 
 		$userAgent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['HTTP_USER_AGENT'] ) ) : '';
-		if ( '' === $userAgent || ! $this->userAgentMatchesAiBot( $userAgent ) ) {
+		if ( '' === $userAgent ) {
+			return;
+		}
+
+		$shouldBlock = ( 'search_only' === $policy )
+			? $this->userAgentMatchesTrainingBot( $userAgent )
+			: $this->userAgentMatchesAiBot( $userAgent );
+
+		if ( ! $shouldBlock ) {
 			return;
 		}
 
@@ -401,10 +473,22 @@ class RobotsTxtEditor {
 			}
 		}
 
-		if ( get_option( 'quinrel_block_ai_bots', 'no' ) === 'yes' ) {
+		$blockAi = get_option( 'quinrel_block_ai_bots', 'no' ) === 'yes';
+		$policy  = get_option( 'quinrel_ai_bot_policy', $blockAi ? 'block_all' : 'allow_all' );
+
+		if ( $blockAi || 'block_all' === $policy ) {
 			$lines   = array( '# Block AI Crawlers and LLM Bots (Quinrel AI Crawler Manager)' );
 			$lines[] = '';
 			foreach ( $this->getMergedBotList() as $bot ) {
+				$lines[] = 'User-agent: ' . $bot;
+				$lines[] = 'Disallow: /';
+				$lines[] = '';
+			}
+			$blocks[] = rtrim( implode( "\n", $lines ), "\n" );
+		} elseif ( 'search_only' === $policy ) {
+			$lines   = array( '# Block AI Training Crawlers (Allow AI Search Agents)' );
+			$lines[] = '';
+			foreach ( $this->getTrainingBotsList() as $bot ) {
 				$lines[] = 'User-agent: ' . $bot;
 				$lines[] = 'Disallow: /';
 				$lines[] = '';

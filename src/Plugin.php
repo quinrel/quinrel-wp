@@ -425,7 +425,8 @@ class Plugin {
 
 	public function serveFrontendLlmsTxt(): void {
 		// This path does not register the rewrite query var, so set it before serving.
-		set_query_var( 'quinrel_llms_txt', '1' );
+		$isFull = str_ends_with( $this->requestPath(), '/llms-full.txt' );
+		set_query_var( 'quinrel_llms_txt', $isFull ? 'full' : '1' );
 		$this->container->get( 'llms_txt_generator' )->serveFile();
 	}
 
@@ -620,7 +621,8 @@ class Plugin {
 	}
 
 	private function isLlmsTxtRequest(): bool {
-		return str_ends_with( $this->requestPath(), '/llms.txt' );
+		$path = $this->requestPath();
+		return str_ends_with( $path, '/llms.txt' ) || str_ends_with( $path, '/llms-full.txt' );
 	}
 
 	private function isIndexNowKeyRequest(): bool {
@@ -628,7 +630,7 @@ class Plugin {
 		if ( ! str_ends_with( $path, '.txt' ) ) {
 			return false;
 		}
-		if ( str_ends_with( $path, '/robots.txt' ) || str_ends_with( $path, '/llms.txt' ) ) {
+		if ( str_ends_with( $path, '/robots.txt' ) || str_ends_with( $path, '/llms.txt' ) || str_ends_with( $path, '/llms-full.txt' ) ) {
 			return false;
 		}
 

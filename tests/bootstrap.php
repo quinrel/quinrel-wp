@@ -1879,6 +1879,12 @@ if (!function_exists('site_url')) {
     }
 }
 
+if (!function_exists('get_pages')) {
+    function get_pages(array $args = array()): array {
+        return array();
+    }
+}
+
 if (!isset($GLOBALS['wp'])) {
     $wpObj = new \stdClass();
     $wpObj->request = '';

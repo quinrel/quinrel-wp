@@ -108,6 +108,42 @@ class RobotsTxtEditorTest extends TestCase
         $this->assertStringContainsString("User-agent: MyTestCrawler\nDisallow: /", $output);
     }
 
+    public function testFilterRobotsTxtWithSearchOnlyAiPolicy(): void
+    {
+        update_option('quinrel_ai_bot_policy', 'search_only');
+
+        $output = $this->editor->filterRobotsTxt('', true);
+
+        $this->assertStringContainsString('# Block AI Training Crawlers (Allow AI Search Agents)', $output);
+        $this->assertStringContainsString("User-agent: GPTBot\nDisallow: /", $output);
+        $this->assertStringContainsString("User-agent: CCBot\nDisallow: /", $output);
+        $this->assertStringNotContainsString("User-agent: PerplexityBot\nDisallow: /", $output);
+        $this->assertStringNotContainsString("User-agent: ChatGPT-User\nDisallow: /", $output);
+    }
+
+    public function testUpdateAiBotPolicyViaRest(): void
+    {
+        $request = new \WP_REST_Request('POST', '/quinrel/v1/robots-txt');
+        $request->set_json_params([
+            'ai_bot_policy' => 'search_only',
+        ]);
+
+        $this->editor->updateRobotsTxt($request);
+
+        $this->assertSame('search_only', get_option('quinrel_ai_bot_policy'));
+        $this->assertSame('no', get_option('quinrel_block_ai_bots'));
+
+        $request2 = new \WP_REST_Request('POST', '/quinrel/v1/robots-txt');
+        $request2->set_json_params([
+            'ai_bot_policy' => 'block_all',
+        ]);
+
+        $this->editor->updateRobotsTxt($request2);
+
+        $this->assertSame('block_all', get_option('quinrel_ai_bot_policy'));
+        $this->assertSame('yes', get_option('quinrel_block_ai_bots'));
+    }
+
     public function testFilterRobotsTxtWithAiTrainingOptOut(): void
     {
         update_option('quinrel_ai_training_optout', 'yes');
