@@ -24,7 +24,7 @@ The writing assistant uses an OpenAI, Anthropic, or Ollama key saved on this sit
 
 ## Schema Markup
 
-Schema Markup can describe a page as Article, NewsArticle, WebPage, BreadcrumbList, FAQ, HowTo, LocalBusiness, Recipe, Event, Product, VideoObject, Person, or Organization. You can also add one custom JSON-LD node.
+Schema Markup can describe a page as Article, NewsArticle, WebPage, BreadcrumbList, FAQ, HowTo, LocalBusiness, Recipe, Event, Product, VideoObject, Person, or Organization. You can also add one custom JSON-LD node. Breadcrumb Schema creates nested BreadcrumbList structured data automatically based on post hierarchy and taxonomy terms.
 
 When WooCommerce is active, product schema can include an aggregate rating if that product has reviews. Structured data does not guarantee a rich result.
 
@@ -42,6 +42,8 @@ The Technical SEO screen includes the Redirects Manager. A redirect can be 301, 
 robots.txt starts from the file WordPress already generated. Quinrel appends its lines unless an administrator confirms a full replacement.
 
 The `.htaccess` editor stays off until an administrator turns it on. It does not run when WordPress file editing is disabled. Nginx does not read `.htaccess`.
+
+RSS Scraping Protection adds source attribution and canonical backlinks to RSS feed entries to help protect published content against unauthorized scrapers.
 
 ## Technical SEO Audit
 
@@ -75,15 +77,21 @@ Roles & Capabilities control who can manage redirects, edit SEO meta, and open S
 
 ## Google Analytics 4, Google Search Console, and IndexNow
 
-Google Analytics 4 and Google Search Console load after you connect them. Search Console can list queries matched by more than one page.
+Google Analytics 4 and Google Search Console load after you connect them. Google Search Console connects via a 1-click Google OAuth flow with automatic property selection, or with manual property entry in its dedicated settings tab. Search Console can list queries matched by more than one page.
 
 IndexNow sends published URLs only after an administrator saves a key and turns notifications on. IndexNow does not guarantee indexing. The Google Indexing API is optional, applies to eligible JobPosting or livestream pages, and does not guarantee indexing.
 
 The Keyword Rank Tracker uses a SerpApi key saved on this site.
 
-A Bing Webmaster tools verification code can be saved in settings. Quinrel does not include a Bing traffic screen.
+A Bing Webmaster tools verification code can be saved in settings. Quinrel does not include a Bing traffic screen. The Bing Webmaster API is used only when a Bing API key is already stored.
 
 Social posting can send to Facebook, X, LinkedIn, and Pinterest. Instagram and YouTube can be stored as profile URLs. Quinrel does not post to Instagram or TikTok.
+
+## Global Settings Hub and Settings Portability
+
+Settings are organized into dedicated tabs for General, Quinrel Cloud, Google Search Console, Bing Webmaster, Indexing & APIs, Performance, AI Assistant, Roles, and Advanced Tools.
+
+Settings Portability lets administrators export plugin settings as a JSON file or import a saved configuration with schema validation.
 
 ## Setup, import, multisite, and headless
 
@@ -99,7 +107,7 @@ The REST API can read public SEO fields for a published post. Writing SEO data r
 
 A Quinrel account is optional. Connecting the site brings intelligence, quick fixes, and an action plan from the Quinrel API into WordPress. Technical SEO on this site keeps working when Quinrel cannot be reached. The settings screen cannot change the Quinrel API host.
 
-An administrator can paste a site token or an authorization code. Quinrel sends that request only to `https://api.quinrel.com`. The base address is `https://api.quinrel.com/v1` unless code overrides it with the `quinrel_backend_api_url` filter.
+An administrator can pair the site automatically with 1-click auto-connect, or paste a site token or an authorization code. Quinrel sends that request only to `https://api.quinrel.com`. The base address is `https://api.quinrel.com/v1` unless code overrides it with the `quinrel_backend_api_url` filter.
 
 A site token is JSON posted to `/auth/site-token` with `grant_type` set to `site_token`, the pasted `site_token`, and `site_url` set to this site's home address. An authorization code is JSON posted to `/auth/token` with `grant_type` set to `authorization_code`, `code`, and the same `site_url`. Quinrel does not store the pasted token or code. It stores the returned access token only after `GET /auth/verify` says `active` is true.
 
