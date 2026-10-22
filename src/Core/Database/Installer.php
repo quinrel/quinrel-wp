@@ -83,6 +83,7 @@ class Installer {
 		\Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkChecker::createTable();
 		\Quinrel\WordPress\Modules\Analytics\PageSpeedScheduler::createTable();
 		\Quinrel\WordPress\Modules\Indexing\GscIndexSyncWorker::createTable();
+		\Quinrel\WordPress\Modules\ContentAssistant\OutreachManager::createTable();
 
 		update_option( 'quinrel_db_version', QUINREL_VERSION, true );
 	}

@@ -39,7 +39,7 @@ class WordComplexityScorer {
 		$rawContent = $params['content'] ?? '';
 
 		if ( $postId > 0 ) {
-			$rawContent = get_post_field( 'post_content', $postId );
+			$rawContent = CustomFieldScanner::getAggregatedContent( $postId );
 		}
 
 		$text  = wp_strip_all_tags( $rawContent );

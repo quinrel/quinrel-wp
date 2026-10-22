@@ -51,7 +51,7 @@ class MorphologicalKeywordMatcher {
 
 		if ( $postId > 0 ) {
 			$keyword = $keyword ?: (string) get_post_meta( $postId, '_quinrel_focus_keyword', true );
-			$content = wp_strip_all_tags( get_post_field( 'post_content', $postId ) );
+			$content = wp_strip_all_tags( CustomFieldScanner::getAggregatedContent( $postId ) );
 		} else {
 			$content = wp_strip_all_tags( $params['content'] ?? '' );
 		}

@@ -25,8 +25,9 @@ class WooCommerceProductSchema {
 		add_action( 'rest_api_init', array( $this, 'registerRoutes' ) );
 	}
 
-	private function isWooCommerceActive(): bool {
-		return class_exists( '\WC_Product' ) || function_exists( 'wc_get_product' );
+	public function isWooCommerceActive(): bool {
+		$active = ( class_exists( '\WC_Product' ) || function_exists( 'wc_get_product' ) ) && ( ! defined( 'QUINREL_TESTS' ) || ! empty( $GLOBALS['mock_woocommerce_active'] ) );
+		return (bool) apply_filters( 'quinrel_is_woocommerce_active', $active );
 	}
 
 	// ── REST routes ───────────────────────────────────────────────────────────
@@ -113,12 +114,51 @@ class WooCommerceProductSchema {
 			}
 		}
 
-		// Brand from custom taxonomy or attribute
-		$brandAttr = $product->get_attribute( 'pa_brand' ) ?: $product->get_attribute( 'brand' );
-		if ( $brandAttr ) {
+		// Identifiers (GTIN, MPN, ISBN)
+		$gtin = get_post_meta( $postId, '_quinrel_gtin', true ) ?: ( get_post_meta( $postId, '_gtin', true ) ?: get_post_meta( $postId, '_barcode', true ) );
+		if ( ! empty( $gtin ) ) {
+			$schema['gtin'] = (string) $gtin;
+		}
+
+		$mpn = get_post_meta( $postId, '_quinrel_mpn', true ) ?: ( get_post_meta( $postId, '_mpn', true ) ?: $product->get_sku() );
+		if ( ! empty( $mpn ) ) {
+			$schema['mpn'] = (string) $mpn;
+		}
+
+		$isbn = get_post_meta( $postId, '_quinrel_isbn', true ) ?: get_post_meta( $postId, '_isbn', true );
+		if ( ! empty( $isbn ) ) {
+			$schema['isbn'] = (string) $isbn;
+		}
+
+		// Brand from post meta, custom taxonomy, or attribute
+		$brandName = get_post_meta( $postId, '_quinrel_brand', true );
+		if ( empty( $brandName ) ) {
+			$brandName = $product->get_attribute( 'pa_brand' ) ?: $product->get_attribute( 'brand' );
+		}
+		if ( empty( $brandName ) && taxonomy_exists( 'product_brand' ) ) {
+			$brands = wp_get_post_terms( $postId, 'product_brand' );
+			if ( ! empty( $brands ) && ! is_wp_error( $brands ) ) {
+				$brandName = $brands[0]->name;
+			}
+		}
+		if ( ! empty( $brandName ) ) {
 			$schema['brand'] = array(
 				'@type' => 'Brand',
-				'name'  => $brandAttr,
+				'name'  => (string) $brandName,
+			);
+		}
+
+		// Merchant Return Policy
+		$returnWindow = (int) get_option( 'quinrel_woo_return_window_days', 30 );
+		$returnPolicy = null;
+		if ( $returnWindow > 0 ) {
+			$returnPolicy = array(
+				'@type'                => 'MerchantReturnPolicy',
+				'applicableCountry'    => get_option( 'quinrel_woo_return_country', 'US' ),
+				'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+				'merchantReturnDays'   => $returnWindow,
+				'returnMethod'         => 'https://schema.org/ReturnByMail',
+				'returnFees'           => 'https://schema.org/FreeReturn',
 			);
 		}
 
@@ -127,14 +167,18 @@ class WooCommerceProductSchema {
 			$minPrice         = $product->get_variation_price( 'min' );
 			$maxPrice         = $product->get_variation_price( 'max' );
 			$schema['offers'] = array(
-				'@type'         => 'AggregateOffer',
-				'priceCurrency' => get_woocommerce_currency(),
-				'lowPrice'      => (string) $minPrice,
-				'highPrice'     => (string) $maxPrice,
-				'offerCount'    => count( $product->get_available_variations() ),
-				'availability'  => $product->is_in_stock() ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-				'url'           => get_permalink( $postId ),
+				'@type'           => 'AggregateOffer',
+				'priceCurrency'   => get_woocommerce_currency(),
+				'lowPrice'        => (string) $minPrice,
+				'highPrice'       => (string) $maxPrice,
+				'offerCount'      => count( $product->get_available_variations() ),
+				'availability'    => $product->is_in_stock() ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+				'url'             => get_permalink( $postId ),
+				'priceValidUntil' => gmdate( 'Y-m-d', strtotime( '+1 year' ) ),
 			);
+			if ( $returnPolicy ) {
+				$schema['offers']['hasMerchantReturnPolicy'] = $returnPolicy;
+			}
 		} else {
 			$price            = $product->get_price();
 			$schema['offers'] = array(
@@ -145,6 +189,9 @@ class WooCommerceProductSchema {
 				'url'             => get_permalink( $postId ),
 				'priceValidUntil' => gmdate( 'Y-m-d', strtotime( '+1 year' ) ),
 			);
+			if ( $returnPolicy ) {
+				$schema['offers']['hasMerchantReturnPolicy'] = $returnPolicy;
+			}
 		}
 
 		// AggregateRating from WooCommerce reviews

@@ -189,6 +189,38 @@ class BreadcrumbRenderer {
 					'url'  => get_category_link( $cat->term_id ),
 				);
 			}
+		} elseif ( $post->post_type === 'product' ) {
+			$shopId = function_exists( 'wc_get_page_id' ) ? (int) wc_get_page_id( 'shop' ) : 0;
+			if ( $shopId > 0 && get_post( $shopId ) ) {
+				$trail[] = array(
+					'name' => get_the_title( $shopId ),
+					'url'  => get_permalink( $shopId ),
+				);
+			}
+
+			$primaryCatId = (int) get_post_meta( $post->ID, '_quinrel_primary_product_cat', true );
+			$targetTerm   = null;
+			if ( $primaryCatId > 0 ) {
+				$t = get_term( $primaryCatId, 'product_cat' );
+				if ( $t && ! is_wp_error( $t ) ) {
+					$targetTerm = $t;
+				}
+			}
+			if ( ! $targetTerm && function_exists( 'get_the_terms' ) ) {
+				$terms = get_the_terms( $post->ID, 'product_cat' );
+				if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
+					$targetTerm = reset( $terms );
+				}
+			}
+
+			if ( $targetTerm && ! is_wp_error( $targetTerm ) ) {
+				$termParents = $this->getTermParents( $targetTerm, 'product_cat' );
+				$trail       = array_merge( $trail, $termParents );
+				$trail[]     = array(
+					'name' => $targetTerm->name,
+					'url'  => get_term_link( $targetTerm ),
+				);
+			}
 		}
 
 		if ( function_exists( 'is_post_type_hierarchical' ) && is_post_type_hierarchical( $post->post_type ) && function_exists( 'get_post_ancestors' ) ) {
@@ -226,6 +258,24 @@ class BreadcrumbRenderer {
 			}
 		}
 
+		return $parents;
+	}
+
+	/**
+	 * Get parent terms recursively for custom hierarchical taxonomies.
+	 */
+	private function getTermParents( $term, string $taxonomy ): array {
+		$parents = array();
+		if ( ! empty( $term->parent ) && function_exists( 'get_term' ) ) {
+			$parent = get_term( (int) $term->parent, $taxonomy );
+			if ( $parent && ! is_wp_error( $parent ) ) {
+				$parents   = array_merge( $this->getTermParents( $parent, $taxonomy ), $parents );
+				$parents[] = array(
+					'name' => $parent->name,
+					'url'  => get_term_link( $parent ),
+				);
+			}
+		}
 		return $parents;
 	}
 

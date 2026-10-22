@@ -6,6 +6,7 @@
     "build": "wp-scripts build src/assets/js/index.js src/assets/js/editor.js src/assets/js/cookie-banner.js",
     "start": "wp-scripts start src/assets/js/index.js src/assets/js/editor.js src/assets/js/cookie-banner.js",
     "make-pot": "wp-scripts make-pot",
+    "package": "bash scripts/package-plugin.sh",
     "test:integration": "bash scripts/run-wordpress-integration-tests.sh",
     "test:release": "bash scripts/release-gate.sh"
   },

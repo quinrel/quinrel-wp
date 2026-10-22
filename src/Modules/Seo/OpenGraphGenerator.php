@@ -30,6 +30,27 @@ class OpenGraphGenerator {
 		printf( '<meta property="og:url" content="%s" />' . "\n", esc_url( $url ) );
 		printf( '<meta property="og:site_name" content="%s" />' . "\n", esc_attr( get_bloginfo( 'name' ) ) );
 
+		if ( is_singular( 'product' ) && ( function_exists( 'wc_get_product' ) || class_exists( '\WC_Product' ) ) ) {
+			$product = wc_get_product( get_the_ID() );
+			if ( $product ) {
+				$price    = $product->get_price();
+				$currency = function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'USD';
+				$stock    = $product->is_in_stock() ? 'instock' : 'oos';
+				if ( $price !== '' && $price !== false ) {
+					printf( '<meta property="product:price:amount" content="%s" />' . "\n", esc_attr( (string) $price ) );
+					printf( '<meta property="product:price:currency" content="%s" />' . "\n", esc_attr( (string) $currency ) );
+				}
+				printf( '<meta property="product:availability" content="%s" />' . "\n", esc_attr( $stock ) );
+				if ( $product->get_sku() ) {
+					printf( '<meta property="product:retailer_item_id" content="%s" />' . "\n", esc_attr( (string) $product->get_sku() ) );
+				}
+				$brand = $product->get_attribute( 'pa_brand' ) ?: $product->get_attribute( 'brand' );
+				if ( $brand ) {
+					printf( '<meta property="product:brand" content="%s" />' . "\n", esc_attr( (string) $brand ) );
+				}
+			}
+		}
+
 		if ( ! empty( $image['url'] ) ) {
 			printf( '<meta property="og:image" content="%s" />' . "\n", esc_url( $image['url'] ) );
 			if ( ! empty( $image['width'] ) ) {
@@ -63,6 +84,9 @@ class OpenGraphGenerator {
 	// ── Context helpers ──────────────────────────────────────────────────────
 
 	private function getOgType(): string {
+		if ( is_singular( 'product' ) ) {
+			return 'product';
+		}
 		if ( is_singular( 'post' ) ) {
 			return 'article';
 		}

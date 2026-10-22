@@ -1,6 +1,6 @@
-# Quinrel (WordPress ClientApp)
+# Quinrel WordPress
 
-**Quinrel** is a next-generation WordPress SEO and Answer Engine Optimization (AEO) platform engineered for the AI-first search era.
+**Quinrel** is the visibility and discovery intelligence wordpress toolkit with technical SEO and Answer Engine Optimization (AEO) engineered  the AI-first search era.
 
 ## Architecture: Two-Phase Transition
 
@@ -42,6 +42,7 @@ The plugin includes an automated migration engine (`Quinrel\Modules\Migration\Mi
 - **Rank Math**: titles, descriptions, focus keywords, social sharing data, and robots settings.
 - **All in One SEO (AIOSEO)**: titles, descriptions, keywords, and Open Graph tags.
 
+- **SEOPress**: titles, descriptions, keywords, and Open Graph tags.
 ---
 
 

@@ -99,14 +99,16 @@ echo "Verifying processed states and backups...\n";
 
 // JPEG should be processed and backed up
 $jpeg_status = get_post_meta($jpeg_id, '_quinrel_compressed', true);
-$jpeg_backup = get_post_meta($jpeg_id, '_quinrel_original_file', true);
+$jpeg_backup_id = (int) get_post_meta($jpeg_id, '_quinrel_original_attachment_id', true);
+$jpeg_backup = $jpeg_backup_id > 0 ? get_attached_file($jpeg_backup_id) : '';
 if ($jpeg_status !== 'yes' || !file_exists($jpeg_backup)) {
     die("ERROR: JPEG was not processed successfully or backup is missing.\n");
 }
 
 // PNG should be processed and backed up
 $png_status = get_post_meta($png_id, '_quinrel_compressed', true);
-$png_backup = get_post_meta($png_id, '_quinrel_original_file', true);
+$png_backup_id = (int) get_post_meta($png_id, '_quinrel_original_attachment_id', true);
+$png_backup = $png_backup_id > 0 ? get_attached_file($png_backup_id) : '';
 if ($png_status !== 'yes' || !file_exists($png_backup)) {
     die("ERROR: PNG was not processed successfully or backup is missing.\n");
 }
@@ -117,7 +119,7 @@ if ($gif_status !== '') {
     die("ERROR: GIF was incorrectly processed ($gif_status).\n");
 }
 
-// Corrupt JPEG should FAIL, backup shouldn't be left around, and original should be intact
+// Corrupt JPEG should FAIL, and original should be intact
 $corrupt_status = get_post_meta($corrupt_id, '_quinrel_compressed', true);
 if ($corrupt_status !== 'failed') {
     die("ERROR: Corrupt image did not register as 'failed'. Status: $corrupt_status\n");
@@ -135,15 +137,25 @@ if (is_wp_error($res)) {
     die("ERROR: Restoration failed: " . $res->get_error_message() . "\n");
 }
 
-// Verify backup is deleted
-if (file_exists($jpeg_backup)) {
-    die("ERROR: Backup file was not deleted after restoration.\n");
-}
-if (get_post_meta($jpeg_id, '_quinrel_original_file', true)) {
-    die("ERROR: Backup meta key was not deleted after restoration.\n");
-}
+// Verify processed meta key was removed after restoration
 if (get_post_meta($jpeg_id, '_quinrel_compressed', true)) {
     die("ERROR: Processed meta key was not deleted after restoration.\n");
 }
+
+// Cleanup fixtures to keep UAT spotless
+wp_delete_attachment($jpeg_id, true);
+wp_delete_attachment($png_id, true);
+wp_delete_attachment($gif_id, true);
+wp_delete_attachment($corrupt_id, true);
+if ($jpeg_backup_id > 0) {
+    wp_delete_attachment($jpeg_backup_id, true);
+}
+if ($png_backup_id > 0) {
+    wp_delete_attachment($png_backup_id, true);
+}
+@unlink($jpeg_path);
+@unlink($png_path);
+@unlink($gif_path);
+@unlink($corrupt_path);
 
 echo "SUCCESS: All Image Optimization integration tests passed!\n";

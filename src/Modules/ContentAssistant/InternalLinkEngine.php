@@ -174,7 +174,7 @@ class InternalLinkEngine {
 		// Clear existing links for this post — full re-index on each save
 		$wpdb->delete( $table, array( 'post_id' => $postId ), array( '%d' ) );
 
-		$content = $post->post_content;
+		$content = CustomFieldScanner::getAggregatedContent( $postId );
 		if ( empty( $content ) ) {
 			return;
 		}

@@ -94,7 +94,7 @@ class InclusiveLanguageChecker {
 			if ( $cached !== false ) {
 				return rest_ensure_response( $cached );
 			}
-			$rawContent = get_post_field( 'post_content', $postId );
+			$rawContent = CustomFieldScanner::getAggregatedContent( $postId );
 		}
 
 		$text       = wp_strip_all_tags( $rawContent );

@@ -6,7 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class ArticleSchema {
+use Quinrel\WordPress\Modules\Schema\Contracts\SchemaTypeInterface;
+
+class ArticleSchema implements SchemaTypeInterface {
+
+	public function getId(): string {
+		return 'article';
+	}
 
 	public function isApplicable( ?int $postId = null ): bool {
 		if ( $postId !== null ) {

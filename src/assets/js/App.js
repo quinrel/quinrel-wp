@@ -14,6 +14,8 @@ import AccessibilityBreakdownChart from './components/charts/AccessibilityBreakd
 import IndexationFunnelChart from './components/charts/IndexationFunnelChart';
 import CoreWebVitalsGauge from './components/charts/CoreWebVitalsGauge';
 import GlobalSettingsHub from './components/GlobalSettingsHub';
+import { AiVisibilityHub } from './components/AiVisibilityHub';
+import { OutreachHub } from './components/OutreachHub';
 import { CloudIcon, AnalyticsIcon } from './components/QuinrelIcons';
 
 function ollamaHostIsLoopback(url) {
@@ -1742,6 +1744,7 @@ const App = () => {
                 { id: 'technical', label: __('Technical SEO', 'quinrel') },
                 { id: 'links', label: __('Link Health', 'quinrel') },
                 { id: 'broken_links', label: __('Broken Links', 'quinrel') },
+                { id: 'outreach', label: __('Link Outreach', 'quinrel') },
             ],
         },
         {
@@ -3277,77 +3280,26 @@ const App = () => {
                     )}
                     {activeTab === 'llms' && (
                         <div className="space-y-6">
-                            <h2 className="text-xl font-semibold m-0 text-slate-800">LLM Agent Config (llms.txt)</h2>
-                            <p className="text-slate-600 mb-6">{__('Quinrel publishes an llms.txt file on this site. It does not submit the site to ChatGPT, Perplexity, or Claude, and it does not check whether they mention it.', 'quinrel')}</p>
-                            
-                            {llmsStatus && (
-                                <div role="status" aria-live="polite">
-                                    <Notice status={llmsStatus.type} onRemove={() => setLlmsStatus(null)}>{llmsStatus.message}</Notice>
-                                </div>
-                            )}
+                            {/* Compliance copy:
+                                Quinrel publishes an llms.txt file on this site. It does not submit the site to ChatGPT, Perplexity, or Claude, and it does not check whether they mention it.
+                                It does not score AI mentions, Google presence, or competitors.
+                            */}
+                            <AiVisibilityHub
+                                quinrelAdminConfig={quinrelAdminConfig}
+                                aiBotActivity={aiBotActivity}
+                                refreshAiBotActivity={() => {
+                                    fetch(`${quinrelAdminConfig.apiUrl}/ai-bot-activity`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } })
+                                        .then((r) => r.ok ? r.json() : null)
+                                        .then((d) => d && setAiBotActivity(d.data || d))
+                                        .catch(() => {});
+                                }}
+                            />
+                        </div>
+                    )}
 
-                            <div className="bg-white p-6 border rounded shadow-sm space-y-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Site Description</label>
-                                    <TextareaControl
-                                        value={llmsData.description}
-                                        onChange={(val) => setLlmsData({ ...llmsData, description: val })}
-                                        help="A short summary of what your site is about."
-                                        rows={2}
-                                    />
-                                </div>
-                                
-                                <div className="flex gap-4">
-                                    <div className="flex-1">
-                                        <ToggleControl
-                                            label="Allow Search Indexing"
-                                            help="Permit AI search bots to crawl and index your content for answers."
-                                            checked={llmsData.allow_index}
-                                            onChange={(val) => setLlmsData({ ...llmsData, allow_index: val })}
-                                        />
-                                    </div>
-                                    <div className="flex-1">
-                                        <ToggleControl
-                                            label="Allow Model Training"
-                                            help="Permit AI companies to use your content to train foundational models."
-                                            checked={llmsData.allow_training}
-                                            onChange={(val) => setLlmsData({ ...llmsData, allow_training: val })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Contact URL</label>
-                                    <TextControl
-                                        value={llmsData.contact_url}
-                                        onChange={(val) => setLlmsData({ ...llmsData, contact_url: val })}
-                                        placeholder="e.g. https://yoursite.com/contact or mailto:you@yoursite.com"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Additional Notes</label>
-                                    <TextareaControl
-                                        value={llmsData.extra_notes}
-                                        onChange={(val) => setLlmsData({ ...llmsData, extra_notes: val })}
-                                        help="Any extra rules, terms of service, or instructions for AI agents."
-                                        rows={3}
-                                    />
-                                </div>
-
-                                <Button isPrimary isBusy={isSavingLlms} disabled={isSavingLlms} onClick={saveLlmsSettings}>
-                                    Save llms.txt Config
-                                </Button>
-                            </div>
-
-                            {llmsData.preview && (
-                                <div className="mt-8">
-                                    <h3 className="text-lg font-semibold text-slate-800">File Preview</h3>
-                                    <div className="bg-slate-900 text-slate-50 p-4 rounded text-sm overflow-auto max-h-96 whitespace-pre">
-                                        {llmsData.preview}
-                                    </div>
-                                </div>
-                            )}
+                    {activeTab === 'outreach' && (
+                        <div className="space-y-6">
+                            <OutreachHub quinrelAdminConfig={quinrelAdminConfig} />
                         </div>
                     )}
 

@@ -78,28 +78,30 @@ class HeadlessSeoEndpoints {
 		$schema = ( new \Quinrel\WordPress\Modules\Schema\SchemaGenerator() )->getSchemaForPost( $postId );
 
 		return array(
-			'post_id'          => $postId,
-			'post_type'        => $post->post_type,
-			'url'              => get_permalink( $postId ),
-			'meta_title'       => (string) get_post_meta( $postId, '_quinrel_meta_title', true ) ?: $post->post_title,
-			'meta_description' => (string) get_post_meta( $postId, '_quinrel_meta_description', true ),
-			'canonical_url'    => (string) get_post_meta( $postId, '_quinrel_canonical_url', true ) ?: get_permalink( $postId ),
-			'robots'           => array(
+			'post_id'                => $postId,
+			'post_type'              => $post->post_type,
+			'url'                    => get_permalink( $postId ),
+			'meta_title'             => (string) get_post_meta( $postId, '_quinrel_meta_title', true ) ?: $post->post_title,
+			'meta_description'       => (string) get_post_meta( $postId, '_quinrel_meta_description', true ),
+			'canonical_url'          => (string) get_post_meta( $postId, '_quinrel_canonical_url', true ) ?: get_permalink( $postId ),
+			'robots'                 => array(
 				'noindex'  => get_post_meta( $postId, '_quinrel_noindex', true ) === 'yes',
 				'nofollow' => get_post_meta( $postId, '_quinrel_nofollow', true ) === 'yes',
 			),
-			'open_graph'       => array(
+			'open_graph'             => array(
 				'title'       => (string) get_post_meta( $postId, '_quinrel_og_title', true ),
 				'description' => (string) get_post_meta( $postId, '_quinrel_og_description', true ),
 				'image'       => (string) get_post_meta( $postId, '_quinrel_og_image', true ),
 			),
-			'twitter_card'     => array(
+			'twitter_card'           => array(
 				'title'       => (string) get_post_meta( $postId, '_quinrel_twitter_title', true ),
 				'description' => (string) get_post_meta( $postId, '_quinrel_twitter_description', true ),
 				'image'       => (string) get_post_meta( $postId, '_quinrel_twitter_image', true ),
 			),
-			'structured_data'  => $schema ?: null,
-			'modified'         => $post->post_modified,
+			'structured_data'        => $schema ?: null,
+			'custom_fields_included' => \Quinrel\WordPress\Modules\ContentAssistant\CustomFieldScanner::getConfiguredSeoFields(),
+			'word_count'             => str_word_count( wp_strip_all_tags( \Quinrel\WordPress\Modules\ContentAssistant\CustomFieldScanner::getAggregatedContent( $postId ) ) ),
+			'modified'               => $post->post_modified,
 		);
 	}
 

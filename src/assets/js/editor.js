@@ -1,12 +1,18 @@
 const quinrelEditorConfig = (typeof window !== 'undefined' && window.quinrelEditorConfig) || {};
 import { registerPlugin } from '@wordpress/plugins';
 import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/edit-post';
-import { PanelBody, TextControl, TextareaControl, ToggleControl, SelectControl, Button, Notice, Spinner } from '@wordpress/components';
+import { PanelBody, TextControl, TextareaControl, ToggleControl, SelectControl, CheckboxControl, Button, Notice, Spinner } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useState, useMemo, useEffect, useCallback } from '@wordpress/element';
 import { __, sprintf, _n } from '@wordpress/i18n';
 import { analyzeReadability, stripHtml } from './lib/readability';
 import { calculateSeoScore } from './lib/seo-score';
+
+// ── Gutenberg Native Schema Blocks ────────────────────────────────
+import './blocks/faqBlock';
+import './blocks/howtoBlock';
+import './blocks/reviewBlock';
+import './blocks/tocBlock';
 
 // ── FAQ Schema Editor Component ──────────────────────────────────
 const FaqEditor = ({ value, onChange }) => {
@@ -886,6 +892,144 @@ const InternalLinkPanel = ({ postId, content }) => {
     );
 };
 
+// ── ACF & Custom Fields SEO Panel ──────────────────────────────────
+const CustomFieldsSeoPanel = ({ postId }) => {
+    const [fields, setFields] = useState([]);
+    const [activeFields, setActiveFields] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [notice, setNotice] = useState(null);
+
+    const loadCustomFields = async () => {
+        if (!postId) return;
+        setIsLoading(true);
+        try {
+            const res = await fetch(`${quinrelEditorConfig.apiUrl}/custom-fields/discover?post_id=${postId}`, {
+                headers: { 'X-WP-Nonce': quinrelEditorConfig.nonce }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setFields(data.discovered_fields || []);
+                setActiveFields(data.active_fields || []);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadCustomFields();
+    }, [postId]);
+
+    const toggleField = async (fieldName) => {
+        const next = activeFields.includes(fieldName)
+            ? activeFields.filter(f => f !== fieldName)
+            : [...activeFields, fieldName];
+
+        setActiveFields(next);
+        setIsSaving(true);
+        try {
+            const res = await fetch(`${quinrelEditorConfig.apiUrl}/custom-fields/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': quinrelEditorConfig.nonce
+                },
+                body: JSON.stringify({ fields: next })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setNotice({ type: 'success', text: __('Custom field preferences saved.', 'quinrel') });
+                setTimeout(() => setNotice(null), 3000);
+            }
+        } catch (e) {
+            setNotice({ type: 'error', text: __('Failed to update custom fields settings.', 'quinrel') });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <PanelBody title={__('ACF & Custom Fields Analysis', 'quinrel')} initialOpen={false}>
+            <p style={{ fontSize: '12px', color: '#64748b', margin: '0 0 10px' }}>
+                {__('Include custom fields (such as ACF Flexible Content, Repeaters, or custom meta) in Quinrel’s SEO, readability, and word count evaluation.', 'quinrel')}
+            </p>
+            {isLoading && <p style={{ fontSize: '12px', color: '#64748b' }}>{__('Scanning custom fields...', 'quinrel')}</p>}
+            {!isLoading && fields.length === 0 && (
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b' }}>
+                    {__('No textual custom fields detected on this post. As you populate ACF or custom meta, they will appear here.', 'quinrel')}
+                </div>
+            )}
+            {!isLoading && fields.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {fields.map((f) => {
+                        const isChecked = activeFields.includes(f.name);
+                        return (
+                            <div
+                                key={f.name}
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '8px 10px',
+                                    background: isChecked ? '#f0fdf4' : '#f8fafc',
+                                    border: '1px solid',
+                                    borderColor: isChecked ? '#bbf7d0' : '#e2e8f0',
+                                    borderRadius: '6px'
+                                }}
+                            >
+                                <div style={{ flex: 1, minWidth: 0, marginRight: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
+                                            {f.label}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '10px',
+                                            fontWeight: '500',
+                                            padding: '1px 6px',
+                                            borderRadius: '4px',
+                                            background: f.source === 'ACF' ? '#e0e7ff' : '#f1f5f9',
+                                            color: f.source === 'ACF' ? '#3730a3' : '#475569'
+                                        }}>
+                                            {f.source}
+                                        </span>
+                                    </div>
+                                    {f.preview && (
+                                        <div style={{ fontSize: '11px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {f.preview}
+                                        </div>
+                                    )}
+                                </div>
+                                <CheckboxControl
+                                    checked={isChecked}
+                                    disabled={isSaving}
+                                    onChange={() => toggleField(f.name)}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+            {notice && (
+                <div style={{
+                    marginTop: '8px',
+                    fontSize: '12px',
+                    padding: '6px 8px',
+                    borderRadius: '4px',
+                    background: notice.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                    color: notice.type === 'success' ? '#166534' : '#991b1b',
+                    border: '1px solid',
+                    borderColor: notice.type === 'success' ? '#bbf7d0' : '#fecaca'
+                }}>
+                    {notice.text}
+                </div>
+            )}
+        </PanelBody>
+    );
+};
+
 // ── Schema Generation and Validation Helpers (SD-003) ──
 const convertToIsoDuration = (time) => {
     if (!time) return '';
@@ -1254,6 +1398,227 @@ const generateLdJson = (schemaType, meta, title, content, featuredMediaUrl, perm
         }
 
         graphs.push(mergeCustomProperties(meta, event));
+    } else if (schemaType === 'podcast') {
+        const podcast = {
+            "@type": "PodcastEpisode",
+            "@id": `${baseId}#podcastepisode`,
+            "name": meta._quinrel_podcast_title || effectiveTitle,
+            "description": meta._quinrel_podcast_description || wpStripAllTags(content || '').slice(0, 160),
+            "url": baseUrl
+        };
+        if (meta._quinrel_podcast_episode_number) podcast.episodeNumber = parseInt(meta._quinrel_podcast_episode_number, 10);
+        if (meta._quinrel_podcast_season_number) podcast.seasonNumber = parseInt(meta._quinrel_podcast_season_number, 10);
+        if (meta._quinrel_podcast_episode_type) podcast.episodeType = meta._quinrel_podcast_episode_type;
+        if (meta._quinrel_podcast_series_name) {
+            podcast.partOfSeries = {
+                "@type": "PodcastSeries",
+                "name": meta._quinrel_podcast_series_name,
+                "url": meta._quinrel_podcast_series_url || domain
+            };
+        }
+        if (meta._quinrel_podcast_audio_url) {
+            podcast.associatedMedia = {
+                "@type": "AudioObject",
+                "contentUrl": meta._quinrel_podcast_audio_url,
+                "encodingFormat": "audio/mpeg"
+            };
+            if (meta._quinrel_podcast_duration) podcast.associatedMedia.duration = meta._quinrel_podcast_duration;
+            if (meta._quinrel_podcast_transcript) podcast.associatedMedia.transcript = meta._quinrel_podcast_transcript;
+        }
+        graphs.push(mergeCustomProperties(meta, podcast));
+    } else if (schemaType === 'course') {
+        const course = {
+            "@type": "Course",
+            "@id": `${baseId}#course`,
+            "name": meta._quinrel_schema_course_name || effectiveTitle,
+            "description": meta._quinrel_schema_course_description || wpStripAllTags(content || '').slice(0, 160),
+            "url": baseUrl,
+            "provider": {
+                "@type": "Organization",
+                "name": meta._quinrel_schema_course_provider || domain,
+                "sameAs": domain
+            }
+        };
+        if (meta._quinrel_schema_course_code) course.courseCode = meta._quinrel_schema_course_code;
+        if (meta._quinrel_schema_course_level) course.educationalLevel = meta._quinrel_schema_course_level;
+        if (meta._quinrel_schema_course_price) {
+            course.offers = {
+                "@type": "Offer",
+                "price": parseFloat(meta._quinrel_schema_course_price),
+                "priceCurrency": meta._quinrel_schema_course_currency || 'USD'
+            };
+        }
+        graphs.push(mergeCustomProperties(meta, course));
+    } else if (schemaType === 'jobposting') {
+        const job = {
+            "@type": "JobPosting",
+            "@id": `${baseId}#jobposting`,
+            "title": meta._quinrel_schema_job_title || effectiveTitle,
+            "description": meta._quinrel_schema_job_description || wpStripAllTags(content || ''),
+            "employmentType": meta._quinrel_schema_job_employment_type || 'FULL_TIME',
+            "hiringOrganization": {
+                "@type": "Organization",
+                "name": meta._quinrel_schema_job_company || domain,
+                "sameAs": meta._quinrel_schema_job_company_url || domain
+            }
+        };
+        if (meta._quinrel_schema_job_location_type === 'REMOTE') {
+            job.jobLocationType = 'TELECOMMUTE';
+            job.applicantLocationRequirements = {
+                "@type": "Country",
+                "name": meta._quinrel_schema_job_country || 'Worldwide'
+            };
+        } else {
+            job.jobLocation = {
+                "@type": "Place",
+                "address": {
+                    "@type": "PostalAddress",
+                    "streetAddress": meta._quinrel_schema_job_street || '',
+                    "addressLocality": meta._quinrel_schema_job_city || '',
+                    "addressCountry": meta._quinrel_schema_job_country || ''
+                }
+            };
+        }
+        if (meta._quinrel_schema_job_salary) {
+            job.baseSalary = {
+                "@type": "MonetaryAmount",
+                "currency": meta._quinrel_schema_job_salary_currency || 'USD',
+                "value": {
+                    "@type": "QuantitativeValue",
+                    "value": parseFloat(meta._quinrel_schema_job_salary),
+                    "unitText": meta._quinrel_schema_job_salary_unit || 'YEAR'
+                }
+            };
+        }
+        graphs.push(mergeCustomProperties(meta, job));
+    } else if (schemaType === 'book') {
+        const book = {
+            "@type": "Book",
+            "@id": `${baseId}#book`,
+            "name": meta._quinrel_schema_book_name || effectiveTitle,
+            "url": baseUrl,
+            "bookFormat": `https://schema.org/${meta._quinrel_schema_book_format || 'Paperback'}`
+        };
+        if (meta._quinrel_schema_book_author) book.author = { "@type": "Person", "name": meta._quinrel_schema_book_author };
+        if (meta._quinrel_schema_book_isbn) book.isbn = meta._quinrel_schema_book_isbn;
+        if (meta._quinrel_schema_book_publisher) book.publisher = { "@type": "Organization", "name": meta._quinrel_schema_book_publisher };
+        graphs.push(mergeCustomProperties(meta, book));
+    } else if (schemaType === 'software') {
+        const sw = {
+            "@type": "SoftwareApplication",
+            "@id": `${baseId}#software`,
+            "name": meta._quinrel_schema_software_name || effectiveTitle,
+            "operatingSystem": meta._quinrel_schema_software_os || 'Web',
+            "applicationCategory": meta._quinrel_schema_software_category || 'BusinessApplication',
+            "url": baseUrl
+        };
+        if (meta._quinrel_schema_software_price) {
+            sw.offers = {
+                "@type": "Offer",
+                "price": parseFloat(meta._quinrel_schema_software_price),
+                "priceCurrency": meta._quinrel_schema_software_currency || 'USD'
+            };
+        }
+        graphs.push(mergeCustomProperties(meta, sw));
+    } else if (schemaType === 'restaurant') {
+        const rest = {
+            "@type": "Restaurant",
+            "@id": `${baseId}#restaurant`,
+            "name": meta._quinrel_schema_restaurant_name || effectiveTitle,
+            "servesCuisine": meta._quinrel_schema_restaurant_cuisine || '',
+            "priceRange": meta._quinrel_schema_restaurant_price_range || '$$',
+            "url": baseUrl,
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": meta._quinrel_schema_restaurant_street || '',
+                "addressLocality": meta._quinrel_schema_restaurant_city || '',
+                "addressCountry": meta._quinrel_schema_restaurant_country || ''
+            }
+        };
+        if (meta._quinrel_schema_restaurant_telephone) rest.telephone = meta._quinrel_schema_restaurant_telephone;
+        if (meta._quinrel_schema_restaurant_menu_url) rest.hasMenu = meta._quinrel_schema_restaurant_menu_url;
+        graphs.push(mergeCustomProperties(meta, rest));
+    } else if (schemaType === 'service') {
+        const srv = {
+            "@type": "Service",
+            "@id": `${baseId}#service`,
+            "name": meta._quinrel_schema_service_name || effectiveTitle,
+            "serviceType": meta._quinrel_schema_service_type || '',
+            "provider": {
+                "@type": "Organization",
+                "name": meta._quinrel_schema_service_provider || domain
+            }
+        };
+        graphs.push(mergeCustomProperties(meta, srv));
+    } else if (schemaType === 'review') {
+        const rev = {
+            "@type": "Review",
+            "@id": `${baseId}#review`,
+            "itemReviewed": {
+                "@type": meta._quinrel_schema_review_item_type || 'Product',
+                "name": meta._quinrel_schema_review_item_name || effectiveTitle
+            },
+            "reviewRating": {
+                "@type": "Rating",
+                "ratingValue": parseFloat(meta._quinrel_schema_review_rating || '5'),
+                "bestRating": 5,
+                "worstRating": 1
+            },
+            "author": {
+                "@type": "Person",
+                "name": meta._quinrel_schema_review_author || 'Reviewer'
+            },
+            "reviewBody": meta._quinrel_schema_review_body || ''
+        };
+        graphs.push(mergeCustomProperties(meta, rev));
+    } else if (schemaType === 'movie') {
+        const mov = {
+            "@type": "Movie",
+            "@id": `${baseId}#movie`,
+            "name": meta._quinrel_schema_movie_name || effectiveTitle,
+            "url": baseUrl
+        };
+        if (meta._quinrel_schema_movie_director) mov.director = { "@type": "Person", "name": meta._quinrel_schema_movie_director };
+        graphs.push(mergeCustomProperties(meta, mov));
+    } else if (schemaType === 'music') {
+        const mus = {
+            "@type": "MusicRecording",
+            "@id": `${baseId}#music`,
+            "name": meta._quinrel_schema_music_name || effectiveTitle,
+            "url": baseUrl
+        };
+        if (meta._quinrel_schema_music_artist) mus.byArtist = { "@type": "MusicGroup", "name": meta._quinrel_schema_music_artist };
+        graphs.push(mergeCustomProperties(meta, mus));
+    } else if (schemaType === 'dataset') {
+        const ds = {
+            "@type": "Dataset",
+            "@id": `${baseId}#dataset`,
+            "name": meta._quinrel_schema_dataset_name || effectiveTitle,
+            "description": meta._quinrel_schema_dataset_description || wpStripAllTags(content || '').slice(0, 160),
+            "url": baseUrl,
+            "creator": {
+                "@type": "Organization",
+                "name": meta._quinrel_schema_dataset_creator || domain
+            }
+        };
+        if (meta._quinrel_schema_dataset_download_url) {
+            ds.distribution = {
+                "@type": "DataDownload",
+                "contentUrl": meta._quinrel_schema_dataset_download_url,
+                "encodingFormat": meta._quinrel_schema_dataset_format || 'text/csv'
+            };
+        }
+        graphs.push(mergeCustomProperties(meta, ds));
+    } else if (schemaType === 'person') {
+        const pers = {
+            "@type": "Person",
+            "@id": `${baseId}#person`,
+            "name": meta._quinrel_schema_person_name || effectiveTitle,
+            "url": meta._quinrel_schema_person_url || baseUrl
+        };
+        if (meta._quinrel_schema_person_job_title) pers.jobTitle = meta._quinrel_schema_person_job_title;
+        if (meta._quinrel_schema_person_works_for) pers.worksFor = { "@type": "Organization", "name": meta._quinrel_schema_person_works_for };
+        graphs.push(mergeCustomProperties(meta, pers));
     } else if (schemaType === 'custom') {
         const custom = {
             "@type": meta._quinrel_schema_custom_type || 'Thing',
@@ -1412,6 +1777,146 @@ const auditSchema = (schemaType, meta, title, featuredMediaUrl) => {
         const hasPrice = !!meta._quinrel_schema_event_price;
         checks.push({ label: __('Ticket Price', 'quinrel'), pass: hasPrice, required: false });
         if (!hasPrice) score -= 15;
+    } else if (schemaType === 'podcast') {
+        const hasTitle = !!meta._quinrel_podcast_title || !!title;
+        checks.push({ label: __('Episode Title', 'quinrel'), pass: hasTitle, required: true });
+        if (!hasTitle) score -= 30;
+
+        const hasAudio = !!meta._quinrel_podcast_audio_url || (content && content.includes('audio'));
+        checks.push({ label: __('Audio URL or Audio Block', 'quinrel'), pass: hasAudio, required: true });
+        if (!hasAudio) score -= 40;
+
+        const hasSeries = !!meta._quinrel_podcast_series_name;
+        checks.push({ label: __('Podcast Series Name', 'quinrel'), pass: hasSeries, required: false });
+        if (!hasSeries) score -= 15;
+
+        const hasDuration = !!meta._quinrel_podcast_duration;
+        checks.push({ label: __('Episode Duration', 'quinrel'), pass: hasDuration, required: false });
+        if (!hasDuration) score -= 15;
+    } else if (schemaType === 'course') {
+        const hasName = !!meta._quinrel_schema_course_name || !!title;
+        checks.push({ label: __('Course Title', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 40;
+
+        const hasDesc = !!meta._quinrel_schema_course_description || (content && content.length > 50);
+        checks.push({ label: __('Course Description', 'quinrel'), pass: hasDesc, required: true });
+        if (!hasDesc) score -= 30;
+
+        const hasProvider = !!meta._quinrel_schema_course_provider;
+        checks.push({ label: __('Course Provider Organization', 'quinrel'), pass: hasProvider, required: false });
+        if (!hasProvider) score -= 30;
+    } else if (schemaType === 'jobposting') {
+        const hasTitle = !!meta._quinrel_schema_job_title || !!title;
+        checks.push({ label: __('Job Title', 'quinrel'), pass: hasTitle, required: true });
+        if (!hasTitle) score -= 30;
+
+        const hasCompany = !!meta._quinrel_schema_job_company;
+        checks.push({ label: __('Hiring Organization', 'quinrel'), pass: hasCompany, required: true });
+        if (!hasCompany) score -= 30;
+
+        const hasLoc = meta._quinrel_schema_job_location_type === 'REMOTE' || !!meta._quinrel_schema_job_city;
+        checks.push({ label: __('Job Location or Remote Specification', 'quinrel'), pass: hasLoc, required: true });
+        if (!hasLoc) score -= 25;
+
+        const hasSalary = !!meta._quinrel_schema_job_salary;
+        checks.push({ label: __('Base Salary', 'quinrel'), pass: hasSalary, required: false });
+        if (!hasSalary) score -= 15;
+    } else if (schemaType === 'book') {
+        const hasName = !!meta._quinrel_schema_book_name || !!title;
+        checks.push({ label: __('Book Title', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 40;
+
+        const hasAuthor = !!meta._quinrel_schema_book_author;
+        checks.push({ label: __('Book Author', 'quinrel'), pass: hasAuthor, required: false });
+        if (!hasAuthor) score -= 30;
+
+        const hasIsbn = !!meta._quinrel_schema_book_isbn;
+        checks.push({ label: __('Book ISBN', 'quinrel'), pass: hasIsbn, required: false });
+        if (!hasIsbn) score -= 30;
+    } else if (schemaType === 'software') {
+        const hasName = !!meta._quinrel_schema_software_name || !!title;
+        checks.push({ label: __('Application Name', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 40;
+
+        const hasOs = !!meta._quinrel_schema_software_os;
+        checks.push({ label: __('Operating System', 'quinrel'), pass: hasOs, required: true });
+        if (!hasOs) score -= 30;
+
+        const hasCat = !!meta._quinrel_schema_software_category;
+        checks.push({ label: __('Application Category', 'quinrel'), pass: hasCat, required: false });
+        if (!hasCat) score -= 30;
+    } else if (schemaType === 'restaurant') {
+        const hasName = !!meta._quinrel_schema_restaurant_name || !!title;
+        checks.push({ label: __('Restaurant Name', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 35;
+
+        const hasCuisine = !!meta._quinrel_schema_restaurant_cuisine;
+        checks.push({ label: __('Cuisine Type', 'quinrel'), pass: hasCuisine, required: false });
+        if (!hasCuisine) score -= 25;
+
+        const hasStreet = !!meta._quinrel_schema_restaurant_street;
+        checks.push({ label: __('Street Address', 'quinrel'), pass: hasStreet, required: true });
+        if (!hasStreet) score -= 40;
+    } else if (schemaType === 'service') {
+        const hasName = !!meta._quinrel_schema_service_name || !!title;
+        checks.push({ label: __('Service Name', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 40;
+
+        const hasType = !!meta._quinrel_schema_service_type;
+        checks.push({ label: __('Service Type', 'quinrel'), pass: hasType, required: false });
+        if (!hasType) score -= 30;
+
+        const hasProvider = !!meta._quinrel_schema_service_provider;
+        checks.push({ label: __('Service Provider', 'quinrel'), pass: hasProvider, required: false });
+        if (!hasProvider) score -= 30;
+    } else if (schemaType === 'review') {
+        const hasItem = !!meta._quinrel_schema_review_item_name || !!title;
+        checks.push({ label: __('Reviewed Item Name', 'quinrel'), pass: hasItem, required: true });
+        if (!hasItem) score -= 40;
+
+        const hasRating = !!meta._quinrel_schema_review_rating;
+        checks.push({ label: __('Review Rating', 'quinrel'), pass: hasRating, required: true });
+        if (!hasRating) score -= 30;
+
+        const hasBody = !!meta._quinrel_schema_review_body || (content && content.length > 50);
+        checks.push({ label: __('Review Body', 'quinrel'), pass: hasBody, required: false });
+        if (!hasBody) score -= 30;
+    } else if (schemaType === 'movie') {
+        const hasName = !!meta._quinrel_schema_movie_name || !!title;
+        checks.push({ label: __('Movie Title', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 50;
+
+        const hasDirector = !!meta._quinrel_schema_movie_director;
+        checks.push({ label: __('Movie Director', 'quinrel'), pass: hasDirector, required: false });
+        if (!hasDirector) score -= 50;
+    } else if (schemaType === 'music') {
+        const hasName = !!meta._quinrel_schema_music_name || !!title;
+        checks.push({ label: __('Track Title', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 50;
+
+        const hasArtist = !!meta._quinrel_schema_music_artist;
+        checks.push({ label: __('Recording Artist', 'quinrel'), pass: hasArtist, required: false });
+        if (!hasArtist) score -= 50;
+    } else if (schemaType === 'dataset') {
+        const hasName = !!meta._quinrel_schema_dataset_name || !!title;
+        checks.push({ label: __('Dataset Name', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 40;
+
+        const hasDesc = !!meta._quinrel_schema_dataset_description || (content && content.length > 50);
+        checks.push({ label: __('Dataset Description', 'quinrel'), pass: hasDesc, required: true });
+        if (!hasDesc) score -= 30;
+
+        const hasLicense = !!meta._quinrel_schema_dataset_license;
+        checks.push({ label: __('Dataset License', 'quinrel'), pass: hasLicense, required: false });
+        if (!hasLicense) score -= 30;
+    } else if (schemaType === 'person') {
+        const hasName = !!meta._quinrel_schema_person_name || !!title;
+        checks.push({ label: __('Person Name', 'quinrel'), pass: hasName, required: true });
+        if (!hasName) score -= 50;
+
+        const hasJob = !!meta._quinrel_schema_person_job_title;
+        checks.push({ label: __('Job Title', 'quinrel'), pass: hasJob, required: false });
+        if (!hasJob) score -= 50;
     } else if (schemaType === 'custom') {
         const hasType = !!meta._quinrel_schema_custom_type;
         checks.push({ label: __('Schema Type', 'quinrel'), pass: hasType, required: true });
@@ -2132,6 +2637,10 @@ const QuinrelSidebar = () => {
                         content={content}
                     />
 
+                    <CustomFieldsSeoPanel
+                        postId={postId}
+                    />
+
                     {/* ── Readability Analysis ── */}
                     <PanelBody title={__('Readability', 'quinrel')} initialOpen={false}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -2202,6 +2711,18 @@ const QuinrelSidebar = () => {
                                 { label: __('Local Business Schema', 'quinrel'), value: 'localbusiness' },
                                 { label: __('Recipe Schema', 'quinrel'), value: 'recipe' },
                                 { label: __('Event Schema', 'quinrel'), value: 'event' },
+                                { label: __('Podcast Episode Schema', 'quinrel'), value: 'podcast' },
+                                { label: __('Course Schema', 'quinrel'), value: 'course' },
+                                { label: __('Job Posting Schema', 'quinrel'), value: 'jobposting' },
+                                { label: __('Book Schema', 'quinrel'), value: 'book' },
+                                { label: __('Software Application Schema', 'quinrel'), value: 'software' },
+                                { label: __('Restaurant Schema', 'quinrel'), value: 'restaurant' },
+                                { label: __('Service Schema', 'quinrel'), value: 'service' },
+                                { label: __('Review Schema', 'quinrel'), value: 'review' },
+                                { label: __('Movie Schema', 'quinrel'), value: 'movie' },
+                                { label: __('Music Recording Schema', 'quinrel'), value: 'music' },
+                                { label: __('Dataset Schema', 'quinrel'), value: 'dataset' },
+                                { label: __('Person / Profile Schema', 'quinrel'), value: 'person' },
                                 { label: __('Custom Schema Builder', 'quinrel'), value: 'custom' },
                             ]}
                             onChange={(val) => updateMeta('_quinrel_primary_schema', val)}
@@ -2552,6 +3073,616 @@ const QuinrelSidebar = () => {
                                     address={meta._quinrel_schema_event_address}
                                     performer={meta._quinrel_schema_event_performer}
                                     price={meta._quinrel_schema_event_price ? `${meta._quinrel_schema_event_currency || 'USD'} ${meta._quinrel_schema_event_price}` : ''}
+                                />
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'podcast' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Podcast Episode Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Audio File URL', 'quinrel')}
+                                    value={meta._quinrel_podcast_audio_url || ''}
+                                    placeholder={__('https://example.com/audio/episode.mp3', 'quinrel')}
+                                    help={__('Optional. If left blank, Quinrel automatically scans for audio blocks or attached media.', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_podcast_audio_url', v)}
+                                />
+                                <TextControl
+                                    label={__('Episode Title', 'quinrel')}
+                                    value={meta._quinrel_podcast_title || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_podcast_title', v)}
+                                />
+                                <TextareaControl
+                                    label={__('Episode Show Notes / Description', 'quinrel')}
+                                    value={meta._quinrel_podcast_description || ''}
+                                    placeholder={__('Leave blank to use excerpt', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_podcast_description', v)}
+                                    rows={3}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Episode #', 'quinrel')}
+                                        value={meta._quinrel_podcast_episode_number || ''}
+                                        placeholder="1"
+                                        onChange={(v) => updateMeta('_quinrel_podcast_episode_number', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Season #', 'quinrel')}
+                                        value={meta._quinrel_podcast_season_number || ''}
+                                        placeholder="1"
+                                        onChange={(v) => updateMeta('_quinrel_podcast_season_number', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Type', 'quinrel')}
+                                        value={meta._quinrel_podcast_episode_type || 'full'}
+                                        options={[
+                                            { label: __('Full Episode', 'quinrel'), value: 'full' },
+                                            { label: __('Trailer', 'quinrel'), value: 'trailer' },
+                                            { label: __('Bonus', 'quinrel'), value: 'bonus' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_podcast_episode_type', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Series / Show Name', 'quinrel')}
+                                        value={meta._quinrel_podcast_series_name || ''}
+                                        placeholder={__('e.g. The Quinrel Show', 'quinrel')}
+                                        onChange={(v) => updateMeta('_quinrel_podcast_series_name', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Series Website URL', 'quinrel')}
+                                        value={meta._quinrel_podcast_series_url || ''}
+                                        placeholder="https://example.com/show"
+                                        onChange={(v) => updateMeta('_quinrel_podcast_series_url', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Duration', 'quinrel')}
+                                        value={meta._quinrel_podcast_duration || ''}
+                                        placeholder={__('e.g. 45 min or PT45M', 'quinrel')}
+                                        onChange={(v) => updateMeta('_quinrel_podcast_duration', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Transcript URL or Text', 'quinrel')}
+                                        value={meta._quinrel_podcast_transcript || ''}
+                                        placeholder="https://example.com/transcript.txt"
+                                        onChange={(v) => updateMeta('_quinrel_podcast_transcript', v)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'course' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Course Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Course Title', 'quinrel')}
+                                    value={meta._quinrel_schema_course_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_course_name', v)}
+                                />
+                                <TextareaControl
+                                    label={__('Course Description', 'quinrel')}
+                                    value={meta._quinrel_schema_course_description || ''}
+                                    placeholder={__('Leave blank to use excerpt', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_course_description', v)}
+                                    rows={3}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Course Code', 'quinrel')}
+                                        value={meta._quinrel_schema_course_code || ''}
+                                        placeholder="CS-101"
+                                        onChange={(v) => updateMeta('_quinrel_schema_course_code', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Level', 'quinrel')}
+                                        value={meta._quinrel_schema_course_level || 'Beginner'}
+                                        options={[
+                                            { label: __('Beginner', 'quinrel'), value: 'Beginner' },
+                                            { label: __('Intermediate', 'quinrel'), value: 'Intermediate' },
+                                            { label: __('Advanced', 'quinrel'), value: 'Advanced' },
+                                            { label: __('All Levels', 'quinrel'), value: 'All Levels' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_course_level', v)}
+                                    />
+                                </div>
+                                <TextControl
+                                    label={__('Course Provider / Institution', 'quinrel')}
+                                    value={meta._quinrel_schema_course_provider || ''}
+                                    placeholder={__('Leave blank to use site name', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_course_provider', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Price', 'quinrel')}
+                                        type="number"
+                                        value={meta._quinrel_schema_course_price || ''}
+                                        placeholder="0 for free"
+                                        onChange={(v) => updateMeta('_quinrel_schema_course_price', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Currency', 'quinrel')}
+                                        value={meta._quinrel_schema_course_currency || 'USD'}
+                                        options={[
+                                            { label: 'USD ($)', value: 'USD' },
+                                            { label: 'EUR (€)', value: 'EUR' },
+                                            { label: 'GBP (£)', value: 'GBP' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_course_currency', v)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'jobposting' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Job Posting Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Job Title', 'quinrel')}
+                                    value={meta._quinrel_schema_job_title || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_job_title', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Hiring Organization', 'quinrel')}
+                                        value={meta._quinrel_schema_job_company || ''}
+                                        placeholder={__('Company name', 'quinrel')}
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_company', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Company Website', 'quinrel')}
+                                        value={meta._quinrel_schema_job_company_url || ''}
+                                        placeholder="https://example.com"
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_company_url', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <SelectControl
+                                        label={__('Employment Type', 'quinrel')}
+                                        value={meta._quinrel_schema_job_employment_type || 'FULL_TIME'}
+                                        options={[
+                                            { label: __('Full-time', 'quinrel'), value: 'FULL_TIME' },
+                                            { label: __('Part-time', 'quinrel'), value: 'PART_TIME' },
+                                            { label: __('Contractor', 'quinrel'), value: 'CONTRACTOR' },
+                                            { label: __('Temporary', 'quinrel'), value: 'TEMPORARY' },
+                                            { label: __('Intern', 'quinrel'), value: 'INTERN' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_employment_type', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Workplace Type', 'quinrel')}
+                                        value={meta._quinrel_schema_job_location_type || 'ONSITE'}
+                                        options={[
+                                            { label: __('On-site / In-person', 'quinrel'), value: 'ONSITE' },
+                                            { label: __('Fully Remote (Telecommute)', 'quinrel'), value: 'REMOTE' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_location_type', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('City', 'quinrel')}
+                                        value={meta._quinrel_schema_job_city || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_city', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Country', 'quinrel')}
+                                        value={meta._quinrel_schema_job_country || ''}
+                                        placeholder="US"
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_country', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Valid Through', 'quinrel')}
+                                        type="date"
+                                        value={meta._quinrel_schema_job_valid_through || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_valid_through', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Salary Amount', 'quinrel')}
+                                        type="number"
+                                        value={meta._quinrel_schema_job_salary || ''}
+                                        placeholder="120000"
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_salary', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Currency', 'quinrel')}
+                                        value={meta._quinrel_schema_job_salary_currency || 'USD'}
+                                        options={[
+                                            { label: 'USD ($)', value: 'USD' },
+                                            { label: 'EUR (€)', value: 'EUR' },
+                                            { label: 'GBP (£)', value: 'GBP' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_salary_currency', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Pay Frequency', 'quinrel')}
+                                        value={meta._quinrel_schema_job_salary_unit || 'YEAR'}
+                                        options={[
+                                            { label: __('Per Year', 'quinrel'), value: 'YEAR' },
+                                            { label: __('Per Month', 'quinrel'), value: 'MONTH' },
+                                            { label: __('Per Hour', 'quinrel'), value: 'HOUR' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_job_salary_unit', v)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'book' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Book Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Book Title', 'quinrel')}
+                                    value={meta._quinrel_schema_book_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_book_name', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Author', 'quinrel')}
+                                        value={meta._quinrel_schema_book_author || ''}
+                                        placeholder={__('Leave blank for post author', 'quinrel')}
+                                        onChange={(v) => updateMeta('_quinrel_schema_book_author', v)}
+                                    />
+                                    <TextControl
+                                        label={__('ISBN', 'quinrel')}
+                                        value={meta._quinrel_schema_book_isbn || ''}
+                                        placeholder="978-0..."
+                                        onChange={(v) => updateMeta('_quinrel_schema_book_isbn', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                    <SelectControl
+                                        label={__('Format', 'quinrel')}
+                                        value={meta._quinrel_schema_book_format || 'Paperback'}
+                                        options={[
+                                            { label: __('Paperback', 'quinrel'), value: 'Paperback' },
+                                            { label: __('Hardcover', 'quinrel'), value: 'Hardcover' },
+                                            { label: __('EBook', 'quinrel'), value: 'EBook' },
+                                            { label: __('Audiobook', 'quinrel'), value: 'AudiobookFormat' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_book_format', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Pages', 'quinrel')}
+                                        type="number"
+                                        value={meta._quinrel_schema_book_pages || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_book_pages', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Publisher', 'quinrel')}
+                                        value={meta._quinrel_schema_book_publisher || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_book_publisher', v)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'software' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Software Application Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Application Name', 'quinrel')}
+                                    value={meta._quinrel_schema_software_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_software_name', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Operating System', 'quinrel')}
+                                        value={meta._quinrel_schema_software_os || 'Web'}
+                                        placeholder="Windows, macOS, Linux, Web"
+                                        onChange={(v) => updateMeta('_quinrel_schema_software_os', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Category', 'quinrel')}
+                                        value={meta._quinrel_schema_software_category || 'BusinessApplication'}
+                                        placeholder="BusinessApplication, DeveloperApplication"
+                                        onChange={(v) => updateMeta('_quinrel_schema_software_category', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Price', 'quinrel')}
+                                        type="number"
+                                        value={meta._quinrel_schema_software_price || ''}
+                                        placeholder="0 for free"
+                                        onChange={(v) => updateMeta('_quinrel_schema_software_price', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Currency', 'quinrel')}
+                                        value={meta._quinrel_schema_software_currency || 'USD'}
+                                        options={[
+                                            { label: 'USD ($)', value: 'USD' },
+                                            { label: 'EUR (€)', value: 'EUR' },
+                                            { label: 'GBP (£)', value: 'GBP' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_software_currency', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Rating (1-5)', 'quinrel')}
+                                        value={meta._quinrel_schema_software_rating || ''}
+                                        placeholder="4.9"
+                                        onChange={(v) => updateMeta('_quinrel_schema_software_rating', v)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'restaurant' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Restaurant Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Restaurant Name', 'quinrel')}
+                                    value={meta._quinrel_schema_restaurant_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_restaurant_name', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Cuisine Type', 'quinrel')}
+                                        value={meta._quinrel_schema_restaurant_cuisine || ''}
+                                        placeholder="Italian, Japanese, Bistro"
+                                        onChange={(v) => updateMeta('_quinrel_schema_restaurant_cuisine', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Price Range', 'quinrel')}
+                                        value={meta._quinrel_schema_restaurant_price_range || '$$'}
+                                        options={[
+                                            { label: '$ (Inexpensive)', value: '$' },
+                                            { label: '$$ (Moderate)', value: '$$' },
+                                            { label: '$$$ (Upscale)', value: '$$$' },
+                                            { label: '$$$$ (Fine Dining)', value: '$$$$' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_restaurant_price_range', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Telephone', 'quinrel')}
+                                        value={meta._quinrel_schema_restaurant_telephone || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_restaurant_telephone', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Street Address', 'quinrel')}
+                                        value={meta._quinrel_schema_restaurant_street || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_restaurant_street', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Menu URL', 'quinrel')}
+                                        value={meta._quinrel_schema_restaurant_menu_url || ''}
+                                        placeholder="https://example.com/menu"
+                                        onChange={(v) => updateMeta('_quinrel_schema_restaurant_menu_url', v)}
+                                    />
+                                    <SelectControl
+                                        label={__('Accepts Reservations', 'quinrel')}
+                                        value={meta._quinrel_schema_restaurant_reservations || 'yes'}
+                                        options={[
+                                            { label: __('Yes', 'quinrel'), value: 'yes' },
+                                            { label: __('No', 'quinrel'), value: 'no' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_restaurant_reservations', v)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'service' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Service Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Service Name', 'quinrel')}
+                                    value={meta._quinrel_schema_service_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_service_name', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Service Type', 'quinrel')}
+                                        value={meta._quinrel_schema_service_type || ''}
+                                        placeholder="Search Engine Optimization"
+                                        onChange={(v) => updateMeta('_quinrel_schema_service_type', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Service Provider', 'quinrel')}
+                                        value={meta._quinrel_schema_service_provider || ''}
+                                        placeholder={__('Leave blank for site name', 'quinrel')}
+                                        onChange={(v) => updateMeta('_quinrel_schema_service_provider', v)}
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Area Served', 'quinrel')}
+                                        value={meta._quinrel_schema_service_area || ''}
+                                        placeholder="Global, New York, UK"
+                                        onChange={(v) => updateMeta('_quinrel_schema_service_area', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Estimated Price', 'quinrel')}
+                                        type="number"
+                                        value={meta._quinrel_schema_service_price || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_service_price', v)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'review' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Review Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Item Reviewed', 'quinrel')}
+                                    value={meta._quinrel_schema_review_item_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_review_item_name', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <SelectControl
+                                        label={__('Item Type', 'quinrel')}
+                                        value={meta._quinrel_schema_review_item_type || 'Product'}
+                                        options={[
+                                            { label: 'Product', value: 'Product' },
+                                            { label: 'Book', value: 'Book' },
+                                            { label: 'Movie', value: 'Movie' },
+                                            { label: 'SoftwareApplication', value: 'SoftwareApplication' },
+                                            { label: 'Restaurant', value: 'Restaurant' },
+                                            { label: 'Course', value: 'Course' },
+                                        ]}
+                                        onChange={(v) => updateMeta('_quinrel_schema_review_item_type', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Rating (1 to 5)', 'quinrel')}
+                                        value={meta._quinrel_schema_review_rating || '5'}
+                                        onChange={(v) => updateMeta('_quinrel_schema_review_rating', v)}
+                                    />
+                                </div>
+                                <TextareaControl
+                                    label={__('Review Summary / Body', 'quinrel')}
+                                    value={meta._quinrel_schema_review_body || ''}
+                                    placeholder={__('Leave blank to use post excerpt', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_review_body', v)}
+                                    rows={3}
+                                />
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'movie' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Movie Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Movie Title', 'quinrel')}
+                                    value={meta._quinrel_schema_movie_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_movie_name', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Director', 'quinrel')}
+                                        value={meta._quinrel_schema_movie_director || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_movie_director', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Release Date', 'quinrel')}
+                                        type="date"
+                                        value={meta._quinrel_schema_movie_date || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_movie_date', v)}
+                                    />
+                                </div>
+                                <TextControl
+                                    label={__('Lead Actors (comma-separated)', 'quinrel')}
+                                    value={meta._quinrel_schema_movie_actors || ''}
+                                    placeholder="Actor 1, Actor 2"
+                                    onChange={(v) => updateMeta('_quinrel_schema_movie_actors', v)}
+                                />
+                                <TextControl
+                                    label={__('Duration', 'quinrel')}
+                                    value={meta._quinrel_schema_movie_duration || ''}
+                                    placeholder="e.g. 2 hours 15 min"
+                                    onChange={(v) => updateMeta('_quinrel_schema_movie_duration', v)}
+                                />
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'music' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Music Recording Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Track Title', 'quinrel')}
+                                    value={meta._quinrel_schema_music_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_music_name', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Artist / Band', 'quinrel')}
+                                        value={meta._quinrel_schema_music_artist || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_music_artist', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Album Name', 'quinrel')}
+                                        value={meta._quinrel_schema_music_album || ''}
+                                        onChange={(v) => updateMeta('_quinrel_schema_music_album', v)}
+                                    />
+                                </div>
+                                <TextControl
+                                    label={__('Duration', 'quinrel')}
+                                    value={meta._quinrel_schema_music_duration || ''}
+                                    placeholder="e.g. 3 min 45 sec"
+                                    onChange={(v) => updateMeta('_quinrel_schema_music_duration', v)}
+                                />
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'dataset' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Dataset Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Dataset Name', 'quinrel')}
+                                    value={meta._quinrel_schema_dataset_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_dataset_name', v)}
+                                />
+                                <TextareaControl
+                                    label={__('Dataset Description', 'quinrel')}
+                                    value={meta._quinrel_schema_dataset_description || ''}
+                                    placeholder={__('Leave blank to use excerpt', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_dataset_description', v)}
+                                    rows={3}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('License URL', 'quinrel')}
+                                        value={meta._quinrel_schema_dataset_license || ''}
+                                        placeholder="https://creativecommons.org/licenses/by/4.0/"
+                                        onChange={(v) => updateMeta('_quinrel_schema_dataset_license', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Download URL', 'quinrel')}
+                                        value={meta._quinrel_schema_dataset_download_url || ''}
+                                        placeholder="https://example.org/data.csv"
+                                        onChange={(v) => updateMeta('_quinrel_schema_dataset_download_url', v)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {meta._quinrel_primary_schema === 'person' && (
+                            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <strong>{__('Person / Profile Details', 'quinrel')}</strong>
+                                <TextControl
+                                    label={__('Full Name', 'quinrel')}
+                                    value={meta._quinrel_schema_person_name || ''}
+                                    placeholder={__('Leave blank to use post title', 'quinrel')}
+                                    onChange={(v) => updateMeta('_quinrel_schema_person_name', v)}
+                                />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <TextControl
+                                        label={__('Job Title', 'quinrel')}
+                                        value={meta._quinrel_schema_person_job_title || ''}
+                                        placeholder="Chief Technology Officer"
+                                        onChange={(v) => updateMeta('_quinrel_schema_person_job_title', v)}
+                                    />
+                                    <TextControl
+                                        label={__('Organization', 'quinrel')}
+                                        value={meta._quinrel_schema_person_works_for || ''}
+                                        placeholder="Acme Corp"
+                                        onChange={(v) => updateMeta('_quinrel_schema_person_works_for', v)}
+                                    />
+                                </div>
+                                <TextControl
+                                    label={__('Social / SameAs URLs (comma-separated)', 'quinrel')}
+                                    value={meta._quinrel_schema_person_same_as || ''}
+                                    placeholder="https://twitter.com/..., https://github.com/..."
+                                    onChange={(v) => updateMeta('_quinrel_schema_person_same_as', v)}
                                 />
                             </div>
                         )}

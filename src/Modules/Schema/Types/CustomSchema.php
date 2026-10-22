@@ -6,13 +6,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use Quinrel\WordPress\Modules\Schema\Contracts\SchemaTypeInterface;
+use Quinrel\WordPress\Modules\Schema\AudioExtractor;
 use Quinrel\WordPress\Modules\Schema\JsonLd;
 
 /**
- * Generates custom point-and-click schemas (Product, FAQ, HowTo, LocalBusiness, Recipe, Event)
+ * Generates custom point-and-click schemas (Product, FAQ, HowTo, LocalBusiness, Recipe, Event,
+ * Podcast, Course, JobPosting, Book, Software, Restaurant, Service, Review, Movie, Music, Dataset, Person)
  * based on post-level metadata.
  */
-class CustomSchema {
+class CustomSchema implements SchemaTypeInterface {
+
+	public function getId(): string {
+		return 'custom';
+	}
 
 	/**
 	 * Determines if a custom schema is configured for the current post.
@@ -57,6 +64,45 @@ class CustomSchema {
 				break;
 			case 'event':
 				$schema = $this->generateEventSchema( $id );
+				break;
+			case 'podcast':
+			case 'podcastepisode':
+				$schema = $this->generatePodcastSchema( $id );
+				break;
+			case 'course':
+				$schema = $this->generateCourseSchema( $id );
+				break;
+			case 'jobposting':
+				$schema = $this->generateJobPostingSchema( $id );
+				break;
+			case 'book':
+				$schema = $this->generateBookSchema( $id );
+				break;
+			case 'software':
+			case 'softwareapplication':
+				$schema = $this->generateSoftwareSchema( $id );
+				break;
+			case 'restaurant':
+				$schema = $this->generateRestaurantSchema( $id );
+				break;
+			case 'service':
+				$schema = $this->generateServiceSchema( $id );
+				break;
+			case 'review':
+				$schema = $this->generateReviewSchema( $id );
+				break;
+			case 'movie':
+				$schema = $this->generateMovieSchema( $id );
+				break;
+			case 'music':
+			case 'musicrecording':
+				$schema = $this->generateMusicSchema( $id );
+				break;
+			case 'dataset':
+				$schema = $this->generateDatasetSchema( $id );
+				break;
+			case 'person':
+				$schema = $this->generatePersonSchema( $id );
 				break;
 			case 'custom':
 				$parsed = $this->parsedCustomJson( $id );
@@ -142,7 +188,7 @@ class CustomSchema {
 			return false;
 		}
 
-		$active = class_exists( '\WC_Product' ) || function_exists( 'wc_get_product' );
+		$active = ( class_exists( '\WC_Product' ) || function_exists( 'wc_get_product' ) ) && ( ! defined( 'QUINREL_TESTS' ) || ! empty( $GLOBALS['mock_woocommerce_active'] ) );
 		return (bool) apply_filters( 'quinrel_woocommerce_owns_product_schema', $active, $postId );
 	}
 
@@ -436,6 +482,650 @@ class CustomSchema {
 				'availability'  => 'https://schema.org/InStock',
 				'url'           => get_permalink( $postId ),
 			);
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Podcast Episode Schema.
+	 */
+	private function generatePodcastSchema( int $postId ): array {
+		$title      = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_title', true ), get_the_title( $postId ) );
+		$desc       = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$epNumber   = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_episode_number', true ) );
+		$seasonNum  = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_season_number', true ) );
+		$epType     = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_episode_type', true ), 'full' );
+		$seriesName = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_series_name', true ), get_bloginfo( 'name' ) );
+		$seriesUrl  = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_series_url', true ), home_url( '/' ) );
+		$duration   = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_duration', true ) );
+		$transcript = $this->textValue( get_post_meta( $postId, '_quinrel_podcast_transcript', true ) );
+
+		if ( $title === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type'         => 'PodcastEpisode',
+			'@id'           => get_permalink( $postId ) . '#podcastepisode',
+			'url'           => get_permalink( $postId ),
+			'name'          => $title,
+			'datePublished' => get_the_date( 'c', $postId ),
+		);
+		$schema = $this->putText( $schema, 'description', $desc );
+
+		if ( $epNumber !== '' ) {
+			$schema['episodeNumber'] = is_numeric( $epNumber ) ? intval( $epNumber ) : $epNumber;
+		}
+		if ( $seasonNum !== '' ) {
+			$schema['seasonNumber'] = is_numeric( $seasonNum ) ? intval( $seasonNum ) : $seasonNum;
+		}
+		if ( in_array( $epType, array( 'full', 'trailer', 'bonus' ), true ) ) {
+			$schema['episodeType'] = $epType;
+		}
+
+		if ( $seriesName !== '' ) {
+			$schema['partOfSeries'] = array(
+				'@type' => 'PodcastSeries',
+				'name'  => $seriesName,
+				'url'   => $seriesUrl,
+			);
+		}
+
+		$audioObject = AudioExtractor::extractAudioObject( $postId );
+		if ( ! empty( $audioObject ) ) {
+			if ( $duration !== '' ) {
+				$isoDuration = $this->convertToIsoDuration( $duration );
+				if ( $isoDuration !== '' ) {
+					$audioObject['duration'] = $isoDuration;
+					$schema['timeRequired']  = $isoDuration;
+				}
+			}
+			if ( $transcript !== '' ) {
+				$audioObject['transcript'] = $transcript;
+			}
+			$schema['associatedMedia'] = $audioObject;
+		} elseif ( $duration !== '' ) {
+			$isoDuration = $this->convertToIsoDuration( $duration );
+			if ( $isoDuration !== '' ) {
+				$schema['timeRequired'] = $isoDuration;
+			}
+		}
+
+		$image = $this->thumbnailUrl( $postId );
+		if ( $image !== '' ) {
+			$schema['image'] = $image;
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Course Schema.
+	 */
+	private function generateCourseSchema( int $postId ): array {
+		$name       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_course_name', true ), get_the_title( $postId ) );
+		$desc       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_course_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$courseCode = $this->textValue( get_post_meta( $postId, '_quinrel_schema_course_code', true ) );
+		$level      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_course_level', true ) );
+		$provider   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_course_provider', true ), get_bloginfo( 'name' ) );
+		$price      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_course_price', true ) );
+		$currency   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_course_currency', true ), 'USD' );
+
+		if ( $name === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type'    => 'Course',
+			'@id'      => get_permalink( $postId ) . '#course',
+			'name'     => $name,
+			'url'      => get_permalink( $postId ),
+			'provider' => array(
+				'@type'  => 'Organization',
+				'name'   => $provider,
+				'sameAs' => home_url( '/' ),
+			),
+		);
+		$schema = $this->putText( $schema, 'description', $desc );
+		$schema = $this->putText( $schema, 'courseCode', $courseCode );
+		$schema = $this->putText( $schema, 'educationalLevel', $level );
+
+		$image = $this->thumbnailUrl( $postId );
+		if ( $image !== '' ) {
+			$schema['image'] = $image;
+		}
+
+		if ( $price !== '' ) {
+			$schema['offers'] = array(
+				'@type'         => 'Offer',
+				'price'         => floatval( $price ),
+				'priceCurrency' => $currency,
+				'category'      => floatval( $price ) > 0 ? 'Paid' : 'Free',
+			);
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * JobPosting Schema.
+	 */
+	private function generateJobPostingSchema( int $postId ): array {
+		$title        = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_title', true ), get_the_title( $postId ) );
+		$desc         = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$company      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_company', true ), get_bloginfo( 'name' ) );
+		$companyUrl   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_company_url', true ), home_url( '/' ) );
+		$empType      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_employment_type', true ), 'FULL_TIME' );
+		$validThrough = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_valid_through', true ) );
+		$locType      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_location_type', true ) );
+		$street       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_street', true ) );
+		$city         = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_city', true ) );
+		$postal       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_postal', true ) );
+		$country      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_country', true ) );
+		$salary       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_salary', true ) );
+		$salaryCurr   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_salary_currency', true ), 'USD' );
+		$salaryUnit   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_job_salary_unit', true ), 'YEAR' );
+
+		if ( $title === '' ) {
+			return array();
+		}
+
+		if ( $desc === '' ) {
+			$rawContent = get_post_field( 'post_content', $postId );
+			$desc       = is_string( $rawContent ) ? wp_strip_all_tags( $rawContent ) : '';
+		}
+
+		$schema = array(
+			'@type'              => 'JobPosting',
+			'@id'                => get_permalink( $postId ) . '#jobposting',
+			'title'              => $title,
+			'description'        => $desc,
+			'datePosted'         => get_the_date( 'c', $postId ),
+			'employmentType'     => $empType,
+			'hiringOrganization' => array(
+				'@type'  => 'Organization',
+				'name'   => $company,
+				'sameAs' => $companyUrl,
+			),
+		);
+
+		if ( $validThrough !== '' ) {
+			$schema['validThrough'] = gmdate( 'c', strtotime( $validThrough ) );
+		} else {
+			$schema['validThrough'] = gmdate( 'c', strtotime( get_the_date( 'Y-m-d', $postId ) . ' +90 days' ) );
+		}
+
+		if ( in_array( strtoupper( $locType ), array( 'TELECOMMUTE', 'REMOTE' ), true ) ) {
+			$schema['jobLocationType']               = 'TELECOMMUTE';
+			$schema['applicantLocationRequirements'] = array(
+				'@type' => 'Country',
+				'name'  => $country !== '' ? $country : 'Worldwide',
+			);
+		} else {
+			$address = array( '@type' => 'PostalAddress' );
+			$address = $this->putText( $address, 'streetAddress', $street );
+			$address = $this->putText( $address, 'addressLocality', $city );
+			$address = $this->putText( $address, 'postalCode', $postal );
+			$address = $this->putText( $address, 'addressCountry', $country );
+
+			$schema['jobLocation'] = array(
+				'@type'   => 'Place',
+				'address' => $address,
+			);
+		}
+
+		if ( $salary !== '' ) {
+			$schema['baseSalary'] = array(
+				'@type'    => 'MonetaryAmount',
+				'currency' => $salaryCurr,
+				'value'    => array(
+					'@type'    => 'QuantitativeValue',
+					'value'    => floatval( $salary ),
+					'unitText' => $salaryUnit,
+				),
+			);
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Book Schema.
+	 */
+	private function generateBookSchema( int $postId ): array {
+		$name      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_book_name', true ), get_the_title( $postId ) );
+		$author    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_book_author', true ) );
+		$isbn      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_book_isbn', true ) );
+		$format    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_book_format', true ), 'Paperback' );
+		$datePub   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_book_date_published', true ), get_the_date( 'Y-m-d', $postId ) );
+		$pages     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_book_pages', true ) );
+		$publisher = $this->textValue( get_post_meta( $postId, '_quinrel_schema_book_publisher', true ) );
+
+		if ( $name === '' ) {
+			return array();
+		}
+
+		if ( $author === '' ) {
+			$authorId = (int) get_post_field( 'post_author', $postId );
+			$author   = get_the_author_meta( 'display_name', $authorId );
+		}
+
+		$formatMap = array(
+			'hardcover' => 'https://schema.org/Hardcover',
+			'paperback' => 'https://schema.org/Paperback',
+			'ebook'     => 'https://schema.org/EBook',
+			'audiobook' => 'https://schema.org/AudiobookFormat',
+		);
+		$formatUrl = $formatMap[ strtolower( $format ) ] ?? 'https://schema.org/Paperback';
+
+		$schema = array(
+			'@type'         => 'Book',
+			'@id'           => get_permalink( $postId ) . '#book',
+			'name'          => $name,
+			'url'           => get_permalink( $postId ),
+			'bookFormat'    => $formatUrl,
+			'datePublished' => $datePub,
+		);
+
+		if ( $author !== '' ) {
+			$schema['author'] = array(
+				'@type' => 'Person',
+				'name'  => $author,
+			);
+		}
+
+		$schema = $this->putText( $schema, 'isbn', $isbn );
+
+		if ( $pages !== '' && is_numeric( $pages ) ) {
+			$schema['numberOfPages'] = intval( $pages );
+		}
+
+		if ( $publisher !== '' ) {
+			$schema['publisher'] = array(
+				'@type' => 'Organization',
+				'name'  => $publisher,
+			);
+		}
+
+		$image = $this->thumbnailUrl( $postId );
+		if ( $image !== '' ) {
+			$schema['image'] = $image;
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * SoftwareApplication Schema.
+	 */
+	private function generateSoftwareSchema( int $postId ): array {
+		$name     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_software_name', true ), get_the_title( $postId ) );
+		$os       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_software_os', true ), 'Web' );
+		$category = $this->textValue( get_post_meta( $postId, '_quinrel_schema_software_category', true ), 'BusinessApplication' );
+		$price    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_software_price', true ) );
+		$currency = $this->textValue( get_post_meta( $postId, '_quinrel_schema_software_currency', true ), 'USD' );
+		$rating   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_software_rating', true ) );
+
+		if ( $name === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type'               => 'SoftwareApplication',
+			'@id'                 => get_permalink( $postId ) . '#software',
+			'name'                => $name,
+			'operatingSystem'     => $os,
+			'applicationCategory' => $category,
+			'url'                 => get_permalink( $postId ),
+		);
+
+		$image = $this->thumbnailUrl( $postId );
+		if ( $image !== '' ) {
+			$schema['image'] = $image;
+		}
+
+		if ( $price !== '' ) {
+			$schema['offers'] = array(
+				'@type'         => 'Offer',
+				'price'         => floatval( $price ),
+				'priceCurrency' => $currency,
+			);
+		}
+
+		if ( $rating !== '' ) {
+			$schema['aggregateRating'] = array(
+				'@type'       => 'AggregateRating',
+				'ratingValue' => floatval( $rating ),
+				'bestRating'  => 5,
+				'ratingCount' => 1,
+			);
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Restaurant Schema (subtype of LocalBusiness).
+	 */
+	private function generateRestaurantSchema( int $postId ): array {
+		$name         = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_name', true ), get_the_title( $postId ) );
+		$cuisine      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_cuisine', true ) );
+		$priceRange   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_price_range', true ), '$$' );
+		$telephone    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_telephone', true ) );
+		$street       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_street', true ) );
+		$city         = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_city', true ) );
+		$postal       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_postal', true ) );
+		$country      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_country', true ) );
+		$menuUrl      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_menu_url', true ) );
+		$reservations = $this->textValue( get_post_meta( $postId, '_quinrel_schema_restaurant_reservations', true ) );
+
+		if ( $name === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type'      => 'Restaurant',
+			'@id'        => get_permalink( $postId ) . '#restaurant',
+			'name'       => $name,
+			'priceRange' => $priceRange,
+			'url'        => get_permalink( $postId ),
+		);
+		$schema = $this->putText( $schema, 'telephone', $telephone );
+		$schema = $this->putText( $schema, 'servesCuisine', $cuisine );
+
+		if ( $menuUrl !== '' ) {
+			$schema['hasMenu'] = $menuUrl;
+		}
+		if ( $reservations !== '' ) {
+			$schema['acceptsReservations'] = in_array( strtolower( $reservations ), array( 'yes', 'true', '1' ), true ) ? 'True' : 'False';
+		}
+
+		$image = $this->thumbnailUrl( $postId );
+		if ( $image !== '' ) {
+			$schema['image'] = $image;
+		}
+
+		$address = array( '@type' => 'PostalAddress' );
+		$address = $this->putText( $address, 'streetAddress', $street );
+		$address = $this->putText( $address, 'addressLocality', $city );
+		$address = $this->putText( $address, 'postalCode', $postal );
+		$address = $this->putText( $address, 'addressCountry', $country );
+
+		if ( count( $address ) > 1 ) {
+			$schema['address'] = $address;
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Service Schema.
+	 */
+	private function generateServiceSchema( int $postId ): array {
+		$name     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_service_name', true ), get_the_title( $postId ) );
+		$desc     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_service_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$type     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_service_type', true ) );
+		$provider = $this->textValue( get_post_meta( $postId, '_quinrel_schema_service_provider', true ), get_bloginfo( 'name' ) );
+		$area     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_service_area', true ) );
+		$terms    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_service_terms', true ) );
+		$price    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_service_price', true ) );
+		$currency = $this->textValue( get_post_meta( $postId, '_quinrel_schema_service_currency', true ), 'USD' );
+
+		if ( $name === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type'    => 'Service',
+			'@id'      => get_permalink( $postId ) . '#service',
+			'name'     => $name,
+			'provider' => array(
+				'@type' => 'Organization',
+				'name'  => $provider,
+			),
+		);
+		$schema = $this->putText( $schema, 'description', $desc );
+		$schema = $this->putText( $schema, 'serviceType', $type );
+		$schema = $this->putText( $schema, 'areaServed', $area );
+		$schema = $this->putText( $schema, 'termsOfService', $terms );
+
+		if ( $price !== '' ) {
+			$schema['offers'] = array(
+				'@type'         => 'Offer',
+				'price'         => floatval( $price ),
+				'priceCurrency' => $currency,
+			);
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Review Schema.
+	 */
+	private function generateReviewSchema( int $postId ): array {
+		$itemName = $this->textValue( get_post_meta( $postId, '_quinrel_schema_review_item_name', true ), get_the_title( $postId ) );
+		$itemType = $this->textValue( get_post_meta( $postId, '_quinrel_schema_review_item_type', true ), 'Thing' );
+		$rating   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_review_rating', true ), '5' );
+		$body     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_review_body', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$author   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_review_author', true ) );
+
+		if ( $itemName === '' ) {
+			return array();
+		}
+
+		if ( $author === '' ) {
+			$authorId = (int) get_post_field( 'post_author', $postId );
+			$author   = get_the_author_meta( 'display_name', $authorId );
+		}
+
+		$schema = array(
+			'@type'         => 'Review',
+			'@id'           => get_permalink( $postId ) . '#review',
+			'itemReviewed'  => array(
+				'@type' => $itemType,
+				'name'  => $itemName,
+			),
+			'reviewRating'  => array(
+				'@type'       => 'Rating',
+				'ratingValue' => floatval( $rating ),
+				'bestRating'  => 5,
+				'worstRating' => 1,
+			),
+			'author'        => array(
+				'@type' => 'Person',
+				'name'  => $author,
+			),
+			'datePublished' => get_the_date( 'c', $postId ),
+		);
+		$schema = $this->putText( $schema, 'reviewBody', $body );
+
+		return $schema;
+	}
+
+	/**
+	 * Movie Schema.
+	 */
+	private function generateMovieSchema( int $postId ): array {
+		$name      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_movie_name', true ), get_the_title( $postId ) );
+		$director  = $this->textValue( get_post_meta( $postId, '_quinrel_schema_movie_director', true ) );
+		$actorsCsv = $this->textValue( get_post_meta( $postId, '_quinrel_schema_movie_actors', true ) );
+		$date      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_movie_date', true ) );
+		$duration  = $this->textValue( get_post_meta( $postId, '_quinrel_schema_movie_duration', true ) );
+
+		if ( $name === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type' => 'Movie',
+			'@id'   => get_permalink( $postId ) . '#movie',
+			'name'  => $name,
+			'url'   => get_permalink( $postId ),
+		);
+		$schema = $this->putText( $schema, 'dateCreated', $date );
+
+		if ( $director !== '' ) {
+			$schema['director'] = array(
+				'@type' => 'Person',
+				'name'  => $director,
+			);
+		}
+
+		if ( $actorsCsv !== '' ) {
+			$schema['actor'] = $this->namedThings( $actorsCsv, 'Person' );
+		}
+
+		if ( $duration !== '' ) {
+			$iso = $this->convertToIsoDuration( $duration );
+			if ( $iso !== '' ) {
+				$schema['duration'] = $iso;
+			}
+		}
+
+		$image = $this->thumbnailUrl( $postId );
+		if ( $image !== '' ) {
+			$schema['image'] = $image;
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * MusicRecording Schema.
+	 */
+	private function generateMusicSchema( int $postId ): array {
+		$name     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_music_name', true ), get_the_title( $postId ) );
+		$artist   = $this->textValue( get_post_meta( $postId, '_quinrel_schema_music_artist', true ) );
+		$album    = $this->textValue( get_post_meta( $postId, '_quinrel_schema_music_album', true ) );
+		$duration = $this->textValue( get_post_meta( $postId, '_quinrel_schema_music_duration', true ) );
+
+		if ( $name === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type' => 'MusicRecording',
+			'@id'   => get_permalink( $postId ) . '#music',
+			'name'  => $name,
+			'url'   => get_permalink( $postId ),
+		);
+
+		if ( $artist !== '' ) {
+			$schema['byArtist'] = array(
+				'@type' => 'MusicGroup',
+				'name'  => $artist,
+			);
+		}
+
+		if ( $album !== '' ) {
+			$schema['inAlbum'] = array(
+				'@type' => 'MusicAlbum',
+				'name'  => $album,
+			);
+		}
+
+		if ( $duration !== '' ) {
+			$iso = $this->convertToIsoDuration( $duration );
+			if ( $iso !== '' ) {
+				$schema['duration'] = $iso;
+			}
+		}
+
+		$image = $this->thumbnailUrl( $postId );
+		if ( $image !== '' ) {
+			$schema['image'] = $image;
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Dataset Schema.
+	 */
+	private function generateDatasetSchema( int $postId ): array {
+		$name        = $this->textValue( get_post_meta( $postId, '_quinrel_schema_dataset_name', true ), get_the_title( $postId ) );
+		$desc        = $this->textValue( get_post_meta( $postId, '_quinrel_schema_dataset_description', true ), wp_strip_all_tags( get_the_excerpt( $postId ) ) );
+		$license     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_dataset_license', true ) );
+		$downloadUrl = $this->textValue( get_post_meta( $postId, '_quinrel_schema_dataset_download_url', true ) );
+		$format      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_dataset_format', true ), 'text/csv' );
+		$creator     = $this->textValue( get_post_meta( $postId, '_quinrel_schema_dataset_creator', true ), get_bloginfo( 'name' ) );
+
+		if ( $name === '' || $desc === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type'       => 'Dataset',
+			'@id'         => get_permalink( $postId ) . '#dataset',
+			'name'        => $name,
+			'description' => $desc,
+			'url'         => get_permalink( $postId ),
+			'creator'     => array(
+				'@type' => 'Organization',
+				'name'  => $creator,
+			),
+		);
+		$schema = $this->putText( $schema, 'license', $license );
+
+		if ( $downloadUrl !== '' ) {
+			$schema['distribution'] = array(
+				'@type'          => 'DataDownload',
+				'contentUrl'     => $downloadUrl,
+				'encodingFormat' => $format,
+			);
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Person Schema.
+	 */
+	private function generatePersonSchema( int $postId ): array {
+		$name      = $this->textValue( get_post_meta( $postId, '_quinrel_schema_person_name', true ), get_the_title( $postId ) );
+		$jobTitle  = $this->textValue( get_post_meta( $postId, '_quinrel_schema_person_job_title', true ) );
+		$worksFor  = $this->textValue( get_post_meta( $postId, '_quinrel_schema_person_works_for', true ) );
+		$sameAsRaw = $this->textValue( get_post_meta( $postId, '_quinrel_schema_person_same_as', true ) );
+		$url       = $this->textValue( get_post_meta( $postId, '_quinrel_schema_person_url', true ), get_permalink( $postId ) );
+
+		if ( $name === '' ) {
+			return array();
+		}
+
+		$schema = array(
+			'@type' => 'Person',
+			'@id'   => get_permalink( $postId ) . '#person',
+			'name'  => $name,
+			'url'   => $url,
+		);
+		$schema = $this->putText( $schema, 'jobTitle', $jobTitle );
+
+		if ( $worksFor !== '' ) {
+			$schema['worksFor'] = array(
+				'@type' => 'Organization',
+				'name'  => $worksFor,
+			);
+		}
+
+		if ( $sameAsRaw !== '' ) {
+			$urls = array_values(
+				array_filter(
+					array_map( 'trim', explode( ',', $sameAsRaw ) ),
+					static function ( $u ): bool {
+						return filter_var( $u, FILTER_VALIDATE_URL ) !== false;
+					}
+				)
+			);
+			if ( ! empty( $urls ) ) {
+				$schema['sameAs'] = $urls;
+			}
+		}
+
+		$image = $this->thumbnailUrl( $postId );
+		if ( $image !== '' ) {
+			$schema['image'] = $image;
 		}
 
 		return $schema;

@@ -22,7 +22,24 @@ class SmartTagResolver {
 		}
 
 		$resolvedId = $postId > 0 ? $postId : ( function_exists( 'get_the_ID' ) ? (int) get_the_ID() : 0 );
-		$sep        = (string) get_option( 'quinrel_title_separator', '-' );
+
+		// Resolve dynamic ACF and custom post meta tags first
+		if ( false !== strpos( $template, 'acf:' ) || false !== strpos( $template, 'cf:' ) || false !== strpos( $template, 'custom_field:' ) ) {
+			$template = (string) preg_replace_callback(
+				'/(?:%%(?:acf|cf|custom_field):([a-zA-Z0-9_\-]+)%%|\{\{\s*(?:acf|cf|custom_field):([a-zA-Z0-9_\-]+)\s*\}\}|%(?:acf|cf):([a-zA-Z0-9_\-]+)%|#(?:acf|cf):([a-zA-Z0-9_\-]+))/i',
+				static function ( array $matches ) use ( $resolvedId ): string {
+					$fieldName = ( '' !== ( $matches[1] ?? '' ) ) ? $matches[1] : (
+						( '' !== ( $matches[2] ?? '' ) ) ? $matches[2] : (
+							( '' !== ( $matches[3] ?? '' ) ) ? $matches[3] : ( $matches[4] ?? '' )
+						)
+					);
+					return self::resolveCustomField( $fieldName, $resolvedId );
+				},
+				$template
+			);
+		}
+
+		$sep = (string) get_option( 'quinrel_title_separator', '-' );
 		if ( '' === trim( $sep ) ) {
 			$sep = '-';
 		}
@@ -148,6 +165,43 @@ class SmartTagResolver {
 		if ( is_array( $categories ) && ! empty( $categories[0]->name ) ) {
 			return (string) $categories[0]->name;
 		}
+		return '';
+	}
+
+	/**
+	 * Resolves an ACF field or custom post meta key into a clean sanitized string.
+	 */
+	public static function resolveCustomField( string $fieldName, int $postId ): string {
+		if ( $postId <= 0 || '' === $fieldName ) {
+			return '';
+		}
+
+		$val = null;
+		if ( function_exists( 'get_field' ) ) {
+			$val = get_field( $fieldName, $postId );
+		}
+
+		if ( null === $val || false === $val || '' === $val ) {
+			if ( function_exists( 'get_post_meta' ) ) {
+				$val = get_post_meta( $postId, $fieldName, true );
+			}
+		}
+
+		if ( is_string( $val ) || is_numeric( $val ) ) {
+			return sanitize_text_field( (string) $val );
+		}
+
+		if ( is_array( $val ) ) {
+			if ( isset( $val['label'] ) && is_string( $val['label'] ) ) {
+				return sanitize_text_field( $val['label'] );
+			}
+			if ( isset( $val['value'] ) && ( is_string( $val['value'] ) || is_numeric( $val['value'] ) ) ) {
+				return sanitize_text_field( (string) $val['value'] );
+			}
+			$scalars = array_filter( $val, static fn( $item ) => is_string( $item ) || is_numeric( $item ) );
+			return sanitize_text_field( implode( ', ', $scalars ) );
+		}
+
 		return '';
 	}
 }

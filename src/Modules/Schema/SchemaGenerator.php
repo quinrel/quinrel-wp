@@ -15,9 +15,18 @@ class SchemaGenerator {
 	private array $schemaTypes = array();
 
 	public function __construct() {
-		$this->schemaTypes[] = new Types\ArticleSchema();
-		$this->schemaTypes[] = new Types\BreadcrumbSchema();
-		$this->schemaTypes[] = new Types\CustomSchema();
+		$defaultTypes = array(
+			new Types\ArticleSchema(),
+			new Types\BreadcrumbSchema(),
+			new Types\CustomSchema(),
+		);
+
+		/**
+		 * Filters the active schema type instances for schema generation.
+		 *
+		 * @param array<int, Contracts\SchemaTypeInterface> $defaultTypes
+		 */
+		$this->schemaTypes = apply_filters( 'quinrel_schema_types', $defaultTypes );
 	}
 
 	/**
@@ -83,14 +92,32 @@ class SchemaGenerator {
 			}
 		}
 
+		// Gutenberg Block-Level Schema extraction (FAQ, HowTo, Review, TOC)
+		$blockSchemas = \Quinrel\WordPress\Modules\Blocks\BlockSchemaExtractor::extractBlockSchemas( $postId );
+		if ( ! empty( $blockSchemas ) ) {
+			foreach ( $blockSchemas as $blockSchema ) {
+				$graphs[] = $blockSchema;
+			}
+		}
+
 		if ( empty( $graphs ) ) {
 			return array();
 		}
 
-		return array(
+		$graph = array(
 			'@context' => 'https://schema.org',
 			'@graph'   => $graphs,
 		);
+
+		$graph = $this->resolveDynamicFieldBindings( $graph, $postId );
+
+		/**
+		 * Filters the final compiled JSON-LD graph before output.
+		 *
+		 * @param array<string, mixed> $graph  Compiled schema graph.
+		 * @param int                  $postId Post ID.
+		 */
+		return apply_filters( 'quinrel_schema_graph', $graph, $postId );
 	}
 
 	/**
@@ -126,5 +153,37 @@ class SchemaGenerator {
 		}
 
 		return 'none';
+	}
+
+	/**
+	 * Resolves dynamic ACF or custom post meta references inside schema graphs.
+	 *
+	 * @param array<string, mixed> $data
+	 * @param int                  $postId
+	 * @return array<string, mixed>
+	 */
+	private function resolveDynamicFieldBindings( array $data, int $postId ): array {
+		foreach ( $data as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$data[ $key ] = $this->resolveDynamicFieldBindings( $value, $postId );
+			} elseif ( is_string( $value ) ) {
+				if ( 1 === preg_match( '/^(?:acf|cf):([a-zA-Z0-9_\-]+)$/i', trim( $value ), $matches ) ) {
+					$resolved = \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolveCustomField( $matches[1], $postId );
+					if ( '' !== $resolved ) {
+						if ( is_numeric( $resolved ) && false === strpos( $resolved, '.' ) ) {
+							$data[ $key ] = (int) $resolved;
+						} elseif ( is_numeric( $resolved ) ) {
+							$data[ $key ] = (float) $resolved;
+						} else {
+							$data[ $key ] = $resolved;
+						}
+					}
+				} elseif ( false !== strpos( $value, 'acf:' ) || false !== strpos( $value, 'cf:' ) ) {
+					$data[ $key ] = \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $value, $postId );
+				}
+			}
+		}
+
+		return $data;
 	}
 }

@@ -191,7 +191,7 @@ class ImageCompressor {
 	}
 
 	public function saveSettings( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$params  = $request->get_json_params();
+		$params  = $request->get_json_params() ?: $request->get_params();
 		$enabled = ! empty( $params['enabled'] );
 
 		if ( $enabled && empty( $params['acknowledge_reversible_processing'] ) ) {

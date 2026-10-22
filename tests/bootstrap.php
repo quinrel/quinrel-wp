@@ -10,6 +10,12 @@ if (!defined('MONTH_IN_SECONDS')) define('MONTH_IN_SECONDS', 2592000);
 if (!defined('YEAR_IN_SECONDS')) define('YEAR_IN_SECONDS', 31536000);
 if (!defined('MB_IN_BYTES')) define('MB_IN_BYTES', 1048576);
 
+if (!defined('QUINREL_TESTS')) {
+    define('QUINREL_TESTS', true);
+}
+global $mock_woocommerce_active;
+$mock_woocommerce_active = false;
+
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
 if (!defined('ABSPATH')) {
@@ -184,6 +190,7 @@ if (!isset($GLOBALS['wpdb'])) {
         public string $postmeta = 'wp_postmeta';
         public string $usermeta = 'wp_usermeta';
         public string $sitemeta = 'wp_sitemeta';
+        public int $insert_id = 0;
         public array $queries = [];
 
         public function get_results(string $query = null, $output = 'OBJECT') {
@@ -231,6 +238,7 @@ if (!isset($GLOBALS['wpdb'])) {
 
         public function insert($table, $data, $format = null) {
             $this->queries[] = 'INSERT ' . $table;
+            $this->insert_id++;
             $callback = $GLOBALS['mock_wpdb_insert'] ?? null;
             if (is_callable($callback)) {
                 return $callback($table, $data, $format);
@@ -412,6 +420,39 @@ if (!function_exists('sanitize_textarea_field')) {
 if (!function_exists('sanitize_file_name')) {
     function sanitize_file_name(string $filename): string {
         return preg_replace('/[^a-zA-Z0-9_\.-]/', '', $filename);
+    }
+}
+
+if (!function_exists('sanitize_title')) {
+    function sanitize_title(string $title, string $fallback_title = '', string $context = 'save'): string {
+        $clean = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $title), '-'));
+        return '' !== $clean ? $clean : $fallback_title;
+    }
+}
+
+if (!function_exists('wpautop')) {
+    function wpautop(string $pee, bool $br = true): string {
+        return '<p>' . trim($pee) . '</p>';
+    }
+}
+
+if (!function_exists('parse_blocks')) {
+    function parse_blocks(string $content): array {
+        $blocks = array();
+        $pattern = '/<!--\s+wp:([a-z0-9_\-\/]+)(?:\s+(\{.*?\}))?\s*(?:\/-->|-->(.*?)<!--\s*\/wp:\1\s*-->)/s';
+        if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $m) {
+                $attrs = !empty($m[2]) ? json_decode($m[2], true) : array();
+                $blocks[] = array(
+                    'blockName'    => $m[1],
+                    'attrs'        => is_array($attrs) ? $attrs : array(),
+                    'innerContent' => array(!empty($m[3]) ? trim($m[3]) : ''),
+                    'innerHTML'    => !empty($m[3]) ? trim($m[3]) : '',
+                    'innerBlocks'  => array(),
+                );
+            }
+        }
+        return $blocks;
     }
 }
 
@@ -812,6 +853,18 @@ if (!function_exists('delete_post_meta')) {
     }
 }
 
+if (!function_exists('get_post_custom')) {
+    function get_post_custom(int $post_id = 0): array {
+        global $mock_post_meta;
+        $meta = $mock_post_meta[$post_id] ?? [];
+        $result = [];
+        foreach ($meta as $k => $v) {
+            $result[$k] = is_array($v) ? $v : [$v];
+        }
+        return $result;
+    }
+}
+
 if (!function_exists('get_term_meta')) {
     function get_term_meta(int $term_id, string $key = '', bool $single = false) {
         global $mock_term_meta;
@@ -897,6 +950,16 @@ if (!function_exists('wp_insert_attachment')) {
             $GLOBALS['mock_attached_files'][$id] = $file;
         }
         return $id;
+    }
+}
+
+if (!function_exists('wp_get_attachment_url')) {
+    function wp_get_attachment_url(int $attachment_id): string|false {
+        global $mock_posts;
+        if (isset($mock_posts[$attachment_id]->guid)) {
+            return (string) $mock_posts[$attachment_id]->guid;
+        }
+        return 'https://example.com/wp-content/uploads/attachment-' . $attachment_id . '.jpg';
     }
 }
 
@@ -1935,4 +1998,79 @@ if (!function_exists('register_activation_hook')) {
 
 if (!function_exists('register_deactivation_hook')) {
     function register_deactivation_hook(string $file, callable|array $callback): void {}
+}
+
+if (!function_exists('get_term')) {
+    function get_term($term, string $taxonomy = '') {
+        global $mock_terms;
+        $id = is_object($term) ? (int) $term->term_id : (int) $term;
+        if (!empty($taxonomy) && isset($mock_terms[$taxonomy][$id])) {
+            return $mock_terms[$taxonomy][$id];
+        }
+        foreach ($mock_terms as $tax => $terms) {
+            if (isset($terms[$id])) {
+                return $terms[$id];
+            }
+        }
+        return false;
+    }
+}
+
+if (!function_exists('get_term_by')) {
+    function get_term_by(string $field, $value, string $taxonomy = '') {
+        global $mock_terms;
+        if (!empty($taxonomy) && isset($mock_terms[$taxonomy])) {
+            foreach ($mock_terms[$taxonomy] as $term) {
+                if (isset($term->$field) && $term->$field == $value) {
+                    return $term;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+if (!function_exists('get_the_terms')) {
+    function get_the_terms($post, string $taxonomy) {
+        global $mock_terms;
+        return isset($mock_terms[$taxonomy]) ? array_values($mock_terms[$taxonomy]) : false;
+    }
+}
+
+if (!function_exists('get_term_link')) {
+    function get_term_link($term, string $taxonomy = ''): string {
+        $slug = is_object($term) ? ($term->slug ?? 'term') : (string) $term;
+        return 'https://example.com/category/' . $slug . '/';
+    }
+}
+
+if (!class_exists('WC_Product')) {
+    class WC_Product {
+        private int $id;
+        public function __construct(int $id) { $this->id = $id; }
+        public function get_name(): string { return get_the_title($this->id); }
+        public function get_short_description(): string { return 'Short description'; }
+        public function get_description(): string { return 'Full description'; }
+        public function get_sku(): string { return 'TEST-SKU'; }
+        public function get_image_id(): int { return 0; }
+        public function get_attribute(string $attr): string { return ''; }
+        public function is_type(string $type): bool { return false; }
+        public function get_price(): string { return '99.99'; }
+        public function is_in_stock(): bool { return true; }
+        public function get_review_count(): int { return 5; }
+        public function get_average_rating(): float { return 4.8; }
+    }
+}
+
+if (!function_exists('wc_get_product')) {
+    function wc_get_product($the_product = false) {
+        $id = is_object($the_product) ? $the_product->ID : (int) $the_product;
+        return new WC_Product($id);
+    }
+}
+
+if (!function_exists('get_woocommerce_currency')) {
+    function get_woocommerce_currency(): string {
+        return 'USD';
+    }
 }

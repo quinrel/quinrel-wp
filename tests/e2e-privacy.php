@@ -18,6 +18,9 @@ global $wpdb;
 $usageTable = $wpdb->prefix . 'quinrel_ai_usage';
 $logsTable = $wpdb->prefix . 'quinrel_404_logs';
 
+// Clean up any stale test rows from previous runs
+$wpdb->query( "DELETE FROM {$logsTable} WHERE uri IN ('/old-404-url', '/new-404-url')" );
+
 // Create a dummy user
 $email = 'privacy_test_' . time() . '@example.com';
 $user_id = wp_insert_user([
@@ -51,13 +54,15 @@ $wpdb->insert($usageTable, [
 
 // Insert dummy data into quinrel_404_logs (older than 90 days)
 $wpdb->insert($logsTable, [
-    'uri' => '/old-404-url',
-    'hits' => 5,
+    'id'       => 'test_old_404_' . time(),
+    'uri'      => '/old-404-url',
+    'hits'     => 5,
     'last_hit' => gmdate('Y-m-d H:i:s', strtotime('-100 days'))
 ]);
 $wpdb->insert($logsTable, [
-    'uri' => '/new-404-url',
-    'hits' => 1,
+    'id'       => 'test_new_404_' . time(),
+    'uri'      => '/new-404-url',
+    'hits'     => 1,
     'last_hit' => current_time('mysql')
 ]);
 
@@ -116,8 +121,8 @@ update_option('quinrel_retention_settings', ['keep_404_logs_days' => 90, 'keep_u
 $tools->applyRetentionPolicy();
 
 // Verify 404 logs
-$old404 = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$logsTable} WHERE url = %s", '/old-404-url'));
-$new404 = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$logsTable} WHERE url = %s", '/new-404-url'));
+$old404 = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$logsTable} WHERE uri = %s", '/old-404-url'));
+$new404 = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$logsTable} WHERE uri = %s", '/new-404-url'));
 
 if ($old404 > 0) {
     die("ERROR: Retention failed to delete old 404 log.\n");
@@ -125,6 +130,10 @@ if ($old404 > 0) {
 if ($new404 !== 1) {
     die("ERROR: Retention wrongly deleted new 404 log.\n");
 }
+
+// Clean up test data and user
+$wpdb->query( "DELETE FROM {$logsTable} WHERE uri IN ('/old-404-url', '/new-404-url')" );
+wp_delete_user( $user_id );
 
 echo "Retention Purge OK.\n";
 echo "SUCCESS: All Privacy & Retention integration tests passed!\n";

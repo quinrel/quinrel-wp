@@ -476,6 +476,44 @@ class SitemapBehaviorTest extends TestCase {
 		$_SERVER['REQUEST_URI'] = '/';
 	}
 
+	public function testWooCommerceProductGalleryImagesIncludedInSitemap(): void {
+		$productId = 901;
+		$GLOBALS['mock_post_meta'][ $productId ]['_product_image_gallery'] = '902,903';
+		$GLOBALS['mock_posts'][902] = (object) array(
+			'ID'         => 902,
+			'post_title' => 'Gallery Angle 1',
+			'guid'       => 'https://example.com/wp-content/uploads/angle1.jpg',
+		);
+		$GLOBALS['mock_posts'][903] = (object) array(
+			'ID'         => 903,
+			'post_title' => 'Gallery Angle 2',
+			'guid'       => 'https://example.com/wp-content/uploads/angle2.jpg',
+		);
+
+		$GLOBALS['mock_wpdb_results'] = static function ( string $query ) use ( $productId ): array {
+			if ( str_contains( $query, 'COUNT' ) ) {
+				return array();
+			}
+			return array(
+				(object) array(
+					'ID'                => $productId,
+					'post_title'        => 'Custom Boots',
+					'post_type'         => 'product',
+					'post_modified_gmt' => '2026-10-01 12:00:00',
+					'thumbnail_id'      => 0,
+				),
+			);
+		};
+
+		$xml = ( new SitemapGenerator() )->chunkXml( '2026-10', 1 );
+
+		$this->assertStringContainsString( '<image:image>', $xml );
+		$this->assertStringContainsString( 'angle1.jpg', $xml );
+		$this->assertStringContainsString( 'Gallery Angle 1', $xml );
+		$this->assertStringContainsString( 'angle2.jpg', $xml );
+		$this->assertStringContainsString( 'Gallery Angle 2', $xml );
+	}
+
 	private function methodBody( string $source, string $name ): string {
 		$start = strpos( $source, 'function ' . $name . '(' );
 		$this->assertNotFalse( $start );

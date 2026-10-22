@@ -90,17 +90,27 @@ class AdminMenu {
 			array( $this, 'renderAdminPage' )
 		);
 
-		// 8. AI & LLMs (llms.txt)
+		// 8. AI Visibility & Control (llms.txt)
 		add_submenu_page(
 			'quinrel',
-			__( 'AI Discovery (llms.txt)', 'quinrel' ),
-			__( 'AI Discovery', 'quinrel' ),
+			__( 'AI Visibility & Control', 'quinrel' ),
+			__( 'AI Visibility', 'quinrel' ),
 			'manage_seo',
 			'quinrel&tab=llms',
 			array( $this, 'renderAdminPage' )
 		);
 
-		// 9. Settings
+		// 9. Link Outreach & Building
+		add_submenu_page(
+			'quinrel',
+			__( 'Link Building & Outreach', 'quinrel' ),
+			__( 'Link Outreach', 'quinrel' ),
+			'manage_seo',
+			'quinrel&tab=outreach',
+			array( $this, 'renderAdminPage' )
+		);
+
+		// 10. Settings
 		add_submenu_page(
 			'quinrel',
 			__( 'Settings & Integrations', 'quinrel' ),

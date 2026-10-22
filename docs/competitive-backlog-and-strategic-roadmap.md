@@ -9,43 +9,43 @@
 ## Master Status Checklist
 
 ### Phase 1: AI-Era SEO Category Ownership & Documentation Hub (Weeks 1–3)
-- [ ] **TASK-AI-01**: Unified "AI Visibility & Control" Admin Hub
-- [ ] **TASK-AI-02**: Curated `/llms.txt` and `/llms-full.txt` Advanced Builder & Caching
-- [ ] **TASK-AI-03**: AI Crawler Shield: Granular Search Ingestion vs. Training Scraping
-- [ ] **TASK-AI-04**: Automated AI Directives & Training Opt-Out Headers (`noai`, `TDM-Reservation`)
-- [ ] **TASK-DOC-01**: Core End-User Guides (`docs/user-guides/`)
-- [ ] **TASK-DOC-02**: Developer Reference & Hook Architecture (`docs/developer-reference/`)
-- [ ] **TASK-DOC-03**: Integration, Migration & Compliance Playbooks (`docs/integrations/`, `docs/compliance/`)
+- [x] **TASK-AI-01**: Unified "AI Visibility & Control" Admin Hub
+- [x] **TASK-AI-02**: Curated `/llms.txt` and `/llms-full.txt` Advanced Builder & Caching
+- [x] **TASK-AI-03**: AI Crawler Shield: Granular Search Ingestion vs. Training Scraping
+- [x] **TASK-AI-04**: Automated AI Directives & Training Opt-Out Headers (`noai`, `TDM-Reservation`)
+- [x] **TASK-DOC-01**: Core End-User Guides (`docs/user-guides/`)
+- [x] **TASK-DOC-02**: Developer Reference & Hook Architecture (`docs/developer-reference/`)
+- [x] **TASK-DOC-03**: Integration, Migration & Compliance Playbooks (`docs/integrations/`, `docs/compliance/`)
 - [ ] **TASK-REF-02**: Static Analysis (PHPStan Level 6+ with WordPress Stubs)
 
 ### Phase 2: Schema Expansion & Custom Field Intelligence (Weeks 4–7)
-- [ ] **TASK-SCH-01**: Modular Schema Architecture & `SchemaTypeInterface` Refactoring
-- [ ] **TASK-SCH-02**: Podcast SEO Module (`PodcastSeries`, `PodcastEpisode`, Enclosure Detection)
-- [ ] **TASK-SCH-03**: Educational & Employment Schemas (`Course`, `JobPosting`)
-- [ ] **TASK-SCH-04**: Creative Work & Media Schemas (`Book`, `Movie`, `Music`, `SoftwareApplication`, `Dataset`)
-- [ ] **TASK-SCH-05**: Local & Commercial Entity Schemas (`Restaurant`, 25+ `LocalBusiness` Subtypes, `Service`)
-- [ ] **TASK-SCH-06**: Critique & Structured Lists (`Review`, `AggregateRating`, `ItemList`)
-- [ ] **TASK-SCH-07**: Schema Stack Editor React UI (`editor.js`)
-- [ ] **TASK-ACF-01**: ACF & Custom Field Deep Content Scanner
-- [ ] **TASK-ACF-02**: ACF Smart Tag Resolver (`%%acf:field_name%%`)
-- [ ] **TASK-ACF-03**: ACF Schema Property Binding Interface
+- [x] **TASK-SCH-01**: Modular Schema Architecture & `SchemaTypeInterface` Refactoring
+- [x] **TASK-SCH-02**: Podcast SEO Module (`PodcastSeries`, `PodcastEpisode`, Enclosure Detection)
+- [x] **TASK-SCH-03**: Educational & Employment Schemas (`Course`, `JobPosting`)
+- [x] **TASK-SCH-04**: Creative Work & Media Schemas (`Book`, `Movie`, `Music`, `SoftwareApplication`, `Dataset`)
+- [x] **TASK-SCH-05**: Local & Commercial Entity Schemas (`Restaurant`, 25+ `LocalBusiness` Subtypes, `Service`)
+- [x] **TASK-SCH-06**: Critique & Structured Lists (`Review`, `AggregateRating`, `ItemList`)
+- [x] **TASK-SCH-07**: Schema Stack Editor React UI (`editor.js`)
+- [x] **TASK-ACF-01**: ACF & Custom Field Deep Content Scanner
+- [x] **TASK-ACF-02**: ACF Smart Tag Resolver (`%%acf:field_name%%`)
+- [x] **TASK-ACF-03**: ACF Schema Property Binding Interface
 
 ### Phase 3: Advanced WooCommerce Suite & Gutenberg Schema Blocks (Weeks 8–11)
-- [ ] **TASK-WOO-01**: WooCommerce Product Identifiers (`GTIN`, `MPN`, `Brand`)
-- [ ] **TASK-WOO-02**: WooCommerce Core Schema Conflict Resolver & Clean Replacement
-- [ ] **TASK-WOO-03**: WooCommerce `priceValidUntil`, Sale Conditions & Product Taxonomy Meta
-- [ ] **TASK-WOO-04**: WooCommerce Product Gallery XML Sitemap Integration
-- [ ] **TASK-BLK-01**: Native Gutenberg FAQ Accordion Block (`quinrel/faq`)
-- [ ] **TASK-BLK-02**: Native Gutenberg HowTo Block (`quinrel/howto`)
-- [ ] **TASK-BLK-03**: Native Gutenberg Review/Rating Card Block (`quinrel/review`)
-- [ ] **TASK-BLK-04**: Native Gutenberg Table of Contents Block (`quinrel/toc`)
+- [x] **TASK-WOO-01**: WooCommerce Product Identifiers (`GTIN`, `MPN`, `Brand`)
+- [x] **TASK-WOO-02**: WooCommerce Core Schema Conflict Resolver & Clean Replacement
+- [x] **TASK-WOO-03**: WooCommerce `priceValidUntil`, Sale Conditions & Product Taxonomy Meta
+- [x] **TASK-WOO-04**: WooCommerce Product Gallery XML Sitemap Integration
+- [x] **TASK-BLK-01**: Native Gutenberg FAQ Accordion Block (`quinrel/faq`)
+- [x] **TASK-BLK-02**: Native Gutenberg HowTo Block (`quinrel/howto`)
+- [x] **TASK-BLK-03**: Native Gutenberg Review/Rating Card Block (`quinrel/review`)
+- [x] **TASK-BLK-04**: Native Gutenberg Table of Contents Block (`quinrel/toc`)
 - [ ] **TASK-REF-01**: React SPA Modularization (`App.js` & `editor.js` Component Splitting)
 
 ### Phase 4: Off-Page Growth & Outreach Workflow (Weeks 12–14)
-- [ ] **TASK-LNK-01**: Unlinked Brand Mention Discovery via GSC Query Cross-Referencing
-- [ ] **TASK-LNK-02**: Broken External Backlink Reclamation Monitor
-- [ ] **TASK-LNK-03**: Outreach Workflow Database & Admin CRM Table (`quinrel_outreach`)
-- [ ] **TASK-LNK-04**: AI Pitch Draftsman via `AiGateway`
+- [x] **TASK-LNK-01**: Unlinked Brand Mention Discovery via GSC Query Cross-Referencing
+- [x] **TASK-LNK-02**: Broken External Backlink Reclamation Monitor
+- [x] **TASK-LNK-03**: Outreach Workflow Database & Admin CRM Table (`quinrel_outreach`)
+- [x] **TASK-LNK-04**: AI Pitch Draftsman via `AiGateway`
 
 ---
 
@@ -56,7 +56,7 @@
 ### Phase 1: AI-Era SEO & Documentation
 
 #### TASK-AI-01: Unified "AI Visibility & Control" Admin Hub
-- **Status:** `- [ ] Not Started`
+- **Status:** `- [x] Completed`
 - **Objective:** Consolidate disparate AI tools (`AiBotTracker`, `LlmsTxtGenerator`, `AiDisclosureManager`, `CcpaPrivacyTools`) into a single, high-visibility top-level admin menu: **"AI Visibility & Control"**.
 - **Requirements:**
   1. Register top-level/submenu admin page slug `quinrel-ai-visibility` with capability `manage_seo`.
@@ -75,7 +75,7 @@
 ---
 
 #### TASK-AI-02: Curated `/llms.txt` and `/llms-full.txt` Advanced Builder & Caching
-- **Status:** `- [ ] Not Started`
+- **Status:** `- [x] Completed`
 - **Objective:** Upgrade `LlmsTxtGenerator.php` from a static dump to a configurable, cached generator complying with the official `llms.txt` specification.
 - **Requirements:**
   1. Allow administrators to select:
@@ -98,7 +98,7 @@
 ---
 
 #### TASK-AI-03: AI Crawler Shield: Granular Search Ingestion vs. Training Scraping
-- **Status:** `- [ ] Not Started`
+- **Status:** `- [x] Completed`
 - **Objective:** Give publishers granular control over AI user agents, distinguishing between AI Search Bots (PerplexityBot, ChatGPT-User) and Bulk Training Scrapers (GPTBot, CCBot, ByteSpider, Google-Extended).
 - **Requirements:**
   1. Maintain an up-to-date catalog of AI user agents with metadata (`name`, `category: search|training`, `ua_regex`, `default_action`).
@@ -120,7 +120,7 @@
 ---
 
 #### TASK-AI-04: Automated AI Directives & Training Opt-Out Headers (`noai`, `TDM-Reservation`)
-- **Status:** `- [ ] Not Started`
+- **Status:** `- [x] Completed`
 - **Objective:** Output modern machine-readable copyright and AI opt-out headers on all front-end responses.
 - **Requirements:**
   1. When option `quinrel_ai_training_optout` is `'yes'`, send the following HTTP headers on all public template requests:

@@ -168,8 +168,8 @@ class LlmsTxtGenerator {
 		$output .= "- Full Digest: {$siteUrl}/llms-full.txt\n\n";
 
 		// BL-033: Cornerstone content (auto-populated)
-		$output      .= "## Cornerstone Content\n\n";
-		$postTypes    = ! empty( $config['post_types'] ) && is_array( $config['post_types'] )
+		$output   .= "## Cornerstone Content\n\n";
+		$postTypes = ! empty( $config['post_types'] ) && is_array( $config['post_types'] )
 			? array_map( 'sanitize_key', $config['post_types'] )
 			: array( 'post', 'page' );
 

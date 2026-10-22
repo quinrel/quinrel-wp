@@ -6,7 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class BreadcrumbSchema {
+use Quinrel\WordPress\Modules\Schema\Contracts\SchemaTypeInterface;
+
+class BreadcrumbSchema implements SchemaTypeInterface {
+
+	public function getId(): string {
+		return 'breadcrumb';
+	}
 
 	public function isApplicable( ?int $postId = null ): bool {
 		if ( $postId !== null ) {

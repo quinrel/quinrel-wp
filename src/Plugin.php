@@ -85,6 +85,8 @@ class Plugin {
 			\WP_CLI::add_command( 'quinrel', \Quinrel\WordPress\Modules\CLI\QuinrelCommand::class );
 		}
 
+		$this->container->get( 'block_registry' )->register();
+
 		// REST_REQUEST is defined on parse_request, after this boot runs.
 		// Cacheable HTML must not build admin, queue, or analytics services.
 		if ( $this->isFrontendHtmlRequest() ) {
@@ -324,6 +326,7 @@ class Plugin {
 		// ── Phase 2 backlog services ───────────────────────────────────────────
 		$this->container->singleton( 'morphological_keyword_matcher', \Quinrel\WordPress\Modules\ContentAssistant\MorphologicalKeywordMatcher::class );
 		$this->container->singleton( 'woocommerce_product_schema', \Quinrel\WordPress\Modules\Schema\WooCommerceProductSchema::class );
+		$this->container->singleton( 'woocommerce_permalink_manager', \Quinrel\WordPress\Modules\Seo\WooCommercePermalinkManager::class );
 		$this->container->singleton( 'headless_seo_endpoints', \Quinrel\WordPress\Modules\Api\HeadlessSeoEndpoints::class );
 		$this->container->singleton( 'content_gap_analyser', \Quinrel\WordPress\Modules\ContentAssistant\ContentGapAnalyser::class );
 		$this->container->singleton( 'frontend_seo_inspector', \Quinrel\WordPress\Modules\Admin\FrontendSeoInspector::class );
@@ -338,6 +341,10 @@ class Plugin {
 		$this->container->singleton( 'google_search_console', \Quinrel\WordPress\Modules\Analytics\GoogleSearchConsoleIntegration::class );
 		$this->container->singleton( 'bing_webmaster', \Quinrel\WordPress\Modules\Analytics\BingWebmasterIntegration::class );
 		$this->container->singleton( 'keyword_rank_tracker', \Quinrel\WordPress\Modules\Analytics\KeywordRankTracker::class );
+		$this->container->singleton( 'outreach_manager', \Quinrel\WordPress\Modules\ContentAssistant\OutreachManager::class );
+		$this->container->singleton( 'brand_mention_finder', \Quinrel\WordPress\Modules\ContentAssistant\BrandMentionFinder::class );
+		$this->container->singleton( 'ai_pitch_draftsman', \Quinrel\WordPress\Modules\ContentAssistant\AiPitchDraftsman::class );
+		$this->container->singleton( 'block_registry', \Quinrel\WordPress\Modules\Blocks\BlockRegistry::class );
 	}
 
 	/**
@@ -372,6 +379,7 @@ class Plugin {
 		add_action( 'template_redirect', array( $this->container->get( 'image_seo_module' ), 'redirectAttachmentPages' ) );
 
 		$this->container->get( 'woocommerce_product_schema' )->register();
+		$this->container->get( 'woocommerce_permalink_manager' )->register();
 		$this->container->get( 'image_object_schema' )->register();
 
 		if ( is_user_logged_in() ) {
@@ -476,7 +484,7 @@ class Plugin {
 		$this->container->get( 'bing_indexnow_api' )->registerRoutes();
 		$this->container->get( 'morphological_keyword_matcher' )->registerRoutes();
 
-		if ( class_exists( '\WC_Product' ) || function_exists( 'wc_get_product' ) ) {
+		if ( $this->container->get( 'woocommerce_product_schema' )->isWooCommerceActive() ) {
 			$this->container->get( 'woocommerce_product_schema' )->registerRoutes();
 		}
 
@@ -494,6 +502,9 @@ class Plugin {
 		$this->container->get( 'google_search_console' )->registerRoutes();
 		$this->container->get( 'bing_webmaster' )->registerRoutes();
 		$this->container->get( 'keyword_rank_tracker' )->registerRoutes();
+		$this->container->get( 'outreach_manager' )->registerRoutes();
+		$this->container->get( 'brand_mention_finder' )->registerRoutes();
+		$this->container->get( 'ai_pitch_draftsman' )->registerRoutes();
 
 		( new \Quinrel\WordPress\Modules\ImageSeo\ImageAltAudit() )->registerRoutes();
 		( new \Quinrel\WordPress\Modules\ImageSeo\ImageCompressor() )->registerRoutes();
@@ -939,6 +950,7 @@ class Plugin {
 		// 8. Create PageSpeed history and Google Index Status tables
 		\Quinrel\WordPress\Modules\Analytics\PageSpeedScheduler::createTable();
 		\Quinrel\WordPress\Modules\Indexing\GscIndexSyncWorker::createTable();
+		\Quinrel\WordPress\Modules\ContentAssistant\OutreachManager::createTable();
 
 		// 9. Register custom SEO capabilities
 		\Quinrel\WordPress\Modules\Admin\CustomSeoUserRoles::addCapabilities();

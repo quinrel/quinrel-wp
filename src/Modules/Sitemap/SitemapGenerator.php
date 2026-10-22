@@ -298,6 +298,27 @@ class SitemapGenerator {
 				}
 			}
 
+			if ( 'product' === $postType && function_exists( 'get_post_meta' ) ) {
+				$gallery = get_post_meta( $postId, '_product_image_gallery', true );
+				if ( is_string( $gallery ) && '' !== trim( $gallery ) ) {
+					$galleryIds = array_filter( array_map( 'intval', explode( ',', $gallery ) ) );
+					foreach ( $galleryIds as $galleryId ) {
+						if ( $galleryId > 0 && function_exists( 'wp_get_attachment_url' ) ) {
+							$galleryUrl = wp_get_attachment_url( $galleryId );
+							if ( $galleryUrl ) {
+								$galleryTitle = function_exists( 'get_the_title' ) ? (string) get_the_title( $galleryId ) : '';
+								$xml         .= "    <image:image>\n";
+								$xml         .= '      <image:loc>' . esc_url( $galleryUrl ) . "</image:loc>\n";
+								if ( '' !== trim( $galleryTitle ) ) {
+									$xml .= '      <image:title>' . esc_html( $galleryTitle ) . "</image:title>\n";
+								}
+								$xml .= "    </image:image>\n";
+							}
+						}
+					}
+				}
+			}
+
 			$xml .= "  </url>\n";
 		}
 
