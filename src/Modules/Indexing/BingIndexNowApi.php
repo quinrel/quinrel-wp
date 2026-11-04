@@ -406,6 +406,7 @@ class BingIndexNowApi {
 				'success' => true,
 				'queued'  => true,
 				'url'     => $url,
+				'message' => __( 'The URL was queued for IndexNow.', 'quinrel' ),
 			)
 		);
 	}

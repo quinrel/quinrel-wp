@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Auto-detects installed SEO plugins and migrates their data to Quinrel.
- * Supports: Yoast SEO, RankMath, All in One SEO (AIOSEO).
+ * Supports: Yoast SEO, Rank Math, All in One SEO, SEOPress, and The SEO Framework.
  *
  * Philosophy: One click, zero data loss.
  */
@@ -48,6 +48,30 @@ class MigrationManager {
 			'_aioseo_og_image'       => '_quinrel_og_image',
 			'_aioseo_twitter_title'  => '_quinrel_twitter_title',
 		),
+		'seopress' => array(
+			'_seopress_titles_title'         => '_quinrel_meta_title',
+			'_seopress_titles_desc'          => '_quinrel_meta_description',
+			'_seopress_analysis_target_kw'   => '_quinrel_focus_keyword',
+			'_seopress_social_fb_title'      => '_quinrel_og_title',
+			'_seopress_social_fb_desc'       => '_quinrel_og_description',
+			'_seopress_social_fb_img'        => '_quinrel_og_image',
+			'_seopress_social_twitter_title' => '_quinrel_twitter_title',
+			'_seopress_robots_canonical'     => '_quinrel_canonical_url',
+			'_seopress_robots_index'         => '_quinrel_noindex',
+			'_seopress_robots_follow'        => '_quinrel_nofollow',
+		),
+		// The SEO Framework 5 still writes the Genesis meta keys.
+		'tsf'      => array(
+			'_genesis_title'          => '_quinrel_meta_title',
+			'_genesis_description'    => '_quinrel_meta_description',
+			'_open_graph_title'       => '_quinrel_og_title',
+			'_open_graph_description' => '_quinrel_og_description',
+			'_social_image_url'       => '_quinrel_og_image',
+			'_twitter_title'          => '_quinrel_twitter_title',
+			'_genesis_canonical_uri'  => '_quinrel_canonical_url',
+			'_genesis_noindex'        => '_quinrel_noindex',
+			'_genesis_nofollow'       => '_quinrel_nofollow',
+		),
 	);
 
 	/**
@@ -56,44 +80,49 @@ class MigrationManager {
 	public function detectPlugins(): array {
 		global $wpdb;
 		$detected = array();
-
-		// Yoast SEO
-		$yoastCount = (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_yoast_wpseo_title' AND meta_value != ''"
+		$sources  = array(
+			'yoast'    => array(
+				'name'     => 'Yoast SEO',
+				'title'    => '_yoast_wpseo_title',
+				'constant' => 'WPSEO_VERSION',
+			),
+			'rankmath' => array(
+				'name'     => 'Rank Math',
+				'title'    => 'rank_math_title',
+				'constant' => 'RANK_MATH_VERSION',
+			),
+			'aioseo'   => array(
+				'name'     => 'All in One SEO',
+				'title'    => '_aioseo_title',
+				'constant' => 'AIOSEO_VERSION',
+			),
+			'seopress' => array(
+				'name'     => 'SEOPress',
+				'title'    => '_seopress_titles_title',
+				'constant' => 'SEOPRESS_VERSION',
+			),
+			'tsf'      => array(
+				'name'     => 'The SEO Framework',
+				'title'    => '_genesis_title',
+				'constant' => 'THE_SEO_FRAMEWORK_VERSION',
+			),
 		);
-		if ( $yoastCount > 0 || defined( 'WPSEO_VERSION' ) ) {
-			$detected[] = array(
-				'id'     => 'yoast',
-				'name'   => 'Yoast SEO',
-				'posts'  => $yoastCount,
-				'active' => defined( 'WPSEO_VERSION' ),
-			);
-		}
 
-		// RankMath
-		$rmCount = (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = 'rank_math_title' AND meta_value != ''"
-		);
-		if ( $rmCount > 0 || defined( 'RANK_MATH_VERSION' ) ) {
-			$detected[] = array(
-				'id'     => 'rankmath',
-				'name'   => 'Rank Math',
-				'posts'  => $rmCount,
-				'active' => defined( 'RANK_MATH_VERSION' ),
+		foreach ( $sources as $pluginId => $source ) {
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value != ''",
+					$source['title']
+				)
 			);
-		}
-
-		// AIOSEO
-		$aioCount = (int) $wpdb->get_var(
-			"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = '_aioseo_title' AND meta_value != ''"
-		);
-		if ( $aioCount > 0 || defined( 'AIOSEO_VERSION' ) ) {
-			$detected[] = array(
-				'id'     => 'aioseo',
-				'name'   => 'All in One SEO',
-				'posts'  => $aioCount,
-				'active' => defined( 'AIOSEO_VERSION' ),
-			);
+			if ( $count > 0 || defined( $source['constant'] ) ) {
+				$detected[] = array(
+					'id'     => $pluginId,
+					'name'   => $source['name'],
+					'posts'  => $count,
+					'active' => defined( $source['constant'] ),
+				);
+			}
 		}
 
 		return $detected;
@@ -153,7 +182,7 @@ class MigrationManager {
 	/**
 	 * Fetch 3 sample posts to preview how titles and descriptions will be resolved.
 	 *
-	 * @param string $pluginId Competitor plugin ID (yoast, rankmath, aioseo).
+	 * @param string $pluginId Competitor plugin ID.
 	 * @param int    $limit    Max sample count.
 	 * @return array<int, array<string, mixed>>
 	 */
@@ -163,12 +192,16 @@ class MigrationManager {
 		}
 
 		global $wpdb;
-		$titleKey = match ( $pluginId ) {
-			'yoast'    => '_yoast_wpseo_title',
-			'rankmath' => 'rank_math_title',
-			'aioseo'   => '_aioseo_title',
-			default    => '',
-		};
+		$titleKey = '';
+		$descKey  = '';
+		foreach ( self::META_MAP[ $pluginId ] as $sourceKey => $targetKey ) {
+			if ( '' === $titleKey && '_quinrel_meta_title' === $targetKey ) {
+				$titleKey = $sourceKey;
+			}
+			if ( '' === $descKey && '_quinrel_meta_description' === $targetKey ) {
+				$descKey = $sourceKey;
+			}
+		}
 
 		if ( '' === $titleKey ) {
 			return array();
@@ -195,12 +228,7 @@ class MigrationManager {
 			}
 
 			$sourceTitle = (string) get_post_meta( $postId, $titleKey, true );
-			$sourceDesc  = match ( $pluginId ) {
-				'yoast'    => (string) get_post_meta( $postId, '_yoast_wpseo_metadesc', true ),
-				'rankmath' => (string) get_post_meta( $postId, 'rank_math_description', true ),
-				'aioseo'   => (string) get_post_meta( $postId, '_aioseo_description', true ),
-				default    => '',
-			};
+			$sourceDesc  = '' !== $descKey ? (string) get_post_meta( $postId, $descKey, true ) : '';
 
 			$resolvedTitle = \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $sourceTitle, $postId );
 			$resolvedDesc  = \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $sourceDesc, $postId );
@@ -266,15 +294,24 @@ class MigrationManager {
 						continue;
 					}
 
-					if ( in_array( $targetKey, array( '_quinrel_noindex', '_quinrel_nofollow' ), true ) && 'yoast' === $pluginId ) {
-						$value = ( '1' === $value ) ? 'yes' : 'no';
+					if ( in_array( $targetKey, array( '_quinrel_noindex', '_quinrel_nofollow' ), true ) ) {
+						if ( 'yoast' === $pluginId ) {
+							$value = ( '1' === $value ) ? 'yes' : 'no';
+						} elseif ( 'seopress' === $pluginId || 'tsf' === $pluginId ) {
+							// Unchecked boxes are usually deleted. Writing "no" would mark an indexed post.
+							$affirmative = 'seopress' === $pluginId ? 'yes' : '1';
+							if ( $affirmative !== $value ) {
+								continue;
+							}
+							$value = 'yes';
+						}
 					}
 
-					if ( '_quinrel_focus_keyword' === $targetKey && in_array( $pluginId, array( 'rankmath', 'aioseo' ), true ) ) {
+					if ( '_quinrel_focus_keyword' === $targetKey && in_array( $pluginId, array( 'rankmath', 'aioseo', 'seopress' ), true ) ) {
 						$value = $this->firstKeyword( $value );
 					}
 
-					if ( '_quinrel_og_image' === $targetKey ) {
+					if ( in_array( $targetKey, array( '_quinrel_og_image', '_quinrel_canonical_url' ), true ) ) {
 						$sanitized = esc_url_raw( trim( $value ) );
 					} else {
 						if ( in_array( $targetKey, array( '_quinrel_meta_title', '_quinrel_meta_description', '_quinrel_og_title', '_quinrel_og_description', '_quinrel_twitter_title' ), true ) ) {
@@ -373,16 +410,14 @@ class MigrationManager {
 	}
 
 	private function pluginLabel( string $pluginId ): string {
-		if ( 'yoast' === $pluginId ) {
-			return 'Yoast SEO';
-		}
-		if ( 'rankmath' === $pluginId ) {
-			return 'Rank Math';
-		}
-		if ( 'aioseo' === $pluginId ) {
-			return 'All in One SEO';
-		}
-		return '';
+		return match ( $pluginId ) {
+			'yoast' => 'Yoast SEO',
+			'rankmath' => 'Rank Math',
+			'aioseo' => 'All in One SEO',
+			'seopress' => 'SEOPress',
+			'tsf' => 'The SEO Framework',
+			default => '',
+		};
 	}
 
 	private function previewMessage( int $copy, int $skipped, string $pluginId ): string {
@@ -475,6 +510,7 @@ class MigrationManager {
 			'rankmath' => 'seo-by-rank-math/rank-math.php',
 			'aioseo'   => 'all-in-one-seo-pack/all_in_one_seo_pack.php',
 			'seopress' => 'wp-seopress/seopress.php',
+			'tsf'      => 'autodescription/autodescription.php',
 		);
 
 		if ( ! isset( $pluginFiles[ $pluginId ] ) ) {

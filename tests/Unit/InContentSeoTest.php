@@ -48,6 +48,24 @@ class InContentSeoTest extends TestCase {
 		$this->assertStringContainsString( 'Noindex', $outputNoindex );
 	}
 
+	public function testQuickEditScriptIsAFileAndOnlyLoadsOnTheListTable(): void {
+		$GLOBALS['mock_enqueued_scripts'] = array();
+		$editor = new PostQuickEdit();
+		$editor->enqueueQuickEditScript( 'post.php' );
+		$this->assertSame( array(), $GLOBALS['mock_enqueued_scripts'] );
+
+		$editor->enqueueQuickEditScript( 'edit.php' );
+		$this->assertArrayHasKey( 'quinrel-quick-edit', $GLOBALS['mock_enqueued_scripts'] );
+		$this->assertStringEndsWith( 'src/assets/js/quick-edit.js', $GLOBALS['mock_enqueued_scripts']['quinrel-quick-edit'] );
+
+		$php = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Modules/Admin/PostQuickEdit.php' );
+		$js  = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/assets/js/quick-edit.js' );
+		$this->assertStringNotContainsString( '<<<', $php );
+		$this->assertStringContainsString( 'inlineEditPost.edit', $js );
+		$this->assertStringContainsString( 'quinrel-quick-title', $js );
+		unset( $GLOBALS['mock_enqueued_scripts'] );
+	}
+
 	public function testAdminMenuRegistersSubmenusWithActionItemsAndSiteHealth(): void {
 		$menu = new AdminMenu();
 		$menu->registerMenu();

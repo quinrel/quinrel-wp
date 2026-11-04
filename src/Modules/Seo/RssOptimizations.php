@@ -28,23 +28,22 @@ class RssOptimizations {
 			return $content;
 		}
 
-		$before = get_option( 'quinrel_rss_before_content', '' );
-		$after  = get_option( 'quinrel_rss_after_content', '' );
+		$before = (string) get_option( 'quinrel_rss_before_content', '' );
+		$after  = (string) get_option( 'quinrel_rss_after_content', '' );
 
-		// If both are empty, apply premium default attribution to prevent site scraping
-		if ( empty( $before ) && empty( $after ) ) {
-			$postTitle = get_the_title();
-			$postUrl   = esc_url( get_permalink() );
-			$siteTitle = get_bloginfo( 'name' );
-			$siteUrl   = esc_url( home_url( '/' ) );
+		if ( $before === '' && $after === '' ) {
+			if ( get_option( 'quinrel_rss_attribution', 'no' ) !== 'yes' ) {
+				return $content;
+			}
 
-			$after = sprintf(
-				'<p>The post <a href="%s">%s</a> first appeared on <a href="%s">%s</a>.</p>',
-				$postUrl,
-				esc_html( $postTitle ),
-				$siteUrl,
-				esc_html( $siteTitle )
-			);
+			$postLink = sprintf( '<a href="%s">%s</a>', esc_url( get_permalink() ), esc_html( get_the_title() ) );
+			$siteLink = sprintf( '<a href="%s">%s</a>', esc_url( home_url( '/' ) ), esc_html( get_bloginfo( 'name' ) ) );
+			$after    = '<p>' . sprintf(
+				/* translators: 1: linked post title, 2: linked site name. */
+				esc_html__( 'The post %1$s first appeared on %2$s.', 'quinrel' ),
+				$postLink,
+				$siteLink
+			) . '</p>';
 		} else {
 			// Replace placeholder tokens
 			$tokens = array(

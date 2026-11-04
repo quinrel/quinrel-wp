@@ -14,38 +14,61 @@ use Quinrel\WordPress\Modules\Schema\VideoExtractor;
  */
 class VideoSitemapGenerator {
 
-	private const CACHE_TRANSIENT  = 'quinrel_video_sitemap_xml_cache';
+	private const PAGE_SIZE        = 500;
+	private const CACHE_VERSION    = 'quinrel_video_sitemap_cache_ver';
 	private const CACHE_EXPIRATION = 4 * HOUR_IN_SECONDS;
 
 	/**
-	 * Serves the virtual video-sitemap.xml.
+	 * Serves one page of the video sitemap. Page 1 is /video-sitemap.xml.
 	 */
-	public function serveSitemap(): void {
+	public function serveSitemap( int $page = 1 ): void {
 		status_header( 200 );
 		header( 'Content-Type: text/xml; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, follow', true );
 
-		$xml = get_transient( self::CACHE_TRANSIENT );
+		$page = max( 1, $page );
+		$ver  = max( 1, (int) get_option( self::CACHE_VERSION, 1 ) );
+		$key  = 'quinrel_video_sitemap_p' . $page . '_v' . $ver;
+		$xml  = get_transient( $key );
 		if ( ! is_string( $xml ) ) {
-			$xml = $this->generateXml();
-			set_transient( self::CACHE_TRANSIENT, $xml, self::CACHE_EXPIRATION );
+			$xml = $this->generateXml( $page );
+			set_transient( $key, $xml, self::CACHE_EXPIRATION );
 		}
 
 		echo $xml; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
-	 * Clears sitemap cache.
+	 * Drop every cached page by moving the version forward. Old transients expire on their own.
 	 */
 	public static function clearCache(): void {
-		delete_transient( self::CACHE_TRANSIENT );
+		$ver = max( 1, (int) get_option( self::CACHE_VERSION, 1 ) );
+		update_option( self::CACHE_VERSION, $ver + 1, false );
 	}
 
 	/**
-	 * Compiles the video urlset. Pages without a video are omitted.
+	 * Sitemap files needed for the published posts this generator reads.
+	 *
+	 * A page that contains no video is still listed. Skipping it would drop later posts.
 	 */
-	public function generateXml(): string {
-		$excludePostTypes   = SitemapSettings::get( 'sitemap_exclude_types', array() );
+	public static function pageCount(): int {
+		$total = 0;
+		foreach ( self::activePostTypes() as $type ) {
+			$counts = wp_count_posts( $type );
+			if ( is_object( $counts ) && isset( $counts->publish ) ) {
+				$total += (int) $counts->publish;
+			}
+		}
+		if ( $total < 1 ) {
+			return 1;
+		}
+		return (int) ceil( $total / self::PAGE_SIZE );
+	}
+
+	/**
+	 * Compiles one page of the video urlset. Pages without a video are omitted from that file.
+	 */
+	public function generateXml( int $page = 1 ): string {
 		$excludePostsString = SitemapSettings::get( 'sitemap_exclude_posts', '' );
 
 		$excludePostIds = array();
@@ -57,20 +80,17 @@ class VideoSitemapGenerator {
 			);
 		}
 
-		$postTypes = get_post_types( array( 'public' => true ) );
-		if ( ! is_array( $postTypes ) || $postTypes === array() ) {
-			$postTypes = array( 'post', 'page' );
-		}
-		if ( is_array( $excludePostTypes ) ) {
-			$postTypes = array_diff( $postTypes, $excludePostTypes );
-		}
+		$postTypes = self::activePostTypes();
+		$page      = max( 1, $page );
 
 		$posts = array();
 		if ( $postTypes !== array() ) {
 			$queryArgs = array(
-				'post_type'      => array_values( $postTypes ),
+				'post_type'      => $postTypes,
 				'post_status'    => 'publish',
-				'posts_per_page' => 500, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- One bounded admin-style read. Pages without a video are skipped.
+				'posts_per_page' => self::PAGE_SIZE, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- One bounded page. Pages without a video are skipped inside this page.
+				'paged'          => $page,
+				'no_found_rows'  => true,
 				'orderby'        => 'modified',
 				'order'          => 'DESC',
 			);
@@ -117,15 +137,10 @@ class VideoSitemapGenerator {
 					$xml .= '      <video:player_loc>' . esc_url( $embedUrl ) . "</video:player_loc>\n";
 				}
 
-				$durationSec = 60; // fallback
-				if ( preg_match( '/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/', $video['duration'], $dm ) ) {
-					$hours       = isset( $dm[1] ) ? intval( $dm[1] ) : 0;
-					$mins        = isset( $dm[2] ) ? intval( $dm[2] ) : 0;
-					$secs        = isset( $dm[3] ) ? intval( $dm[3] ) : 0;
-					$durationSec = ( $hours * 3600 ) + ( $mins * 60 ) + $secs;
+				$durationSec = VideoExtractor::secondsFromIso( isset( $video['duration'] ) && is_string( $video['duration'] ) ? $video['duration'] : '' );
+				if ( $durationSec > 0 ) {
+					$xml .= '      <video:duration>' . $durationSec . "</video:duration>\n";
 				}
-
-				$xml .= '      <video:duration>' . $durationSec . "</video:duration>\n";
 				$xml .= '      <video:publication_date>' . esc_html( $video['uploadDate'] ) . "</video:publication_date>\n";
 				$xml .= "    </video:video>\n";
 				$xml .= "  </url>\n";
@@ -134,5 +149,22 @@ class VideoSitemapGenerator {
 
 		$xml .= '</urlset>';
 		return $xml;
+	}
+
+	/**
+	 * Public post types this sitemap reads, minus types an administrator excluded.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function activePostTypes(): array {
+		$excludePostTypes = SitemapSettings::get( 'sitemap_exclude_types', array() );
+		$postTypes        = get_post_types( array( 'public' => true ) );
+		if ( ! is_array( $postTypes ) || $postTypes === array() ) {
+			$postTypes = array( 'post', 'page' );
+		}
+		if ( is_array( $excludePostTypes ) ) {
+			$postTypes = array_diff( $postTypes, $excludePostTypes );
+		}
+		return array_values( $postTypes );
 	}
 }

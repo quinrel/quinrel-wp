@@ -4,7 +4,7 @@ Tags: seo, schema, sitemap, indexing, search console
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,7 +53,7 @@ robots.txt starts from the file WordPress already generated. Quinrel appends its
 
 The `.htaccess` editor stays off until an administrator turns it on. It does not run when WordPress file editing is disabled. Nginx does not read `.htaccess`.
 
-RSS Scraping Protection adds source attribution and canonical backlinks to RSS feed entries to help protect published content against unauthorized scrapers.
+RSS feed text can add a line before or after each item. The default “The post first appeared on” line stays off until an administrator turns it on. Text saved in the before and after boxes is used either way.
 
 ### Technical SEO Audit
 
@@ -87,13 +87,13 @@ Roles & Capabilities control who can manage redirects, edit SEO meta, and open S
 
 ### Google Analytics 4, Google Search Console, and IndexNow
 
-Google Analytics 4 and Google Search Console load after you connect them. Google Search Console connects via a 1-click Google OAuth flow with automatic property selection, or with manual property entry in its dedicated settings tab. Search Console can list queries matched by more than one page.
+Google Analytics 4 and Google Search Console load after you connect them. Google Search Console connects after an administrator saves a Google OAuth client ID and client secret. Connect then opens Google's account screen for read-only access. The administrator chooses the Search Console property. Search Console can list queries matched by more than one page.
 
-IndexNow sends published URLs only after an administrator saves a key and turns notifications on. IndexNow does not guarantee indexing. The Google Indexing API is optional, applies to eligible JobPosting or livestream pages, and does not guarantee indexing.
+IndexNow sends published URLs to https://api.indexnow.org/indexnow only after an administrator saves a key and turns notifications on. IndexNow does not guarantee indexing. The Google Indexing API is optional, applies to eligible JobPosting or livestream pages, and does not guarantee indexing.
 
-The Keyword Rank Tracker uses a SerpApi key saved on this site.
+The Keyword Rank Tracker shows how queries moved in Google Search Console. A SerpApi key is optional and is used only for a live Google results check.
 
-A Bing Webmaster tools verification code can be saved in settings. Quinrel does not include a Bing traffic screen. The Bing Webmaster API is used only when a Bing API key is already stored.
+A Bing Webmaster tools verification code can be saved in settings. An administrator who saves a Bing API key can read the last 28 days of clicks and impressions for this site. The site address is sent to https://ssl.bing.com only when that administrator opens the Bing section. Quinrel does not submit pages or sitemaps to the Bing Webmaster API.
 
 Social posting can send to Facebook, X, LinkedIn, and Pinterest. Instagram and YouTube can be stored as profile URLs. Quinrel does not post to Instagram or TikTok.
 
@@ -107,7 +107,7 @@ Settings Portability lets administrators export plugin settings as a JSON file o
 
 The setup wizard can store a site type and profile URLs. Technical SEO already works before you finish it.
 
-Quinrel can import titles, descriptions, and settings from Yoast SEO, Rank Math, and All in One SEO. The import shows how many fields it will copy and does not write until you confirm.
+Quinrel can import titles, descriptions, and settings from Yoast SEO, Rank Math, All in One SEO, SEOPress, and The SEO Framework. The import shows how many fields it will copy and does not write until you confirm.
 
 On a multisite network, a network screen is available. It is not shown on a single site.
 
@@ -139,13 +139,17 @@ For every service below, nothing is sent until an administrator turns the featur
 
 The writing assistant sends the current post title, meta description, or an excerpt to OpenAI at https://api.openai.com, or to Anthropic at https://api.anthropic.com, when an editor runs it. Ollama defaults to http://localhost:11434 on this server. A remote http or https host receives the prompt, which can include the post title and content, only after an administrator confirms that host. A settings import cannot set a remote Ollama host.
 
-The Keyword Rank Tracker sends focus keywords to SerpApi at https://serpapi.com when a key is saved and a check runs. PageSpeed sends the URL being checked to Google. Google Search Console uses read-only access for impressions, clicks, and click-through rate after an administrator connects it. Quinrel does not write Search Console data to Google. Google Analytics 4 reports are requested after an administrator saves the property credentials and opens the report.
+Content gap analysis sends up to 200 focus keywords and titles from published posts and pages to OpenAI, Anthropic, Ollama, or https://api.quinrel.com when an editor runs it.
+
+When an administrator turns on font display swap, and the page already loads a stylesheet from https://fonts.googleapis.com, Quinrel opens a preconnect to https://fonts.googleapis.com and https://fonts.gstatic.com for that request. The connection does not happen while the option is off.
+
+The Keyword Rank Tracker reads query positions from Google Search Console after an administrator connects it. It sends focus keywords to SerpApi at https://serpapi.com when a key is saved and a check runs. PageSpeed sends the URL an administrator checks to Google's PageSpeed Insights API at https://www.googleapis.com. A saved API key is included in that request. A local address is not sent. Google Search Console uses read-only access for impressions, clicks, and click-through rate after an administrator connects it. Quinrel does not write Search Console data to Google. Google Analytics 4 reports are requested after an administrator saves the property credentials and opens the report.
 
 IndexNow sends published URLs, after an administrator saves a key and turns notifications on, only to https://api.indexnow.org, https://www.bing.com, https://yandex.com, and https://search.seznam.cz. IndexNow does not guarantee indexing. The Google Indexing API sends a published URL only when an administrator turns it on, and only for an eligible JobPosting or livestream page. It does not guarantee indexing.
 
 Social posting can send a post URL to Facebook, X, LinkedIn, or Pinterest after an administrator connects that account. Quinrel does not post to Instagram or TikTok.
 
-A Bing Webmaster tools verification code can be saved in settings. This release does not include a Bing traffic screen. The Bing Webmaster API is used only when a Bing API key is already stored.
+A Bing Webmaster tools verification code can be saved in settings. An administrator who saves a Bing API key can read the last 28 days of clicks and impressions for this site. The site address is sent to https://ssl.bing.com only when that administrator opens the Bing section. Quinrel does not submit pages or sitemaps to the Bing Webmaster API.
 
 Connecting Quinrel sends the requests described above only to https://api.quinrel.com. The settings screen cannot change that host. A Quinrel account is optional.
 
@@ -175,9 +179,9 @@ No. The settings screen cannot change the Quinrel API host. Connection requests 
 
 Yes. Quinrel supports WooCommerce product structured data, including an aggregate rating when that product has reviews, and related SEO controls when WooCommerce is active.
 
-= Can I migrate from Yoast SEO, Rank Math, or All in One SEO? =
+= Can I migrate from Yoast SEO, Rank Math, All in One SEO, SEOPress, or The SEO Framework? =
 
-Yes. Supported SEO data can be imported from Yoast SEO, Rank Math, and All in One SEO. The import shows how many fields it will copy and does not write until you confirm.
+Yes. Supported SEO data can be imported from Yoast SEO, Rank Math, All in One SEO, SEOPress, and The SEO Framework. The import shows how many fields it will copy and does not write until you confirm.
 
 = Will Quinrel guarantee higher Google rankings? =
 
@@ -213,7 +217,7 @@ Yes. Quinrel is designed to work alongside existing WordPress themes, editors, a
 4. The technical SEO audit before a scan. It runs on this site and does not score AI mentions, Google presence, or competitors.
 5. Image SEO. Reversible compression stays off until an administrator turns it on, and the alt-text audit lists images that have no alternative text.
 6. Schema markup templates. No global display rule is saved on this site.
-7. The keyword rank tracker. Cloud rank checks stay off until the site is connected and a SerpApi key is saved.
+7. The keyword rank tracker. Query movement comes from Google Search Console. A live results check uses a SerpApi key.
 8. XML sitemap settings. Quinrel's sitemap stays off until an administrator turns it on.
 
 == Support ==
@@ -228,15 +232,31 @@ When reporting a problem, include your WordPress version, PHP version, Quinrel v
 
 == Changelog ==
 
+= 1.1.1 =
+
+* The keyword rank tracker shows query movement from Google Search Console for the last 28 days compared with the 28 days before that. A SerpApi key is used only when an administrator runs a live results check.
+* SEOPress and The SEO Framework import with the same preview and confirm step as Yoast SEO, Rank Math, and All in One SEO.
+* The video sitemap adds a file for each further set of 500 posts. A video duration is written only when the page states one.
+* Google Search Console connects after an administrator saves a Google OAuth client ID and client secret. Connect opens Google for read-only access, and the administrator chooses the property.
+* Bing traffic, PageSpeed, and indexation screens use the saved connection and leave the count empty when that source has not returned a result.
+
 = 1.1.0 =
 
 * Settings Architecture: Dedicated Global Settings Hub with individual tabs for General, Quinrel Cloud, Google Search Console, Bing Webmaster, Indexing & APIs, Performance, AI Assistant, Roles, and Advanced Tools.
-* Google Search Console: 1-click Site Kit-style OAuth connect flow, site selector dropdown, and live telemetry sync.
+* Google Search Console: an administrator saves a Google OAuth client ID and client secret, then connects for read-only access and chooses a Search Console property.
 * Quinrel Cloud: 1-click automated site pairing endpoint alongside manual site token and authorization code methods.
 * Bing Webmaster: Verification meta tags and API key telemetry integration.
 * Breadcrumb Schema & RSS Scraping Protection: Automatic JSON-LD breadcrumb hierarchy generation and customizable RSS feed attribution backlinks.
 * Settings Portability: Safe JSON settings export and schema-validated import utility.
 * Performance & Assets: Core Web Vitals optimization options with script delay and passive listeners.
+* Document titles stay with the theme unless a custom SEO title is saved.
+* Archive pages after the first stay indexable unless an administrator turns on noindex for them.
+* While Yoast, Rank Math, All in One SEO, or SEOPress is active, Quinrel does not replace titles and meta until an administrator confirms it.
+* The default RSS attribution line stays off until an administrator turns it on.
+* Script defer and the Google Fonts preconnect stay off until an administrator turns them on. Defer applies only to listed script handles.
+* The Bing Webmaster API key, the Search Console client secret, and Search Console tokens are encrypted at rest.
+* Content gap analysis reads at most 200 recent published posts and pages that have a focus keyword.
+* Core Web Vitals scores come from a PageSpeed Insights audit the administrator runs. The screen does not show a score until that audit returns.
 * Modern WordPress Admin layout maximizing workspace usage across large displays.
 * Plugin author updated to Skoorite Team.
 

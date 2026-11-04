@@ -18,34 +18,55 @@ class AutofixAndOptimizationTest extends TestCase {
 
 	public function testScriptOptimizerDefersEligibleScripts(): void {
 		$optimizer = new ScriptOptimizer();
+		$tag       = '<script src="https://example.com/app.js" id="app-js"></script>';
 
-		// Regular script should receive defer
-		$tag      = '<script src="https://example.com/app.js" id="app-js"></script>';
-		$result   = $optimizer->filterScriptTag( $tag, 'app-js', 'https://example.com/app.js' );
+		$this->assertSame( $tag, $optimizer->filterScriptTag( $tag, 'app-js', 'https://example.com/app.js' ) );
+
+		$GLOBALS['mock_wp_options']['quinrel_defer_non_critical_scripts'] = 'yes';
+		$this->assertSame( $tag, $optimizer->filterScriptTag( $tag, 'app-js', 'https://example.com/app.js' ) );
+
+		$GLOBALS['mock_wp_options']['quinrel_defer_script_handles'] = 'app-js, jquery-core';
+		$result = $optimizer->filterScriptTag( $tag, 'app-js', 'https://example.com/app.js' );
 		$this->assertStringContainsString( 'defer="defer"', $result );
 
-		// Core exclusions (jquery) should NOT be deferred
 		$jqTag    = '<script src="https://example.com/jquery.js" id="jquery-core-js"></script>';
 		$jqResult = $optimizer->filterScriptTag( $jqTag, 'jquery-core', 'https://example.com/jquery.js' );
 		$this->assertStringNotContainsString( 'defer="defer"', $jqResult );
 
-		// Scripts already deferred should not have duplicate defer attributes
 		$alreadyDeferred = '<script src="https://example.com/deferred.js" defer="defer"></script>';
-		$defResult       = $optimizer->filterScriptTag( $alreadyDeferred, 'def-js', 'https://example.com/deferred.js' );
+		$GLOBALS['mock_wp_options']['quinrel_defer_script_handles'] = 'def-js';
+		$defResult = $optimizer->filterScriptTag( $alreadyDeferred, 'def-js', 'https://example.com/deferred.js' );
 		$this->assertSame( $alreadyDeferred, $defResult );
 
-		// When option is disabled, no deferral happens
 		$GLOBALS['mock_wp_options']['quinrel_defer_non_critical_scripts'] = 'no';
 		$noResult = $optimizer->filterScriptTag( $tag, 'app-js', 'https://example.com/app.js' );
 		$this->assertSame( $tag, $noResult );
 	}
 
 	public function testFontOptimizerAppendsDisplaySwap(): void {
-		$optimizer = new FontOptimizer();
-
+		$optimizer     = new FontOptimizer();
 		$googleFontUrl = 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700';
-		$result        = $optimizer->filterGoogleFontSrc( $googleFontUrl, 'roboto-font' );
+
+		$this->assertSame( $googleFontUrl, $optimizer->filterGoogleFontSrc( $googleFontUrl, 'roboto-font' ) );
+		$this->assertSame( array(), $optimizer->addFontHints( array(), 'preconnect' ) );
+
+		$GLOBALS['mock_wp_options']['quinrel_font_display_swap'] = 'yes';
+		$result = $optimizer->filterGoogleFontSrc( $googleFontUrl, 'roboto-font' );
 		$this->assertStringContainsString( 'display=swap', $result );
+
+		$GLOBALS['wp_styles'] = (object) array(
+			'queue'      => array( 'roboto-font' ),
+			'registered' => array(
+				'roboto-font' => (object) array( 'src' => $googleFontUrl ),
+			),
+		);
+		$hints = $optimizer->addFontHints( array(), 'preconnect' );
+		$this->assertContains( 'https://fonts.googleapis.com', $hints );
+		$this->assertSame( array(), $optimizer->addFontHints( array(), 'dns-prefetch' ) );
+
+		$GLOBALS['wp_styles']->queue = array();
+		$this->assertSame( array(), $optimizer->addFontHints( array(), 'preconnect' ) );
+		unset( $GLOBALS['wp_styles'] );
 
 		// Non-Google fonts are unmodified
 		$localFont = 'https://example.com/fonts.css';

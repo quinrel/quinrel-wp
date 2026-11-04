@@ -7,10 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * BulkIndexingDispatcher
- *
- * Dispatches bulk instant-push notifications to Google Indexing API and Bing/Yandex
- * IndexNow protocols simultaneously, accelerating discovery for newly updated content.
+ * Queues up to ten published URLs for IndexNow when that feature is on.
  */
 class BulkIndexingDispatcher {
 
@@ -69,26 +66,42 @@ class BulkIndexingDispatcher {
 			);
 		}
 
-		// Dispatch via IndexNow
-		$indexNowSuccess = false;
-		$indexNowClient  = new BingIndexNowApi();
-		$host            = wp_parse_url( home_url(), PHP_URL_HOST ) ?: '';
-		$key             = (string) get_option( 'quinrel_bing_api_key', '' );
+		$indexNow = new BingIndexNowApi();
+		if ( ! $indexNow->isEnabled() ) {
+			return new \WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => __( 'IndexNow is off. Turn it on and save a key before submitting URLs.', 'quinrel' ),
+				),
+				400
+			);
+		}
 
-		if ( ! empty( $key ) && ! empty( $host ) ) {
-			$indexNowSuccess = $indexNowClient->submitBatch( $host, $key, $urls );
+		$queued = 0;
+		foreach ( $urls as $url ) {
+			if ( $indexNow->enqueueUrl( $url ) ) {
+				++$queued;
+			}
+		}
+
+		if ( 0 === $queued ) {
+			return new \WP_REST_Response(
+				array(
+					'success' => false,
+					'message' => __( 'No URLs were queued for IndexNow.', 'quinrel' ),
+				),
+				400
+			);
 		}
 
 		return rest_ensure_response(
 			array(
 				'success'         => true,
-				'submitted_count' => count( $urls ),
-				'urls'            => $urls,
-				'indexnow_pushed' => $indexNowSuccess,
+				'submitted_count' => $queued,
 				'message'         => sprintf(
-					/* translators: %d: count of submitted URLs */
-					__( 'Pushed %d URL(s) to search engine indexing queues.', 'quinrel' ),
-					count( $urls )
+					/* translators: %d: number of URLs queued for IndexNow. */
+					__( 'Queued %d URL(s) for IndexNow.', 'quinrel' ),
+					$queued
 				),
 			)
 		);

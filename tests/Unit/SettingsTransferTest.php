@@ -204,6 +204,10 @@ class SettingsTransferTest extends TestCase {
 		$this->assertSame( 'salt-must-stay-on-the-site', get_option( 'quinrel_encryption_salt' ) );
 		$this->assertFalse( get_option( 'quinrel_openai_key', false ) );
 		$this->assertContains( 'quinrel_indexnow_key', SettingsTransfer::secretOptions() );
+		$this->assertContains( 'quinrel_bing_api_key', SettingsTransfer::secretOptions() );
+		$this->assertContains( 'quinrel_pagespeed_api_key', SettingsTransfer::secretOptions() );
+		$this->assertContains( 'quinrel_gsc_config', SettingsTransfer::secretOptions() );
+		$this->assertContains( 'quinrel_gsc_token', SettingsTransfer::secretOptions() );
 	}
 
 	public function testTransferRoutesRequireManageOptions(): void {

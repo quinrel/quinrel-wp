@@ -271,11 +271,15 @@ class AdminModule {
 		$gscToken        = (array) get_option( 'quinrel_gsc_token', array() );
 		$gscConnected    = ! empty( $gscToken['access_token'] ) || ! empty( $gscToken['refresh_token'] );
 		$gscSecretStored = ! empty( $gscConfig['client_secret'] ) ? '••••••••••••' : '';
+		$indexNowKey     = (string) get_option( 'quinrel_indexnow_key', '' );
+		$indexNowKey     = BingIndexNowApi::isValidKey( $indexNowKey ) ? $indexNowKey : '';
 
 		return rest_ensure_response(
 			array(
 				'google_indexing_configured' => $rawGoogleKey !== '',
-				'indexnow_configured'        => (string) get_option( 'quinrel_indexnow_key', '' ) !== '',
+				'indexnow_key'               => $indexNowKey,
+				'indexnow_key_url'           => '' !== $indexNowKey ? home_url( '/' . $indexNowKey . '.txt' ) : '',
+				'indexnow_configured'        => '' !== $indexNowKey,
 				'auto_index'                 => get_option( 'quinrel_auto_index', 'no' ) === 'yes',
 				'enable_google_indexing_api' => get_option( 'quinrel_enable_google_indexing_api', 'no' ) === 'yes',
 				'delete_data_on_uninstall'   => get_option( 'quinrel_delete_data_on_uninstall', 'no' ) === 'yes',
@@ -285,6 +289,9 @@ class AdminModule {
 				'pinterest_verify'           => get_option( 'quinrel_pinterest_verify', '' ),
 				'rss_before_content'         => get_option( 'quinrel_rss_before_content', '' ),
 				'rss_after_content'          => get_option( 'quinrel_rss_after_content', '' ),
+				'rss_attribution'            => get_option( 'quinrel_rss_attribution', 'no' ) === 'yes',
+				'noindex_paged_archives'     => get_option( 'quinrel_noindex_paged_archives', 'no' ) === 'yes',
+				'owns_head'                  => get_option( 'quinrel_owns_head', 'no' ) === 'yes',
 				'breadcrumb_separator'       => get_option( 'quinrel_breadcrumb_separator', '›' ),
 				'breadcrumb_home_label'      => get_option( 'quinrel_breadcrumb_home_label', 'Home' ),
 				'breadcrumb_auto_insert'     => get_option( 'quinrel_breadcrumb_auto_insert', 'none' ),
@@ -292,14 +299,17 @@ class AdminModule {
 				'sitemap_exclude_posts'      => get_option( 'quinrel_sitemap_exclude_posts', '' ),
 
 				// Performance
-				'defer_non_critical_scripts' => get_option( 'quinrel_defer_non_critical_scripts', 'yes' ) === 'yes',
-				'font_display_swap'          => get_option( 'quinrel_font_display_swap', 'yes' ) === 'yes',
+				'defer_non_critical_scripts' => get_option( 'quinrel_defer_non_critical_scripts', 'no' ) === 'yes',
+				'defer_script_handles'       => (string) get_option( 'quinrel_defer_script_handles', '' ),
+				'font_display_swap'          => get_option( 'quinrel_font_display_swap', 'no' ) === 'yes',
+				'pagespeed_api_key'          => \Quinrel\WordPress\Modules\Analytics\PageSpeedDashboard::hasStoredKey() ? '••••••••••••' : '',
 
 				// Google Search Console & Bing Webmaster
 				'gsc_client_id'              => (string) ( $gscConfig['client_id'] ?? '' ),
 				'gsc_client_secret'          => $gscSecretStored,
 				'gsc_connected'              => $gscConnected,
-				'bing_api_key'               => (string) get_option( 'quinrel_bing_api_key', '' ),
+				'gsc_property'               => (string) ( $gscConfig['selected_property'] ?? '' ),
+				'bing_api_key'               => (string) get_option( 'quinrel_bing_api_key', '' ) !== '' ? '••••••••••••' : '',
 
 				// Secure AI Vault settings
 				'ai_provider'                => get_option( 'quinrel_ai_provider', 'openai' ),
@@ -318,7 +328,7 @@ class AdminModule {
 			$params = array();
 		}
 
-		if ( isset( $params['indexnow_key'] ) && '' !== $params['indexnow_key'] ) {
+		if ( array_key_exists( 'indexnow_key', $params ) ) {
 			if ( ! is_string( $params['indexnow_key'] ) ) {
 				return new \WP_Error(
 					'invalid_indexnow_key',
@@ -328,7 +338,7 @@ class AdminModule {
 			}
 
 			$indexNowKey = sanitize_text_field( wp_unslash( $params['indexnow_key'] ) );
-			if ( ! BingIndexNowApi::isValidKey( $indexNowKey ) ) {
+			if ( '' !== $indexNowKey && ! BingIndexNowApi::isValidKey( $indexNowKey ) ) {
 				return new \WP_Error(
 					'invalid_indexnow_key',
 					__( 'The IndexNow key must be 8 to 128 letters, numbers, or dashes. Quinrel does not create one for you.', 'quinrel' ),
@@ -354,8 +364,13 @@ class AdminModule {
 			}
 		}
 
-		if ( ! empty( $params['indexnow_key'] ) && is_string( $params['indexnow_key'] ) ) {
-			update_option( 'quinrel_indexnow_key', sanitize_text_field( wp_unslash( $params['indexnow_key'] ) ), false );
+		if ( array_key_exists( 'indexnow_key', $params ) && is_string( $params['indexnow_key'] ) ) {
+			$indexNowKey = sanitize_text_field( wp_unslash( $params['indexnow_key'] ) );
+			if ( '' === $indexNowKey ) {
+				delete_option( 'quinrel_indexnow_key' );
+			} elseif ( BingIndexNowApi::isValidKey( $indexNowKey ) ) {
+				update_option( 'quinrel_indexnow_key', $indexNowKey, false );
+			}
 		}
 
 		if ( isset( $params['auto_index'] ) ) {
@@ -392,6 +407,18 @@ class AdminModule {
 
 		if ( isset( $params['rss_after_content'] ) ) {
 			update_option( 'quinrel_rss_after_content', wp_kses_post( $params['rss_after_content'] ) );
+		}
+
+		if ( isset( $params['rss_attribution'] ) ) {
+			update_option( 'quinrel_rss_attribution', $params['rss_attribution'] ? 'yes' : 'no', false );
+		}
+
+		if ( isset( $params['noindex_paged_archives'] ) ) {
+			update_option( 'quinrel_noindex_paged_archives', $params['noindex_paged_archives'] ? 'yes' : 'no', false );
+		}
+
+		if ( isset( $params['owns_head'] ) ) {
+			update_option( 'quinrel_owns_head', $params['owns_head'] ? 'yes' : 'no', true );
 		}
 
 		if ( isset( $params['breadcrumb_separator'] ) ) {
@@ -444,26 +471,59 @@ class AdminModule {
 		}
 
 		if ( isset( $params['defer_non_critical_scripts'] ) ) {
-			update_option( 'quinrel_defer_non_critical_scripts', $params['defer_non_critical_scripts'] ? 'yes' : 'no' );
+			update_option( 'quinrel_defer_non_critical_scripts', $params['defer_non_critical_scripts'] ? 'yes' : 'no', true );
+		}
+
+		if ( isset( $params['defer_script_handles'] ) ) {
+			update_option(
+				'quinrel_defer_script_handles',
+				\Quinrel\WordPress\Modules\Performance\ScriptOptimizer::sanitizeHandleList( (string) $params['defer_script_handles'] ),
+				false
+			);
 		}
 
 		if ( isset( $params['font_display_swap'] ) ) {
-			update_option( 'quinrel_font_display_swap', $params['font_display_swap'] ? 'yes' : 'no' );
+			update_option( 'quinrel_font_display_swap', $params['font_display_swap'] ? 'yes' : 'no', true );
+		}
+
+		if ( isset( $params['pagespeed_api_key'] ) ) {
+			$storedPsi = \Quinrel\WordPress\Modules\Analytics\PageSpeedDashboard::storeKey(
+				sanitize_text_field( wp_unslash( (string) $params['pagespeed_api_key'] ) )
+			);
+			if ( is_wp_error( $storedPsi ) ) {
+				return $storedPsi;
+			}
 		}
 
 		if ( isset( $params['bing_api_key'] ) ) {
-			update_option( 'quinrel_bing_api_key', sanitize_text_field( wp_unslash( $params['bing_api_key'] ) ) );
+			$bingKey = sanitize_text_field( wp_unslash( (string) $params['bing_api_key'] ) );
+			if ( $bingKey !== '••••••••••••' ) {
+				$storedBing = \Quinrel\WordPress\Modules\Analytics\BingWebmasterIntegration::storeKey( $bingKey );
+				if ( is_wp_error( $storedBing ) ) {
+					return $storedBing;
+				}
+			}
 		}
 
-		if ( isset( $params['gsc_client_id'] ) || isset( $params['gsc_client_secret'] ) ) {
-			$existingGsc = (array) get_option( 'quinrel_gsc_config', array() );
+		if ( isset( $params['gsc_client_id'] ) || isset( $params['gsc_client_secret'] ) || isset( $params['gsc_property'] ) ) {
+			$gsc         = new \Quinrel\WordPress\Modules\Analytics\GoogleSearchConsoleIntegration();
+			$existingGsc = $gsc->getConfig();
+			$nextGsc     = $existingGsc;
 			if ( isset( $params['gsc_client_id'] ) ) {
-				$existingGsc['client_id'] = sanitize_text_field( wp_unslash( $params['gsc_client_id'] ) );
+				$nextGsc['client_id'] = sanitize_text_field( wp_unslash( (string) $params['gsc_client_id'] ) );
 			}
 			if ( isset( $params['gsc_client_secret'] ) && $params['gsc_client_secret'] !== '••••••••••••' && $params['gsc_client_secret'] !== '' ) {
-				$existingGsc['client_secret'] = sanitize_text_field( wp_unslash( $params['gsc_client_secret'] ) );
+				$nextGsc['client_secret'] = sanitize_text_field( wp_unslash( (string) $params['gsc_client_secret'] ) );
 			}
-			update_option( 'quinrel_gsc_config', $existingGsc );
+			if ( isset( $params['gsc_property'] ) ) {
+				$nextGsc['selected_property'] = sanitize_text_field( wp_unslash( (string) $params['gsc_property'] ) );
+			}
+			if ( $nextGsc !== $existingGsc ) {
+				$storedGsc = $gsc->storeConfig( $nextGsc );
+				if ( is_wp_error( $storedGsc ) ) {
+					return $storedGsc;
+				}
+			}
 		}
 
 		return rest_ensure_response( array( 'success' => true ) );
@@ -520,7 +580,11 @@ class AdminModule {
 	}
 
 	public function manualIndexUrl( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
-		$postId = $request->get_param( 'post_id' );
+		$params = $request->get_json_params();
+		$postId = is_array( $params ) ? ( $params['post_id'] ?? null ) : null;
+		if ( ! $postId ) {
+			$postId = $request->get_param( 'post_id' );
+		}
 		if ( ! $postId ) {
 			return new \WP_Error( 'missing_param', __( 'Post ID is required.', 'quinrel' ), array( 'status' => 400 ) );
 		}
@@ -563,23 +627,21 @@ class AdminModule {
 	 * GET /quinrel/v1/pagespeed?post_id=N
 	 *
 	 * Fetches mobile and desktop PageSpeed Insights scores for the post URL.
-	 * Results are cached in post-meta (_quinrel_pagespeed_cache) for 7 days.
-	 * Requires QUINREL_PSI_KEY constant or quinrel_psi_key option to be set
-	 * (PageSpeed Insights API key). Without a key the public API rate-limit applies.
+	 * Results are cached in post meta for 7 days. The check uses the saved
+	 * PageSpeed Insights key when one exists. A local address is not sent.
 	 */
-	public function getPageSpeed( \WP_REST_Request $request ): \WP_REST_Response {
-		$postId = $request->get_param( 'post_id' );
+	public function getPageSpeed( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
+		$postId = (int) $request->get_param( 'post_id' );
 		$url    = get_permalink( $postId );
 
-		if ( ! $url ) {
+		if ( ! is_string( $url ) || $url === '' ) {
 			return new \WP_Error( 'invalid_post', __( 'Could not resolve post URL.', 'quinrel' ), array( 'status' => 404 ) );
 		}
 
-		// 7-day cache: return stored result unless older than a week
 		$cached = get_post_meta( $postId, '_quinrel_pagespeed_cache', true );
-		if ( $cached ) {
+		if ( is_string( $cached ) && $cached !== '' ) {
 			$data = json_decode( $cached, true );
-			if ( isset( $data['fetched_at'] ) && ( time() - $data['fetched_at'] ) < WEEK_IN_SECONDS ) {
+			if ( is_array( $data ) && isset( $data['fetched_at'] ) && ( time() - (int) $data['fetched_at'] ) < WEEK_IN_SECONDS ) {
 				return rest_ensure_response(
 					array(
 						'success' => true,
@@ -590,48 +652,35 @@ class AdminModule {
 			}
 		}
 
-		$apiKey   = defined( 'QUINREL_PSI_KEY' )
-			? QUINREL_PSI_KEY
-			: get_option( 'quinrel_psi_key', '' );
-		$keyParam = $apiKey ? '&key=' . rawurlencode( $apiKey ) : '';
-
-		$scores = array( 'fetched_at' => time() );
+		$dashboard = new \Quinrel\WordPress\Modules\Analytics\PageSpeedDashboard();
+		$scores    = array( 'fetched_at' => time() );
+		$failure   = null;
 
 		foreach ( array( 'mobile', 'desktop' ) as $strategy ) {
-			$endpoint = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
-				. '?url=' . rawurlencode( $url )
-				. '&strategy=' . $strategy
-				. $keyParam;
-
-			$response = wp_safe_remote_get(
-				$endpoint,
-				array(
-					'timeout'    => 30,
-					'user-agent' => 'Quinrel/' . QUINREL_VERSION,
-				)
-			);
-
-			if ( is_wp_error( $response ) ) {
+			$audit = $dashboard->runAudit( $url, $strategy );
+			if ( is_wp_error( $audit ) ) {
+				if ( in_array( $audit->get_error_code(), array( 'psi_local_url', 'psi_invalid_url' ), true ) ) {
+					return $audit;
+				}
+				$failure             = $audit;
 				$scores[ $strategy ] = null;
 				continue;
 			}
-
-			$body                = json_decode( wp_remote_retrieve_body( $response ), true );
-			$scores[ $strategy ] = isset( $body['lighthouseResult']['categories']['performance']['score'] )
-				? (int) round( $body['lighthouseResult']['categories']['performance']['score'] * 100 )
-				: null;
-
-			// Also cache useful sub-metrics if present
-			$audits = $body['lighthouseResult']['audits'] ?? array();
-			if ( isset( $audits['first-contentful-paint']['displayValue'] ) ) {
-				$scores[ $strategy . '_fcp' ] = $audits['first-contentful-paint']['displayValue'];
-			}
-			if ( isset( $audits['largest-contentful-paint']['displayValue'] ) ) {
-				$scores[ $strategy . '_lcp' ] = $audits['largest-contentful-paint']['displayValue'];
+			$scores[ $strategy ] = $audit['scores']['performance'] ?? null;
+			foreach ( $audit['metrics'] as $metric ) {
+				if ( ! is_array( $metric ) || ( $metric['value'] ?? '' ) === '' ) {
+					continue;
+				}
+				if ( $metric['id'] === 'lcp' ) {
+					$scores[ $strategy . '_lcp' ] = $metric['value'];
+				}
 			}
 		}
 
-		// Persist to post-meta so the editor sidebar can display cached values
+		if ( $scores['mobile'] === null && $scores['desktop'] === null && $failure instanceof \WP_Error ) {
+			return $failure;
+		}
+
 		update_post_meta( $postId, '_quinrel_pagespeed_cache', wp_json_encode( $scores ) );
 
 		return rest_ensure_response(
@@ -653,7 +702,7 @@ class AdminModule {
 	 * Requires the Google Search Console OAuth token to be present
 	 * (same credential used by the Indexing API — quinrel_google_indexing_key).
 	 */
-	public function getGscKeywords( \WP_REST_Request $request ): \WP_REST_Response {
+	public function getGscKeywords( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$postId = $request->get_param( 'post_id' );
 		$url    = get_permalink( $postId );
 
@@ -676,21 +725,27 @@ class AdminModule {
 			}
 		}
 
-		// Obtain a fresh access token via the same Google service-account JSON
-		// that powers the Indexing API (GoogleIndexingApi::getAccessToken).
-		$api         = new \Quinrel\WordPress\Modules\Indexing\GoogleIndexingApi();
-		$accessToken = $api->getAccessToken();
+		// Check OAuth2 Google Search Console token first, then fallback to service-account JSON
+		$gscIntegration = new \Quinrel\WordPress\Modules\Analytics\GoogleSearchConsoleIntegration();
+		$tokenResult    = $gscIntegration->getValidToken();
+		$accessToken    = ! is_wp_error( $tokenResult ) ? $tokenResult : null;
+
+		if ( ! $accessToken ) {
+			$api         = new \Quinrel\WordPress\Modules\Indexing\GoogleIndexingApi();
+			$accessToken = $api->getAccessToken();
+		}
 
 		if ( ! $accessToken ) {
 			return new \WP_Error(
 				'gsc_no_token',
-				__( 'Google Search Console is not connected. Please add your Service Account JSON under Quinrel → Settings → Indexing.', 'quinrel' ),
+				__( 'Google Search Console is not connected. Connect your Google account under Quinrel → Settings → Google Search Console.', 'quinrel' ),
 				array( 'status' => 401 )
 			);
 		}
 
 		// Parse the site URL (GSC needs the property URL, not the full post URL)
-		$siteUrl = trailingslashit( get_option( 'siteurl' ) );
+		$gscConfig = (array) get_option( 'quinrel_gsc_config', array() );
+		$siteUrl   = ! empty( $gscConfig['selected_property'] ) ? $gscConfig['selected_property'] : trailingslashit( get_option( 'siteurl' ) );
 
 		$body = array(
 			'startDate'             => gmdate( 'Y-m-d', strtotime( '-90 days' ) ),
@@ -784,25 +839,33 @@ class AdminModule {
 	 * Returns site-wide Google Search Console data for the last 28 days.
 	 * Cached in a site-wide transient for 6 hours.
 	 */
-	public function getGscDashboard( \WP_REST_Request $request ): \WP_REST_Response {
+	public function getGscDashboard( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$cacheKey = 'quinrel_gsc_dashboard_v1';
 		$cached   = get_transient( $cacheKey );
 		if ( $cached !== false ) {
 			return rest_ensure_response( array_merge( $cached, array( 'cached' => true ) ) );
 		}
 
-		$api         = new \Quinrel\WordPress\Modules\Indexing\GoogleIndexingApi();
-		$accessToken = $api->getAccessToken();
+		// Check OAuth2 Google Search Console token first, then fallback to service-account JSON
+		$gscIntegration = new \Quinrel\WordPress\Modules\Analytics\GoogleSearchConsoleIntegration();
+		$tokenResult    = $gscIntegration->getValidToken();
+		$accessToken    = ! is_wp_error( $tokenResult ) ? $tokenResult : null;
+
+		if ( ! $accessToken ) {
+			$api         = new \Quinrel\WordPress\Modules\Indexing\GoogleIndexingApi();
+			$accessToken = $api->getAccessToken();
+		}
 
 		if ( ! $accessToken ) {
 			return new \WP_Error(
 				'gsc_not_connected',
-				__( 'Google Search Console is not connected. Add your Service Account JSON under Quinrel → Settings → Indexing.', 'quinrel' ),
+				__( 'Google Search Console is not connected. Connect your Google account under Quinrel → Settings → Google Search Console.', 'quinrel' ),
 				array( 'status' => 401 )
 			);
 		}
 
-		$siteUrl   = trailingslashit( get_option( 'siteurl' ) );
+		$gscConfig = (array) get_option( 'quinrel_gsc_config', array() );
+		$siteUrl   = ! empty( $gscConfig['selected_property'] ) ? $gscConfig['selected_property'] : trailingslashit( get_option( 'siteurl' ) );
 		$endDate   = gmdate( 'Y-m-d' );
 		$startDate = gmdate( 'Y-m-d', strtotime( '-28 days' ) );
 
@@ -951,10 +1014,10 @@ class AdminModule {
 	 * Groups GSC queries where two or more distinct pages both have clicks,
 	 * indicating posts competing for the same keyword. Cached 6 hours.
 	 */
-	public function getKeywordCannibalization( \WP_REST_Request $request ): \WP_REST_Response {
+	public function getKeywordCannibalization( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$cacheKey = 'quinrel_cannibalization_v1';
 		$cached   = get_transient( $cacheKey );
-		if ( $cached !== false ) {
+		if ( is_array( $cached ) ) {
 			return rest_ensure_response( array_merge( $cached, array( 'cached' => true ) ) );
 		}
 
@@ -1369,10 +1432,10 @@ class AdminModule {
 	 * Requires: quinrel_ga4_property_id and quinrel_ga4_credentials options.
 	 * Cached for 4 hours.
 	 */
-	public function getGa4Report( \WP_REST_Request $request ): \WP_REST_Response {
+	public function getGa4Report( \WP_REST_Request $request ): \WP_REST_Response|\WP_Error {
 		$cacheKey = 'quinrel_ga4_report_v1';
 		$cached   = get_transient( $cacheKey );
-		if ( $cached !== false ) {
+		if ( is_array( $cached ) ) {
 			return rest_ensure_response( array_merge( $cached, array( 'cached' => true ) ) );
 		}
 
@@ -1381,10 +1444,14 @@ class AdminModule {
 		$credJson    = KeyVault::decrypt( $rawCredJson );
 
 		if ( empty( $propertyId ) || empty( $credJson ) ) {
-			return new \WP_Error(
-				'ga4_not_configured',
-				__( 'GA4 Property ID and Service Account credentials are required. Configure them under Quinrel → Analytics.', 'quinrel' ),
-				array( 'status' => 401 )
+			// Optional analytics. A 401 here is a failed request on every Analytics
+			// visit for a site that never connected GA4.
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'code'    => 'ga4_not_configured',
+					'message' => __( 'GA4 Property ID and Service Account credentials are required. Configure them under Quinrel → Analytics.', 'quinrel' ),
+				)
 			);
 		}
 

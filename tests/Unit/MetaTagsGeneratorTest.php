@@ -35,8 +35,8 @@ class MetaTagsGeneratorTest extends TestCase
 
     public function testGetDocumentTitleNonSingular(): void
     {
-        $title = $this->generator->getDocumentTitle();
-        $this->assertSame('Quinrel Test Site - AI Powered SEO Plugin', $title);
+        $title = $this->generator->getDocumentTitle('Theme Title');
+        $this->assertSame('Theme Title', $title);
     }
 
     public function testGetDocumentTitleSingularDefault(): void
@@ -49,8 +49,8 @@ class MetaTagsGeneratorTest extends TestCase
             'post_title' => 'Sample Post Title',
         ]);
 
-        $title = $this->generator->getDocumentTitle();
-        $this->assertSame('Sample Post Title - Quinrel Test Site', $title);
+        $title = $this->generator->getDocumentTitle('Theme Title');
+        $this->assertSame('Theme Title', $title);
     }
 
     public function testGetDocumentTitleSingularCustomMeta(): void
@@ -90,10 +90,13 @@ class MetaTagsGeneratorTest extends TestCase
         $this->assertSame('noindex, follow', $method->invoke($this->generator));
         $mock_is_search = false;
 
-        // Paged archive (page 2+)
+        // Paged archive stays indexable until the option is on.
         $mock_is_paged = true;
+        $this->assertSame('index, follow', $method->invoke($this->generator));
+        update_option('quinrel_noindex_paged_archives', 'yes');
         $this->assertSame('noindex, follow', $method->invoke($this->generator));
         $mock_is_paged = false;
+        delete_option('quinrel_noindex_paged_archives');
 
         // Date archive
         $mock_is_date = true;
@@ -211,6 +214,7 @@ class MetaTagsGeneratorTest extends TestCase
     public function testSeoModuleBootRemovesDuplicateCoreCanonicalAndRobotsHooks(): void
     {
         $GLOBALS['mock_removed_actions'] = [];
+        $GLOBALS['mock_filter_callbacks'] = [];
         $eventManager = new \Quinrel\WordPress\Core\Event\EventManager();
         $openGraph = new \Quinrel\WordPress\Modules\Seo\OpenGraphGenerator();
         $module = new \Quinrel\WordPress\Modules\Seo\SeoModule($eventManager, $this->generator, $openGraph);
@@ -219,6 +223,97 @@ class MetaTagsGeneratorTest extends TestCase
 
         $this->assertContains(['wp_head', 'rel_canonical', 10], $GLOBALS['mock_removed_actions']);
         $this->assertContains(['wp_head', 'wp_robots', 1], $GLOBALS['mock_removed_actions']);
+        $this->assertSame(1, $GLOBALS['mock_filter_callbacks']['pre_get_document_title'][10][0][1]);
+    }
+
+    public function testSeoModuleLeavesTheHeadAloneWhileAnotherSeoPluginIsActive(): void
+    {
+        update_option('active_plugins', array('wordpress-seo/wp-seo.php'));
+        $GLOBALS['mock_removed_actions'] = [];
+        $GLOBALS['mock_hooks'] = [];
+        $GLOBALS['mock_filter_callbacks'] = [];
+
+        $eventManager = new \Quinrel\WordPress\Core\Event\EventManager();
+        $openGraph = new \Quinrel\WordPress\Modules\Seo\OpenGraphGenerator();
+        $module = new \Quinrel\WordPress\Modules\Seo\SeoModule($eventManager, $this->generator, $openGraph);
+        $module->boot();
+
+        $this->assertFalse(\Quinrel\WordPress\Modules\Seo\SeoModule::printsHead());
+        $this->assertSame([], $GLOBALS['mock_removed_actions']);
+        $hookNames = array_column($GLOBALS['mock_hooks'], 1);
+        $this->assertNotContains('pre_get_document_title', $hookNames);
+        $this->assertNotContains('wp_head', $hookNames);
+        $this->assertContains('the_content_feed', $hookNames);
+
+        update_option('quinrel_owns_head', 'yes');
+        $this->assertTrue(\Quinrel\WordPress\Modules\Seo\SeoModule::printsHead());
+        delete_option('active_plugins');
+        delete_option('quinrel_owns_head');
+    }
+
+    public function testHeadNoticeOffersOwnershipOnlyOnQuinrelScreens(): void
+    {
+        update_option('active_plugins', array('seo-by-rank-math/rank-math.php'));
+        $GLOBALS['mock_current_screen'] = (object) array('id' => 'toplevel_page_quinrel');
+        $GLOBALS['mock_user_caps'] = array('manage_options' => true, 'manage_seo' => false);
+
+        $eventManager = new \Quinrel\WordPress\Core\Event\EventManager();
+        $module = new \Quinrel\WordPress\Modules\Seo\SeoModule(
+            $eventManager,
+            $this->generator,
+            new \Quinrel\WordPress\Modules\Seo\OpenGraphGenerator()
+        );
+
+        ob_start();
+        $module->renderHeadNotice();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Rank Math is writing titles and meta.', $output);
+        $this->assertStringContainsString('Let Quinrel write titles and meta.', $output);
+        $this->assertStringContainsString('admin-post.php', $output);
+        $this->assertStringContainsString('value="quinrel_own_head"', $output);
+
+        $GLOBALS['mock_current_screen'] = (object) array('id' => 'dashboard');
+        ob_start();
+        $module->renderHeadNotice();
+        $this->assertSame('', ob_get_clean());
+
+        delete_option('active_plugins');
+        unset($GLOBALS['mock_current_screen'], $GLOBALS['mock_user_caps']);
+    }
+
+    public function testConfirmOwnsHeadStoresTheChoice(): void
+    {
+        $GLOBALS['mock_redirect_throw'] = true;
+        $GLOBALS['mock_user_caps'] = array('manage_options' => true, 'manage_seo' => false);
+        $_POST['_wpnonce'] = wp_create_nonce('quinrel_own_head');
+
+        $module = new \Quinrel\WordPress\Modules\Seo\SeoModule(
+            new \Quinrel\WordPress\Core\Event\EventManager(),
+            $this->generator,
+            new \Quinrel\WordPress\Modules\Seo\OpenGraphGenerator()
+        );
+
+        try {
+            $module->confirmOwnsHead();
+            $this->fail('The confirmation handler should redirect.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringStartsWith('redirect:', $exception->getMessage());
+        }
+
+        $this->assertSame('yes', get_option('quinrel_owns_head'));
+        $this->assertTrue($GLOBALS['mock_option_autoload']['quinrel_owns_head']);
+
+        $_POST['_wpnonce'] = 'nope';
+        try {
+            $module->confirmOwnsHead();
+            $this->fail('A bad nonce should stop the request.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringStartsWith('wp_die:', $exception->getMessage());
+        }
+
+        unset($GLOBALS['mock_redirect_throw'], $GLOBALS['mock_user_caps'], $_POST['_wpnonce']);
+        delete_option('quinrel_owns_head');
     }
 
     public function testSmartTagsAndShortcodeStrippingInTitleAndDescription(): void

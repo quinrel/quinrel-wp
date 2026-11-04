@@ -7,11 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * GscIndexSyncWorker
- *
- * Systematically audits and synchronizes Google Search Console indexation
- * status across published posts, storing coverage states and driving the
- * Google Indexation Funnel visualization.
+ * Published and sitemap counts, plus stored index-status rows, for the funnel.
  */
 class GscIndexSyncWorker {
 
@@ -72,149 +68,103 @@ class GscIndexSyncWorker {
 	}
 
 	public function getFunnelDataResponse( \WP_REST_Request $request ): \WP_REST_Response {
+		unset( $request );
 		global $wpdb;
 
-		// 1. Total Published Posts
 		$totalPosts = (int) $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ('post', 'page')"
 		);
+		$inSitemap  = ( new \Quinrel\WordPress\Modules\Sitemap\SitemapGenerator() )->countIndexableUrls();
 
-		// 2. In Sitemap (published posts not marked noindex)
-		$noindexCount = (int) $wpdb->get_var(
-			"SELECT COUNT(DISTINCT post_id) FROM {$wpdb->postmeta} WHERE meta_key = '_quinrel_noindex' AND meta_value = 'yes'"
-		);
-		$inSitemap    = max( 0, $totalPosts - $noindexCount );
-
-		// 3. Status breakdown from quinrel_index_status
-		$table  = $wpdb->prefix . self::TABLE_NAME;
+		$table  = esc_sql( $wpdb->prefix . self::TABLE_NAME );
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 
 		$indexedCount    = 0;
 		$crawledCount    = 0;
 		$discoveredCount = 0;
 		$coverageGroups  = array();
+		$realRows        = 0;
 
 		if ( $exists ) {
+			// Table name is the plugin prefix plus a class constant, passed through esc_sql().
+			// The old sync batch wrote "Indexed, not submitted in sitemap" without asking Google.
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$indexedCount    = (int) $wpdb->get_var(
-				"SELECT COUNT(*) FROM {$table} WHERE verdict = 'PASS'"
+			$realRows = (int) $wpdb->get_var(
+				"SELECT COUNT(*) FROM {$table} WHERE coverage_state <> '' AND coverage_state <> 'Indexed, not submitted in sitemap'"
 			);
-			$crawledCount    = (int) $wpdb->get_var(
-				"SELECT COUNT(*) FROM {$table} WHERE coverage_state LIKE '%Crawled%'"
-			);
-			$discoveredCount = (int) $wpdb->get_var(
-				"SELECT COUNT(*) FROM {$table} WHERE coverage_state LIKE '%Discovered%'"
-			);
-
-			$coverageRows = $wpdb->get_results(
-				"SELECT coverage_state, COUNT(*) as count FROM {$table} GROUP BY coverage_state ORDER BY count DESC LIMIT 10",
-				ARRAY_A
-			);
-			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			if ( is_array( $coverageRows ) ) {
-				$coverageGroups = $coverageRows;
+			if ( $realRows > 0 ) {
+				$discoveredCount = (int) $wpdb->get_var(
+					"SELECT COUNT(*) FROM {$table} WHERE coverage_state = 'Discovered - currently not indexed'"
+				);
+				$crawledCount    = (int) $wpdb->get_var(
+					"SELECT COUNT(*) FROM {$table} WHERE coverage_state = 'Crawled - currently not indexed'"
+				);
+				$indexedCount    = (int) $wpdb->get_var(
+					"SELECT COUNT(*) FROM {$table} WHERE verdict = 'PASS' AND coverage_state = 'Submitted and indexed'"
+				);
+				$coverageRows    = $wpdb->get_results(
+					"SELECT coverage_state, COUNT(*) as count FROM {$table} WHERE coverage_state <> '' AND coverage_state <> 'Indexed, not submitted in sitemap' GROUP BY coverage_state ORDER BY count DESC LIMIT 10",
+					ARRAY_A
+				);
+				if ( is_array( $coverageRows ) ) {
+					$coverageGroups = $coverageRows;
+				}
 			}
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
-		// Fallback baseline for initial installations before GSC OAuth is completed
-		if ( $indexedCount === 0 && $totalPosts > 0 ) {
-			$indexedCount    = (int) round( $inSitemap * 0.85 );
-			$crawledCount    = (int) round( $inSitemap * 0.92 );
-			$discoveredCount = (int) round( $inSitemap * 0.96 );
-		}
-
-		$impressionsCount = (int) round( $indexedCount * 0.75 );
+		// A stage is measured only when a stored coverage string answers that stage.
+		$coverageMeasured = $coverageGroups !== array();
 
 		return rest_ensure_response(
 			array(
-				'funnel'          => array(
-					array(
-						'stage'   => __( 'Published Content', 'quinrel' ),
-						'count'   => $totalPosts,
-						'percent' => 100,
-						'color'   => '#6366f1',
-					),
-					array(
-						'stage'   => __( 'Included in XML Sitemap', 'quinrel' ),
-						'count'   => $inSitemap,
-						'percent' => $totalPosts > 0 ? (int) round( ( $inSitemap / $totalPosts ) * 100 ) : 0,
-						'color'   => '#8b5cf6',
-					),
-					array(
-						'stage'   => __( 'Discovered by Google', 'quinrel' ),
-						'count'   => min( $inSitemap, $discoveredCount ),
-						'percent' => $totalPosts > 0 ? (int) round( ( min( $inSitemap, $discoveredCount ) / $totalPosts ) * 100 ) : 0,
-						'color'   => '#3b82f6',
-					),
-					array(
-						'stage'   => __( 'Crawled by Googlebot', 'quinrel' ),
-						'count'   => min( $inSitemap, $crawledCount ),
-						'percent' => $totalPosts > 0 ? (int) round( ( min( $inSitemap, $crawledCount ) / $totalPosts ) * 100 ) : 0,
-						'color'   => '#0ea5e9',
-					),
-					array(
-						'stage'   => __( 'Indexed in Google Search', 'quinrel' ),
-						'count'   => $indexedCount,
-						'percent' => $totalPosts > 0 ? (int) round( ( $indexedCount / $totalPosts ) * 100 ) : 0,
-						'color'   => '#10b981',
-					),
-					array(
-						'stage'   => __( 'Generating Impressions (90d)', 'quinrel' ),
-						'count'   => $impressionsCount,
-						'percent' => $totalPosts > 0 ? (int) round( ( $impressionsCount / $totalPosts ) * 100 ) : 0,
-						'color'   => '#059669',
-					),
+				'funnel'            => array(
+					$this->funnelStage( __( 'Published Content', 'quinrel' ), $totalPosts, true, '#6366f1', $totalPosts ),
+					$this->funnelStage( __( 'Included in XML Sitemap', 'quinrel' ), $inSitemap, true, '#8b5cf6', $totalPosts ),
+					$this->funnelStage( __( 'Discovered by Google', 'quinrel' ), $discoveredCount, $discoveredCount > 0, '#3b82f6', $totalPosts ),
+					$this->funnelStage( __( 'Crawled by Googlebot', 'quinrel' ), $crawledCount, $crawledCount > 0, '#0ea5e9', $totalPosts ),
+					$this->funnelStage( __( 'Indexed in Google Search', 'quinrel' ), $indexedCount, $indexedCount > 0, '#10b981', $totalPosts ),
+					$this->funnelStage( __( 'Generating Impressions (90d)', 'quinrel' ), 0, false, '#059669', $totalPosts ),
 				),
-				'coverage_groups' => $coverageGroups,
+				'coverage_groups'   => $coverageMeasured ? $coverageGroups : array(),
+				'coverage_measured' => $coverageMeasured,
 			)
 		);
 	}
 
-	public function syncBatchResponse( \WP_REST_Request $request ): \WP_REST_Response {
-		global $wpdb;
-		$table = $wpdb->prefix . self::TABLE_NAME;
+	/**
+	 * The old batch route wrote PASS rows without asking Google. It now writes nothing.
+	 */
+	public function syncBatchResponse( \WP_REST_Request $request ): \WP_Error {
+		unset( $request );
 
-		// Fetch up to 10 published posts
-		$posts = $wpdb->get_results(
-			"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' AND post_type IN ('post', 'page') LIMIT 10",
-			ARRAY_A
+		return new \WP_Error(
+			'quinrel_index_unmeasured',
+			__( 'Quinrel does not invent Google index status. Nothing was written.', 'quinrel' ),
+			array( 'status' => 501 )
 		);
+	}
 
-		$synced = 0;
-		foreach ( $posts as $p ) {
-			$id  = (int) $p['ID'];
-			$url = get_permalink( $id );
-			if ( ! $url ) {
-				continue;
-			}
-
-			$wpdb->replace(
-				$table,
-				array(
-					'post_id'          => $id,
-					'url'              => $url,
-					'verdict'          => 'PASS',
-					'coverage_state'   => 'Indexed, not submitted in sitemap',
-					'robots_txt_state' => 'ALLOWED',
-					'indexing_state'   => 'INDEXING_ALLOWED',
-					'last_crawled'     => current_time( 'mysql' ),
-					'last_inspected'   => current_time( 'mysql' ),
-				),
-				array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+	/**
+	 * @return array{stage:string,count:int|null,percent:int|null,measured:bool,color:string}
+	 */
+	private function funnelStage( string $label, int $count, bool $measured, string $color, int $totalPosts ): array {
+		if ( ! $measured ) {
+			return array(
+				'stage'    => $label,
+				'count'    => null,
+				'percent'  => null,
+				'measured' => false,
+				'color'    => $color,
 			);
-			++$synced;
 		}
 
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'synced'  => $synced,
-				'message' => sprintf(
-					/* translators: %d: number of synced URLs */
-					__( 'Synchronized %d URL(s) into local Google index status table.', 'quinrel' ),
-					$synced
-				),
-			)
+		return array(
+			'stage'    => $label,
+			'count'    => $count,
+			'percent'  => $totalPosts > 0 ? (int) round( ( $count / $totalPosts ) * 100 ) : 0,
+			'measured' => true,
+			'color'    => $color,
 		);
 	}
 }

@@ -37,6 +37,11 @@ class SettingsTransfer {
 		'quinrel_pinterest_verify'           => 'token',
 		'quinrel_rss_before_content'         => 'html',
 		'quinrel_rss_after_content'          => 'html',
+		'quinrel_rss_attribution'            => 'bool',
+		'quinrel_noindex_paged_archives'     => 'bool',
+		'quinrel_owns_head'                  => 'bool',
+		'quinrel_defer_non_critical_scripts' => 'bool',
+		'quinrel_font_display_swap'          => 'bool',
 		'quinrel_breadcrumb_separator'       => 'separator',
 		'quinrel_breadcrumb_home_label'      => 'text',
 		'quinrel_breadcrumb_auto_insert'     => 'breadcrumb_insert',
@@ -186,6 +191,11 @@ class SettingsTransfer {
 						'anthropic_api_key',
 						'gsc_api_key',
 						'bing_api_key',
+						'quinrel_bing_api_key',
+						'quinrel_pagespeed_api_key',
+						'quinrel_psi_key',
+						'quinrel_gsc_config',
+						'quinrel_gsc_token',
 					)
 				)
 			)

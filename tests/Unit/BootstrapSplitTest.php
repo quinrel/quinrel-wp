@@ -125,6 +125,87 @@ class BootstrapSplitTest extends TestCase {
 		$this->assertContains( 'quinrel_404_cleanup', $this->hookNames() );
 	}
 
+	public function testRestBootRegistersOutreachAndListsNoProspects(): void {
+		$this->bootAt( '/wp-json/quinrel/v1/outreach/prospects', false, false );
+
+		$manager = null;
+		foreach ( $GLOBALS['mock_action_callbacks']['rest_api_init'] ?? array() as $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				if ( is_array( $callback ) && $callback[0] instanceof \Quinrel\WordPress\Modules\ContentAssistant\OutreachManager && 'registerRoutes' === $callback[1] ) {
+					$callback();
+					$manager = $callback[0];
+				}
+			}
+		}
+
+		$this->assertInstanceOf( \Quinrel\WordPress\Modules\ContentAssistant\OutreachManager::class, $manager );
+		$this->assertArrayHasKey( 'quinrel/v1/outreach/prospects', $GLOBALS['mock_rest_routes'] );
+
+		$route    = $GLOBALS['mock_rest_routes']['quinrel/v1/outreach/prospects'];
+		$response = $route[0]['callback']( new \WP_REST_Request() );
+		$data     = $response->get_data();
+		$this->assertSame( array(), $data['prospects'] );
+		$this->assertSame( 0, $data['total'] );
+	}
+
+	public function testRestBootRegistersBrandMentionsAndPitchWithoutHttp(): void {
+		unset(
+			$GLOBALS['mock_wp_options']['quinrel_ai_api_key'],
+			$GLOBALS['mock_wp_options']['quinrel_openai_api_key'],
+			$GLOBALS['mock_wp_options']['quinrel_anthropic_api_key'],
+			$GLOBALS['mock_wp_options']['quinrel_brand_terms']
+		);
+		$this->bootAt( '/wp-json/quinrel/v1/outreach/brand-mentions', false, false );
+
+		$finder = null;
+		$pitch  = null;
+		foreach ( $GLOBALS['mock_action_callbacks']['rest_api_init'] ?? array() as $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				if ( ! is_array( $callback ) ) {
+					continue;
+				}
+				if ( $callback[0] instanceof \Quinrel\WordPress\Modules\ContentAssistant\BrandMentionFinder && 'registerRoutes' === $callback[1] ) {
+					$callback();
+					$finder = $callback[0];
+				}
+				if ( $callback[0] instanceof \Quinrel\WordPress\Modules\ContentAssistant\AiPitchDraftsman && 'registerRoutes' === $callback[1] ) {
+					$callback();
+					$pitch = $callback[0];
+				}
+			}
+		}
+
+		$this->assertInstanceOf( \Quinrel\WordPress\Modules\ContentAssistant\BrandMentionFinder::class, $finder );
+		$this->assertInstanceOf( \Quinrel\WordPress\Modules\ContentAssistant\AiPitchDraftsman::class, $pitch );
+		$this->assertArrayHasKey( 'quinrel/v1/outreach/brand-mentions', $GLOBALS['mock_rest_routes'] );
+		$this->assertArrayHasKey( 'quinrel/v1/outreach/generate-pitch', $GLOBALS['mock_rest_routes'] );
+
+		$mentions      = $GLOBALS['mock_rest_routes']['quinrel/v1/outreach/brand-mentions']['callback']( new \WP_REST_Request() );
+		$mentionData   = $mentions->get_data();
+		$opportunities = $mentionData['data']['opportunities'];
+		$this->assertTrue( $mentionData['success'] );
+		$this->assertIsArray( $opportunities );
+		$this->assertSame( count( $opportunities ), $mentionData['data']['summary']['total_found'] );
+
+		$request = new \WP_REST_Request( 'POST', '/quinrel/v1/outreach/generate-pitch' );
+		$request->set_json_params(
+			array(
+				'target_domain' => 'example.com',
+				'target_topic'  => 'search architecture',
+				'contact_name'  => 'Ada',
+			)
+		);
+		$generated = $GLOBALS['mock_rest_routes']['quinrel/v1/outreach/generate-pitch']['callback']( $request );
+		$pitchData = $generated->get_data();
+		$this->assertSame( 200, $generated->get_status() );
+		$this->assertTrue( $pitchData['success'] );
+		$this->assertSame( 'deterministic', $pitchData['data']['provider'] );
+		$this->assertStringContainsString( 'search architecture', $pitchData['data']['subject'] );
+		$this->assertStringContainsString( 'Ada', $pitchData['data']['body'] );
+		$this->assertStringContainsString( 'search architecture', $pitchData['data']['body'] );
+		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
+	}
+
 	public function testRestRequestUsesOperationalBoot(): void {
 		$this->bootAt( '/wp-json/quinrel/v1/settings', false, false );
 
@@ -250,6 +331,7 @@ class BootstrapSplitTest extends TestCase {
 		$GLOBALS['mock_is_admin']         = $admin;
 		$GLOBALS['mock_is_user_logged_in'] = $loggedIn;
 		$GLOBALS['mock_hooks']            = array();
+		$GLOBALS['mock_action_callbacks'] = array();
 		$GLOBALS['mock_rest_routes']      = array();
 		$GLOBALS['mock_http_log']         = array();
 		$GLOBALS['mock_filter_callbacks'] = array();

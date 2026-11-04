@@ -168,6 +168,106 @@ class MigrationTest extends TestCase
         unset($GLOBALS['mock_wpdb_col']);
     }
 
+    public function testSeoPressImportCopiesTheFirstKeywordAndRestrictiveFlagsOnly(): void
+    {
+        $GLOBALS['mock_posts'][41] = new \WP_Post(array(
+            'ID' => 41,
+            'post_title' => 'Imported Post',
+        ));
+        $GLOBALS['mock_post_meta'] = array(
+            41 => array('_quinrel_meta_title' => 'Keep me'),
+        );
+        $GLOBALS['mock_wpdb_results'] = function (string $query) {
+            if (str_contains($query, '_seopress_titles_title')) {
+                return array((object) array('post_id' => 41, 'meta_value' => 'Replacement title'));
+            }
+            if (str_contains($query, '_seopress_titles_desc')) {
+                return array((object) array('post_id' => 41, 'meta_value' => '%%post_title%% %%sep%% %%sitetitle%%'));
+            }
+            if (str_contains($query, '_seopress_analysis_target_kw')) {
+                return array((object) array('post_id' => 41, 'meta_value' => 'alpha, beta'));
+            }
+            if (str_contains($query, '_seopress_robots_index')) {
+                return array((object) array('post_id' => 41, 'meta_value' => 'yes'));
+            }
+            if (str_contains($query, '_seopress_robots_follow')) {
+                return array((object) array('post_id' => 41, 'meta_value' => 'no'));
+            }
+            if (str_contains($query, '_seopress_robots_canonical')) {
+                return array((object) array('post_id' => 41, 'meta_value' => 'https://example.com/from-seopress'));
+            }
+            return array();
+        };
+
+        $result = (new MigrationManager())->migrate('seopress');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('Keep me', get_post_meta(41, '_quinrel_meta_title', true));
+        $this->assertSame('Imported Post - Quinrel Test Site', get_post_meta(41, '_quinrel_meta_description', true));
+        $this->assertSame('alpha', get_post_meta(41, '_quinrel_focus_keyword', true));
+        $this->assertSame('yes', get_post_meta(41, '_quinrel_noindex', true));
+        $this->assertSame('', get_post_meta(41, '_quinrel_nofollow', true));
+        $this->assertSame('https://example.com/from-seopress', get_post_meta(41, '_quinrel_canonical_url', true));
+        $this->assertStringContainsString('Deactivate SEOPress', $result['message']);
+        unset($GLOBALS['mock_wpdb_results']);
+    }
+
+    public function testTheSeoFrameworkImportWritesNoindexOnlyWhenSet(): void
+    {
+        $GLOBALS['mock_post_meta'] = array();
+        $GLOBALS['mock_wpdb_results'] = function (string $query) {
+            if (str_contains($query, '_genesis_title')) {
+                return array((object) array('post_id' => 42, 'meta_value' => 'Framework title'));
+            }
+            if (str_contains($query, '_genesis_noindex')) {
+                return array((object) array('post_id' => 42, 'meta_value' => '1'));
+            }
+            if (str_contains($query, '_genesis_nofollow')) {
+                return array((object) array('post_id' => 42, 'meta_value' => '0'));
+            }
+            return array();
+        };
+
+        $result = (new MigrationManager())->migrate('tsf');
+
+        $this->assertSame('Framework title', get_post_meta(42, '_quinrel_meta_title', true));
+        $this->assertSame('yes', get_post_meta(42, '_quinrel_noindex', true));
+        $this->assertSame('', get_post_meta(42, '_quinrel_nofollow', true));
+        $this->assertSame('', get_post_meta(42, '_quinrel_focus_keyword', true));
+        $this->assertStringContainsString('Deactivate The SEO Framework', $result['message']);
+        unset($GLOBALS['mock_wpdb_results']);
+    }
+
+    public function testSeoPressAndTheSeoFrameworkAreDetectedAndCanBeDeactivated(): void
+    {
+        $GLOBALS['mock_wpdb_var'] = function (string $query) {
+            if (str_contains($query, '_seopress_titles_title')) {
+                return 3;
+            }
+            if (str_contains($query, '_genesis_title')) {
+                return 4;
+            }
+            return 0;
+        };
+
+        $detected = (new MigrationManager())->detectPlugins();
+        $byId = array();
+        foreach ($detected as $row) {
+            $byId[$row['id']] = $row;
+        }
+        $this->assertSame('SEOPress', $byId['seopress']['name']);
+        $this->assertSame(3, $byId['seopress']['posts']);
+        $this->assertSame('The SEO Framework', $byId['tsf']['name']);
+        $this->assertSame(4, $byId['tsf']['posts']);
+        $this->assertArrayNotHasKey('yoast', $byId);
+
+        $request = new \WP_REST_Request();
+        $request->set_param('plugin_id', 'tsf');
+        $response = (new MigrationManager())->handleDeactivateCompetitor($request);
+        $this->assertStringContainsString('The SEO Framework has been safely deactivated.', $response->get_data()['message']);
+        unset($GLOBALS['mock_wpdb_var']);
+    }
+
     private function migrationRequest(string $pluginId, bool $confirm): \WP_REST_Request
     {
         $request = new \WP_REST_Request();

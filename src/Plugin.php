@@ -355,6 +355,14 @@ class Plugin {
 	 */
 	private function bootFrontendHtml(): void {
 		$this->container->get( 'seo_module' )->boot();
+
+		if ( get_option( 'quinrel_defer_non_critical_scripts', 'no' ) === 'yes' ) {
+			( new \Quinrel\WordPress\Modules\Performance\ScriptOptimizer() )->register();
+		}
+		if ( get_option( 'quinrel_font_display_swap', 'no' ) === 'yes' ) {
+			( new \Quinrel\WordPress\Modules\Performance\FontOptimizer() )->register();
+		}
+
 		$this->container->get( 'schema_module' )->boot();
 		$this->container->get( 'robots_txt_editor' )->register();
 		$this->container->get( 'breadcrumb_renderer' )->register();
@@ -626,7 +634,7 @@ class Plugin {
 
 	private function isSitemapRequest(): bool {
 		return 1 === preg_match(
-			'#/(sitemap\.xml|sitemap-posts-\d{4}-\d{2}(?:-(?:[2-9]|[1-9]\d+))?\.xml|sitemap-news\.xml|news-sitemap\.xml|video-sitemap\.xml)$#',
+			'#/(sitemap\.xml|sitemap-posts-\d{4}-\d{2}(?:-(?:[2-9]|[1-9]\d+))?\.xml|sitemap-news\.xml|news-sitemap\.xml|video-sitemap(?:-(?:[2-9]|[1-9]\d+))?\.xml)$#',
 			$this->requestPath()
 		);
 	}
@@ -880,6 +888,12 @@ class Plugin {
 		$rankTracker = $this->container->get( 'keyword_rank_tracker' );
 		$rankTracker->register();
 
+		// registerRestControllers() never runs on a /wp-json request, so these
+		// routes 404 from wp-admin unless boot registers them here.
+		$this->container->get( 'outreach_manager' )->register();
+		$this->container->get( 'brand_mention_finder' )->register();
+		$this->container->get( 'ai_pitch_draftsman' )->register();
+
 		// Broken Link Checker (BL-018)
 		$brokenLinkChecker = new \Quinrel\WordPress\Modules\TechnicalSeo\BrokenLinkChecker();
 		$brokenLinkChecker->register();
@@ -895,10 +909,6 @@ class Plugin {
 		( new \Quinrel\WordPress\Modules\Indexing\BulkIndexingDispatcher() )->register();
 		( new \Quinrel\WordPress\Modules\Analytics\CannibalizationResolver() )->register();
 		( new \Quinrel\WordPress\Modules\Analytics\PageSpeedScheduler() )->register();
-
-		// Performance Optimizers (defer scripts, font-display: swap)
-		( new \Quinrel\WordPress\Modules\Performance\ScriptOptimizer() )->register();
-		( new \Quinrel\WordPress\Modules\Performance\FontOptimizer() )->register();
 	}
 
 	public function getContainer(): Container {
@@ -962,13 +972,7 @@ class Plugin {
 		// 10. Recurring work is scheduled here. Boot must not call wp_next_scheduled().
 		self::scheduleBackgroundEvents();
 
-		// 11. Auto-generate IndexNow key for instant search engine pings
-		if ( '' === (string) get_option( 'quinrel_indexnow_key', '' ) ) {
-			update_option( 'quinrel_indexnow_key', wp_generate_password( 32, false, false ), false );
-			update_option( 'quinrel_auto_index', 'yes', false );
-		}
-
-		// 12. Secrets, logs, and dashboard caches stay out of the alloptions set.
+		// 11. Secrets, logs, and dashboard caches stay out of the alloptions set.
 		self::enforceOptionAutoload();
 	}
 
@@ -1004,6 +1008,9 @@ class Plugin {
 			'quinrel_honour_gpc',
 			'quinrel_htaccess_web_backups_retired',
 			'quinrel_auto_index',
+			'quinrel_owns_head',
+			'quinrel_defer_non_critical_scripts',
+			'quinrel_font_display_swap',
 		);
 		$quiet    = array(
 			'quinrel_encryption_salt',
@@ -1023,6 +1030,9 @@ class Plugin {
 			'quinrel_gsc_token',
 			'quinrel_gsc_config',
 			'quinrel_bing_api_key',
+			'quinrel_pagespeed_api_key',
+			'quinrel_psi_key',
+			'quinrel_pagespeed_reports',
 			'quinrel_social_apps',
 			'quinrel_social_accounts',
 			'quinrel_serpapi_key',

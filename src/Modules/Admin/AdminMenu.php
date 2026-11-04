@@ -149,6 +149,7 @@ class AdminMenu {
 
 			$adminConfig = array(
 				'apiUrl'          => esc_url_raw( rest_url( 'quinrel/v1' ) ),
+				'homeUrl'         => esc_url_raw( home_url( '/' ) ),
 				'nonce'           => wp_create_nonce( 'wp_rest' ),
 				'setupComplete'   => get_option( 'quinrel_setup_complete' ) ? '1' : '0',
 				'initialTab'      => $initialTab,

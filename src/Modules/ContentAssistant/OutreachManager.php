@@ -320,7 +320,7 @@ class OutreachManager {
 	 */
 	public function getBrokenBacklinks(): array {
 		global $wpdb;
-		$table = $wpdb->prefix . 'quinrel_404_logs';
+		$table = esc_sql( $wpdb->prefix . 'quinrel_404_logs' );
 
 		$siteHost = wp_parse_url( home_url(), PHP_URL_HOST );
 		if ( empty( $siteHost ) ) {
@@ -381,7 +381,7 @@ class OutreachManager {
 		}
 
 		$permalink    = get_permalink( $postId );
-		$tableLinks   = $wpdb->prefix . 'quinrel_links';
+		$tableLinks   = esc_sql( $wpdb->prefix . 'quinrel_links' );
 		$focusKeyword = mb_strtolower( (string) get_post_meta( $postId, '_quinrel_focus_keyword', true ) );
 
 		$rows = $wpdb->get_results(

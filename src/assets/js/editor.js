@@ -2193,11 +2193,9 @@ const PageSpeedBadge = ({ postId, cachedJson, updateMeta }) => {
 
     return (
         <PanelBody title={__('PageSpeed Performance', 'quinrel')} initialOpen={false}>
-            {quinrelEditorConfig.cloudConfigured !== '1' && (
-                <Notice status="info" isDismissible={false}>
-                    {__('This site is not connected to Quinrel, so PageSpeed through Quinrel is unavailable. You can keep using Quinrel on this site.', 'quinrel')}
-                </Notice>
-            )}
+            <p style={{ fontSize: '12px', color: '#64748b', marginTop: 0 }}>
+                {__('Runs this post URL through Google PageSpeed Insights. A local address cannot be checked.', 'quinrel')}
+            </p>
             {cached ? (
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '12px' }}>

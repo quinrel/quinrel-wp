@@ -1,6 +1,6 @@
 {
   "name": "quinrel-frontend",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Frontend assets for Quinrel plugin",
   "scripts": {
     "build": "wp-scripts build src/assets/js/index.js src/assets/js/editor.js src/assets/js/cookie-banner.js",

@@ -100,6 +100,16 @@ class KeywordRankTracker {
 
 		register_rest_route(
 			'quinrel/v1',
+			'/rank-tracker/search-console',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'searchConsoleMovement' ),
+				'permission_callback' => $reportCap,
+			)
+		);
+
+		register_rest_route(
+			'quinrel/v1',
 			'/rank-tracker/check-now',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -129,6 +139,10 @@ class KeywordRankTracker {
 				'count'   => count( $keywords ),
 			)
 		);
+	}
+
+	public function searchConsoleMovement( \WP_REST_Request $request ): \WP_REST_Response {
+		return rest_ensure_response( ( new GoogleSearchConsoleIntegration() )->keywordMovement() );
 	}
 
 	public function getHistory( \WP_REST_Request $request ): \WP_REST_Response {

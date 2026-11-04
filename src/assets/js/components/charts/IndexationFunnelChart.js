@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 export const IndexationFunnelChart = ({ apiBase, nonce, onActionComplete }) => {
-    const [funnelData, setFunnelData] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [payload, setPayload] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadFailed, setLoadFailed] = useState(false);
     const [isPushing, setIsPushing] = useState(false);
     const [statusMessage, setStatusMessage] = useState(null);
 
@@ -14,11 +15,16 @@ export const IndexationFunnelChart = ({ apiBase, nonce, onActionComplete }) => {
                 headers: { 'X-WP-Nonce': nonce },
             });
             const data = await res.json();
-            if (data?.funnel) {
-                setFunnelData(data.funnel);
+            if (res.ok && Array.isArray(data?.funnel)) {
+                setPayload(data);
+                setLoadFailed(false);
+            } else {
+                setPayload(null);
+                setLoadFailed(true);
             }
         } catch (e) {
-            // fallback
+            setPayload(null);
+            setLoadFailed(true);
         } finally {
             setIsLoading(false);
         }
@@ -40,111 +46,109 @@ export const IndexationFunnelChart = ({ apiBase, nonce, onActionComplete }) => {
                 },
             });
             const data = await res.json();
-            if (data.success) {
+            if (res.ok && data.success) {
                 setStatusMessage({ type: 'success', text: data.message });
                 fetchFunnelData();
                 if (onActionComplete) onActionComplete();
             } else {
-                setStatusMessage({ type: 'error', text: data.message || __('Failed to push indexing.', 'quinrel') });
+                setStatusMessage({ type: 'error', text: data.message || __('IndexNow did not accept the URLs.', 'quinrel') });
             }
         } catch (e) {
-            setStatusMessage({ type: 'error', text: __('Network error during bulk index push.', 'quinrel') });
+            setStatusMessage({ type: 'error', text: __('Network error during IndexNow submit.', 'quinrel') });
         } finally {
             setIsPushing(false);
         }
     };
 
-    const stages = funnelData || [
-        { stage: __('Published Content', 'quinrel'), count: 200, percent: 100, color: '#6366f1' },
-        { stage: __('Included in XML Sitemap', 'quinrel'), count: 196, percent: 98, color: '#8b5cf6' },
-        { stage: __('Discovered by Google', 'quinrel'), count: 188, percent: 94, color: '#3b82f6' },
-        { stage: __('Crawled by Googlebot', 'quinrel'), count: 180, percent: 90, color: '#0ea5e9' },
-        { stage: __('Indexed in Google Search', 'quinrel'), count: 168, percent: 84, color: '#10b981' },
-        { stage: __('Generating Impressions (90d)', 'quinrel'), count: 132, percent: 66, color: '#059669' },
-    ];
+    const stages = Array.isArray(payload?.funnel) ? payload.funnel : [];
+    const coverage = Array.isArray(payload?.coverage_groups) ? payload.coverage_groups : [];
 
     return (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                     <h3 className="text-base font-bold text-slate-900 tracking-tight m-0">
-                        {__('Google Indexation & Discovery Funnel', 'quinrel')}
+                        {__('Indexation funnel', 'quinrel')}
                     </h3>
                     <p className="text-xs text-slate-500 mt-1 m-0">
-                        {__('Track the lifecycle of published content from sitemap discovery to search impressions.', 'quinrel')}
+                        {__('Published and sitemap counts come from this site. Google stages appear only after index status is stored.', 'quinrel')}
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={handleBulkPush}
-                        disabled={isPushing}
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg shadow-sm transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                        <span>🚀</span>
-                        {isPushing ? __('Pushing…', 'quinrel') : __('1-Click Push via IndexNow & GSC', 'quinrel')}
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={handleBulkPush}
+                    disabled={isPushing}
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                >
+                    {isPushing ? __('Submitting…', 'quinrel') : __('Submit to IndexNow', 'quinrel')}
+                </button>
             </div>
 
             {statusMessage && (
-                <div className={`p-3 rounded-xl text-xs font-medium flex items-center justify-between ${statusMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
+                <div role="status" className={`p-3 rounded-xl text-xs font-medium flex items-center justify-between ${statusMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
                     <span>{statusMessage.text}</span>
-                    <button type="button" onClick={() => setStatusMessage(null)} className="text-xs font-bold opacity-75 hover:opacity-100">✕</button>
+                    <button type="button" onClick={() => setStatusMessage(null)} className="text-xs font-bold opacity-75 hover:opacity-100">
+                        <span aria-hidden="true">✕</span>
+                        <span className="screen-reader-text">{__('Dismiss', 'quinrel')}</span>
+                    </button>
                 </div>
             )}
 
-            {/* Funnel Cascading Tapered Bars */}
-            <div className="space-y-3">
-                {stages.map((s, i) => (
-                    <div key={i} className="group relative">
-                        <div className="flex justify-between items-center text-xs mb-1">
-                            <span className="font-semibold text-slate-700 flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold">
-                                    {i + 1}
-                                </span>
-                                {s.stage}
-                            </span>
-                            <span className="font-bold text-slate-900">
-                                {s.count} <span className="text-slate-400 font-normal">({s.percent}%)</span>
-                            </span>
-                        </div>
-                        <div className="w-full bg-slate-100 rounded-lg h-3 overflow-hidden">
-                            <div
-                                className="h-full rounded-lg transition-all duration-700 relative overflow-hidden"
-                                style={{ width: `${s.percent}%`, backgroundColor: s.color }}
-                            >
-                                <div className="absolute inset-0 bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            {isLoading && (
+                <p role="status" className="text-sm text-slate-600 m-0">{__('Loading indexation counts.', 'quinrel')}</p>
+            )}
+            {loadFailed && (
+                <p role="alert" className="text-sm text-amber-800 m-0">{__('Indexation counts could not be loaded.', 'quinrel')}</p>
+            )}
 
-            {/* Google Search Console Status Breakdown */}
-            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-100">
-                <span className="text-xs font-bold text-slate-700 block mb-2">{__('Search Console Coverage Breakdown', 'quinrel')}</span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80">
-                        <span className="text-[11px] text-slate-500 block">{__('Indexed & Valid', 'quinrel')}</span>
-                        <span className="text-sm font-bold text-emerald-600 block mt-0.5">168 URLs</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80">
-                        <span className="text-[11px] text-slate-500 block">{__('Crawled - Not Indexed', 'quinrel')}</span>
-                        <span className="text-sm font-bold text-amber-600 block mt-0.5">12 URLs</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80">
-                        <span className="text-[11px] text-slate-500 block">{__('Discovered - Not Indexed', 'quinrel')}</span>
-                        <span className="text-sm font-bold text-indigo-600 block mt-0.5">8 URLs</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-white border border-slate-200/80">
-                        <span className="text-[11px] text-slate-500 block">{__('Excluded by noindex', 'quinrel')}</span>
-                        <span className="text-sm font-bold text-slate-600 block mt-0.5">8 URLs</span>
-                    </div>
+            {stages.length > 0 && (
+                <div className="space-y-3">
+                    {stages.map((stage, index) => {
+                        const measured = stage.measured === true;
+                        const width = measured ? Math.min(100, Math.max(0, Number(stage.percent) || 0)) : 0;
+                        return (
+                            <div key={`${stage.stage || 'stage'}-${index}`}>
+                                <div className="flex justify-between items-center text-xs mb-1 gap-3">
+                                    <span className="font-semibold text-slate-700">{stage.stage}</span>
+                                    {measured ? (
+                                        <span className="font-bold text-slate-900">
+                                            {Number(stage.count) || 0}
+                                            <span className="text-slate-400 font-normal"> ({Number(stage.percent) || 0}%)</span>
+                                        </span>
+                                    ) : (
+                                        <span className="font-medium text-slate-500">{__('Not measured', 'quinrel')}</span>
+                                    )}
+                                </div>
+                                <div className="w-full bg-slate-100 rounded-lg h-3 overflow-hidden">
+                                    <div
+                                        className="h-full rounded-lg"
+                                        style={{ width: `${width}%`, backgroundColor: measured ? (stage.color || '#64748b') : 'transparent' }}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
+            )}
+
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-100">
+                <span className="text-xs font-bold text-slate-700 block mb-2">{__('Search Console coverage', 'quinrel')}</span>
+                {payload?.coverage_measured === true && coverage.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {coverage.map((group, index) => (
+                            <div key={`${group.coverage_state || 'state'}-${index}`} className="p-2.5 rounded-lg bg-white border border-slate-200/80">
+                                <span className="text-[11px] text-slate-500 block">{group.coverage_state || __('Unknown', 'quinrel')}</span>
+                                <span className="text-sm font-bold text-slate-800 block mt-0.5">{Number(group.count) || 0}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p role="status" className="text-sm text-slate-600 m-0">
+                        {__('Search Console coverage has not been measured on this site.', 'quinrel')}
+                    </p>
+                )}
             </div>
         </div>
     );
 };
 export default IndexationFunnelChart;
-

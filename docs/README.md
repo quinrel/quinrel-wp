@@ -36,3 +36,5 @@ Quinrel is a high-performance WordPress SEO and AI search visibility plugin. Ope
 * [Third-Party Services Policy](third-party-services.md)
 * [Support Runbook](support-runbook.md)
 * [Competitive Backlog & Strategic Roadmap](competitive-backlog-and-strategic-roadmap.md)
+* [Google Search Console connect](google-search-console-connect.md) — held until Quinrel’s Google OAuth app is verified. Read this before changing the Connect button.
+* [IndexNow and Bing Webmaster](indexnow-and-bing-webmaster.md) — production tasks, acceptance checks, and QA. Read this before changing either feature.

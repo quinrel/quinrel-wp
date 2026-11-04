@@ -17,7 +17,8 @@ use Quinrel\WordPress\Modules\Indexing\BingIndexNowApi;
  *   /sitemap-posts-YYYY-MM-N.xml   → Later page when that month exceeds the URL limit
  *   /sitemap-news.xml              → Google News sitemap (last 48 hours)
  *   /news-sitemap.xml              → Legacy alias for news sitemap
- *   /video-sitemap.xml             → Video sitemap
+ *   /video-sitemap.xml             → Video sitemap, page 1
+ *   /video-sitemap-N.xml           → Later video sitemap page
  *   /{indexnow-key}.txt            → IndexNow verification file
  */
 class SitemapRouteManager {
@@ -57,7 +58,11 @@ class SitemapRouteManager {
 		}
 
 		if ( SitemapSettings::get( 'enable_video_sitemap', 'no' ) === 'yes' ) {
-			add_rewrite_rule( '^video-sitemap\.xml$', 'index.php?quinrel_sitemap=video', 'top' );
+			add_rewrite_rule(
+				'^video-sitemap(?:-([2-9]|[1-9]\d+))?\.xml$',
+				'index.php?quinrel_sitemap=video&quinrel_sitemap_page=$matches[1]',
+				'top'
+			);
 		}
 
 		$bingKey = (string) get_option( 'quinrel_indexnow_key', '' );
@@ -110,8 +115,9 @@ class SitemapRouteManager {
 		}
 
 		// ── Video Sitemap ──
-		if ( preg_match( '#/video-sitemap\.xml$#', $path ) ) {
-			$this->dispatch( 'video', '', 1 );
+		if ( preg_match( '#/video-sitemap(?:-([2-9]|[1-9]\d+))?\.xml$#', $path, $matches ) ) {
+			$page = isset( $matches[1] ) && $matches[1] !== '' ? (int) $matches[1] : 1;
+			$this->dispatch( 'video', '', $page );
 		}
 
 		// ── Date-based sub-sitemap chunk (sitemap-posts-2024-05.xml or sitemap-posts-2024-05-2.xml) ──
@@ -146,7 +152,7 @@ class SitemapRouteManager {
 
 		if ( $type === 'video' ) {
 			if ( SitemapSettings::get( 'enable_video_sitemap', 'no' ) === 'yes' ) {
-				$this->videoSitemapGenerator->serveSitemap();
+				$this->videoSitemapGenerator->serveSitemap( max( 1, $page ) );
 				exit;
 			}
 			$this->trigger404();
@@ -197,7 +203,7 @@ class SitemapRouteManager {
 					str_starts_with( $pattern, '^sitemap-posts-' ) ||
 					str_starts_with( $pattern, '^sitemap-news\\.xml$' ) ||
 					str_starts_with( $pattern, '^news-sitemap\\.xml$' ) ||
-					str_starts_with( $pattern, '^video-sitemap\\.xml$' ) ||
+					str_starts_with( $pattern, '^video-sitemap' ) ||
 					str_contains( (string) $wp_rewrite->extra_rules_top[ $pattern ], 'quinrel_' )
 				) {
 					unset( $wp_rewrite->extra_rules_top[ $pattern ] );

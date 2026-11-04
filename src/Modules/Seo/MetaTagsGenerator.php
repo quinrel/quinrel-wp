@@ -65,7 +65,12 @@ class MetaTagsGenerator {
 		echo "<!-- /Quinrel SEO Meta Tags -->\n\n";
 	}
 
-	public function getDocumentTitle(): string {
+	/**
+	 * Replace the document title only when a custom SEO title is stored.
+	 *
+	 * An empty return lets WordPress, or an earlier filter, keep its title.
+	 */
+	public function getDocumentTitle( string $title = '' ): string {
 		if ( is_singular() ) {
 			$postId      = (int) get_the_ID();
 			$customTitle = (string) get_post_meta( $postId, '_quinrel_meta_title', true );
@@ -75,7 +80,7 @@ class MetaTagsGenerator {
 					return $resolved;
 				}
 			}
-			return get_the_title() . ' - ' . get_bloginfo( 'name' );
+			return $title;
 		}
 
 		if ( is_category() || is_tag() || is_tax() ) {
@@ -85,11 +90,10 @@ class MetaTagsGenerator {
 				if ( '' !== trim( $customTitle ) ) {
 					return $customTitle;
 				}
-				return single_term_title( '', false ) . ' - ' . get_bloginfo( 'name' );
 			}
 		}
 
-		return get_bloginfo( 'name' ) . ' - ' . get_bloginfo( 'description' );
+		return $title;
 	}
 
 	private function getDescription(): string {
@@ -323,14 +327,14 @@ class MetaTagsGenerator {
 			return 'noindex, follow';
 		}
 
-		// ── Paginated archives (page 2+): noindex to prevent duplication ──
-		// Page 1 is canonical; subsequent pages are supplementary.
-		if ( is_paged() ) {
+		// Date archives stay noindex, including page 2 and later.
+		if ( is_date() ) {
 			return 'noindex, follow';
 		}
 
-		// ── Date archives (day/month/year): thin content — noindex ──
-		if ( is_date() ) {
+		// Page 2 and later stay indexable unless an administrator opts in.
+		// The canonical for that page is already self-referencing.
+		if ( is_paged() && get_option( 'quinrel_noindex_paged_archives', 'no' ) === 'yes' ) {
 			return 'noindex, follow';
 		}
 

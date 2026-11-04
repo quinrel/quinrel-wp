@@ -60,7 +60,7 @@ class RedirectChainCollapser {
 	 */
 	public function detectChainsAndLoops(): array {
 		global $wpdb;
-		$table = $wpdb->prefix . 'quinrel_redirects';
+		$table = esc_sql( $wpdb->prefix . 'quinrel_redirects' );
 
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
 		if ( ! $exists ) {

@@ -102,13 +102,25 @@ class CustomSeoUserRoles {
 	}
 
 	public function getCapabilities( \WP_REST_Request $request ): \WP_REST_Response {
-		$roles  = get_editable_roles();
-		$result = array();
+		// get_editable_roles() lives in wp-admin and is not loaded on a REST request.
+		if ( ! function_exists( 'get_editable_roles' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/user.php';
+		}
 
+		$roles = function_exists( 'get_editable_roles' ) ? get_editable_roles() : array();
+		if ( ! is_array( $roles ) ) {
+			$roles = array();
+		}
+
+		$result = array();
 		foreach ( $roles as $slug => $roleData ) {
+			if ( ! is_array( $roleData ) ) {
+				continue;
+			}
+			$caps            = isset( $roleData['capabilities'] ) && is_array( $roleData['capabilities'] ) ? $roleData['capabilities'] : array();
 			$result[ $slug ] = array(
-				'label'        => $roleData['name'],
-				'capabilities' => array_filter( $roleData['capabilities'], fn( $k ) => in_array( $k, self::CAPABILITIES, true ), ARRAY_FILTER_USE_KEY ),
+				'label'        => isset( $roleData['name'] ) ? (string) $roleData['name'] : (string) $slug,
+				'capabilities' => array_filter( $caps, static fn( $key ) => in_array( $key, self::CAPABILITIES, true ), ARRAY_FILTER_USE_KEY ),
 			);
 		}
 

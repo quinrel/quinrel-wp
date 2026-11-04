@@ -182,6 +182,43 @@ class IndexNowSubmissionTest extends TestCase {
 		$this->assertCount( $before, $GLOBALS['mock_http_log'] );
 	}
 
+	public function testSettingsReadKeepOmitAndClearTheIndexNowKey(): void {
+		$admin = new AdminModule( new EventManager(), new AdminMenu() );
+		update_option( 'quinrel_indexnow_key', self::KEY );
+		update_option( 'quinrel_auto_index', 'yes' );
+		update_option( 'quinrel_breadcrumb_home_label', 'Start' );
+
+		$read = $admin->getSettings( new \WP_REST_Request() )->get_data();
+		$this->assertSame( self::KEY, $read['indexnow_key'] );
+		$this->assertSame( 'https://example.com/' . self::KEY . '.txt', $read['indexnow_key_url'] );
+
+		$kept = new \WP_REST_Request();
+		$kept->set_json_params(
+			array(
+				'indexnow_key'          => self::KEY,
+				'breadcrumb_home_label' => 'Kept',
+			)
+		);
+		$admin->updateSettings( $kept );
+		$this->assertSame( self::KEY, get_option( 'quinrel_indexnow_key' ) );
+		$this->assertSame( 'Kept', get_option( 'quinrel_breadcrumb_home_label' ) );
+
+		$omitted = new \WP_REST_Request();
+		$omitted->set_json_params( array( 'breadcrumb_home_label' => 'Still' ) );
+		$admin->updateSettings( $omitted );
+		$this->assertSame( self::KEY, get_option( 'quinrel_indexnow_key' ) );
+
+		$cleared = new \WP_REST_Request();
+		$cleared->set_json_params( array( 'indexnow_key' => '' ) );
+		$admin->updateSettings( $cleared );
+		$this->assertFalse( get_option( 'quinrel_indexnow_key', false ) );
+		$this->assertFalse( ( new BingIndexNowApi() )->isEnabled() );
+
+		$emptyRead = $admin->getSettings( new \WP_REST_Request() )->get_data();
+		$this->assertSame( '', $emptyRead['indexnow_key'] );
+		$this->assertSame( '', $emptyRead['indexnow_key_url'] );
+	}
+
 	public function testSettingsRejectAnInvalidKeyAndDoNotInventOne(): void {
 		$admin = new AdminModule( new EventManager(), new AdminMenu() );
 		update_option( 'quinrel_indexnow_key', self::KEY );
@@ -219,15 +256,90 @@ class IndexNowSubmissionTest extends TestCase {
 		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
 	}
 
-	public function testPluginActivationAutoGeneratesIndexNowKeyWhenUnset(): void {
+	public function testManualSubmitQueuesASameSiteUrlAndRejectsTheOthers(): void {
+		$api = $this->enabledApi();
+
+		$queued = new \WP_REST_Request();
+		$queued->set_json_params( array( 'url' => 'https://example.com/manual/' ) );
+		$result = $api->manualSubmit( $queued );
+		$this->assertInstanceOf( \WP_REST_Response::class, $result );
+		$data = $result->get_data();
+		$this->assertTrue( $data['queued'] );
+		$this->assertStringContainsString( 'queued', strtolower( $data['message'] ) );
+		$this->assertContains( 'https://example.com/manual/', $api->getQueue() );
+
+		update_option( 'quinrel_auto_index', 'no' );
+		$before = $api->getQueue();
+		$disabled = new \WP_REST_Request();
+		$disabled->set_json_params( array( 'url' => 'https://example.com/other/' ) );
+		$off = $api->manualSubmit( $disabled );
+		$this->assertSame( 'indexnow_disabled', $off->get_error_code() );
+		$this->assertSame( 400, $off->get_error_data()['status'] );
+		$this->assertSame( $before, $api->getQueue() );
+
+		update_option( 'quinrel_auto_index', 'yes' );
+		$foreign = new \WP_REST_Request();
+		$foreign->set_json_params( array( 'url' => 'https://evil.example/owned/' ) );
+		$rejected = $api->manualSubmit( $foreign );
+		$this->assertSame( 'indexnow_not_queued', $rejected->get_error_code() );
+		$this->assertSame( 400, $rejected->get_error_data()['status'] );
+		$this->assertNotContains( 'https://evil.example/owned/', $api->getQueue() );
+
+		$admin = new AdminModule( new EventManager(), new AdminMenu() );
+		$editor = new \WP_REST_Request();
+		$editor->set_json_params( array( 'post_id' => 7 ) );
+		$fromEditor = $admin->manualIndexUrl( $editor );
+		$this->assertInstanceOf( \WP_REST_Response::class, $fromEditor );
+		$this->assertContains( 'https://example.com/post-7/', $api->getQueue() );
+	}
+
+	public function testIndexNowLogRouteReturnsStoredRows(): void {
+		$api = new BingIndexNowApi();
+		$api->logSubmission( 'https://example.com/logged/', 202 );
+		$api->registerRoutes();
+
+		$route = $GLOBALS['mock_rest_routes']['quinrel/v1/indexing/indexnow-log'];
+		$rows  = $route['callback']()->get_data();
+		$this->assertSame( 'https://example.com/logged/', $rows[0]['url'] );
+		$this->assertSame( 202, $rows[0]['status_code'] );
+
+		$GLOBALS['mock_user_caps'] = array(
+			'manage_seo'      => false,
+			'manage_options'  => false,
+		);
+		$this->assertFalse( $route['permission_callback']() );
+		$GLOBALS['mock_user_caps']['manage_seo'] = true;
+		$this->assertTrue( $route['permission_callback']() );
+		unset( $GLOBALS['mock_user_caps'] );
+	}
+
+	public function testPluginActivationLeavesIndexNowOff(): void {
 		delete_option( 'quinrel_indexnow_key' );
 		delete_option( 'quinrel_auto_index' );
 
 		\Quinrel\WordPress\Plugin::activate();
 
-		$generatedKey = get_option( 'quinrel_indexnow_key' );
-		$this->assertIsString( $generatedKey );
-		$this->assertSame( 32, strlen( $generatedKey ) );
+		$this->assertFalse( get_option( 'quinrel_indexnow_key', false ) );
+		$this->assertNotSame( 'yes', get_option( 'quinrel_auto_index', 'no' ) );
+
+		$api = new BingIndexNowApi();
+		$api->autoSubmitOnPublish(
+			'publish',
+			'draft',
+			new \WP_Post(
+				array(
+					'ID'        => 7,
+					'post_type' => 'post',
+				)
+			)
+		);
+		$this->assertSame( array(), $GLOBALS['mock_http_log'] );
+		$this->assertSame( array(), $api->getQueue() );
+
+		update_option( 'quinrel_indexnow_key', self::KEY );
+		update_option( 'quinrel_auto_index', 'yes' );
+		\Quinrel\WordPress\Plugin::activate();
+		$this->assertSame( self::KEY, get_option( 'quinrel_indexnow_key' ) );
 		$this->assertSame( 'yes', get_option( 'quinrel_auto_index' ) );
 	}
 

@@ -25,7 +25,7 @@ if (!defined('WP_CONTENT_DIR')) {
     define('WP_CONTENT_DIR', dirname(__DIR__) . '/wp-content');
 }
 if (!defined('QUINREL_VERSION')) {
-    define('QUINREL_VERSION', '1.1.0');
+    define('QUINREL_VERSION', '1.1.1');
 }
 if (!defined('SECURE_AUTH_KEY')) {
     define('SECURE_AUTH_KEY', 'test_secure_auth_key_1234567890abcdef');
@@ -286,7 +286,7 @@ $mock_posts = [];
 $mock_current_post_id = 0;
 
 // Conditional tags state
-global $mock_is_singular, $mock_is_admin, $mock_is_front_page, $mock_is_home, $mock_is_404, $mock_is_search, $mock_is_paged, $mock_is_date;
+global $mock_is_singular, $mock_is_admin, $mock_is_front_page, $mock_is_home, $mock_is_404, $mock_is_search, $mock_is_paged, $mock_is_date, $mock_is_feed;
 $mock_is_singular = false;
 $mock_is_admin = false;
 $mock_is_front_page = false;
@@ -295,6 +295,7 @@ $mock_is_404 = false;
 $mock_is_search = false;
 $mock_is_paged = false;
 $mock_is_date = false;
+$mock_is_feed = false;
 
 if (!class_exists('WP_Post')) {
     class WP_Post {
@@ -330,9 +331,18 @@ if (!class_exists('WP_REST_Request')) {
     class WP_REST_Request {
         private array $params = [];
         private array $jsonParams = [];
+        private array $headers = [];
         private string $body = '';
 
         public function __construct(string $method = 'GET', string $route = '') {}
+
+        public function set_header(string $key, $value): void {
+            $this->headers[strtolower($key)] = $value;
+        }
+
+        public function get_header(string $key) {
+            return $this->headers[strtolower($key)] ?? null;
+        }
 
         public function set_body(string $body): void {
             $this->body = $body;
@@ -597,6 +607,15 @@ if (!function_exists('wp_create_nonce')) {
     }
 }
 
+if (!function_exists('wp_verify_nonce')) {
+    function wp_verify_nonce(?string $nonce, string $action = '-1'): bool|int {
+        if (empty($nonce)) {
+            return false;
+        }
+        return $nonce === 'nonce-' . $action ? 1 : false;
+    }
+}
+
 if (!function_exists('wp_kses')) {
     function wp_kses(string $content, array $allowed_html, array $allowed_protocols = array()): string {
         unset($allowed_html, $allowed_protocols);
@@ -669,6 +688,13 @@ if (!function_exists('is_paged')) {
     function is_paged(): bool {
         global $mock_is_paged;
         return (bool) $mock_is_paged;
+    }
+}
+
+if (!function_exists('is_feed')) {
+    function is_feed($feeds = ''): bool {
+        unset($feeds);
+        return !empty($GLOBALS['mock_is_feed']);
     }
 }
 
@@ -970,6 +996,13 @@ if (!function_exists('get_the_title')) {
     }
 }
 
+if (!function_exists('get_the_author')) {
+    function get_the_author(): string {
+        $author = $GLOBALS['mock_the_author'] ?? 'Test Author';
+        return is_string($author) ? $author : 'Test Author';
+    }
+}
+
 if (!function_exists('get_bloginfo')) {
     function get_bloginfo(string $show = 'name'): string {
         if ($show === 'name') {
@@ -1242,7 +1275,19 @@ if (!function_exists('flush_rewrite_rules')) {
 if (!function_exists('add_action')) {
     function add_action(string $hook_name, callable $callback, int $priority = 10, int $accepted_args = 1): true {
         $GLOBALS['mock_hooks'][] = array( 'action', $hook_name );
+        if (!isset($GLOBALS['mock_action_callbacks']) || !is_array($GLOBALS['mock_action_callbacks'])) {
+            $GLOBALS['mock_action_callbacks'] = array();
+        }
+        $GLOBALS['mock_action_callbacks'][$hook_name][$priority][] = $callback;
+        unset($accepted_args);
         return true;
+    }
+}
+
+if (!function_exists('get_editable_roles')) {
+    function get_editable_roles(): array {
+        $roles = $GLOBALS['mock_editable_roles'] ?? array();
+        return is_array($roles) ? $roles : array();
     }
 }
 
@@ -1622,8 +1667,11 @@ if (!function_exists('wp_upload_dir')) {
 
 if (!function_exists('wp_count_posts')) {
     function wp_count_posts(string $type = 'post', string $perm = '') {
-        unset($type, $perm);
+        unset($perm);
         $count = $GLOBALS['mock_published_posts'] ?? 0;
+        if (is_array($count)) {
+            $count = $count[$type] ?? 0;
+        }
         return (object) array('publish' => (int) $count);
     }
 }
@@ -1902,6 +1950,14 @@ if (!function_exists('wp_remote_retrieve_header')) {
             }
         }
         return '';
+    }
+}
+
+if (!function_exists('wp_die')) {
+    function wp_die($message = '', $title = '', $args = array()): void {
+        unset($title, $args);
+        $text = is_string($message) ? $message : '';
+        throw new \RuntimeException('wp_die:' . $text);
     }
 }
 

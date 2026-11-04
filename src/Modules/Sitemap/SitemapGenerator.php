@@ -151,9 +151,13 @@ class SitemapGenerator {
 		}
 
 		if ( SitemapSettings::get( 'enable_video_sitemap', 'no' ) === 'yes' ) {
-			$xml .= "  <sitemap>\n";
-			$xml .= '    <loc>' . esc_url( home_url( '/video-sitemap.xml' ) ) . "</loc>\n";
-			$xml .= "  </sitemap>\n";
+			$videoPages = VideoSitemapGenerator::pageCount();
+			for ( $page = 1; $page <= $videoPages; $page++ ) {
+				$suffix = $page === 1 ? '' : '-' . $page;
+				$xml   .= "  <sitemap>\n";
+				$xml   .= '    <loc>' . esc_url( home_url( '/video-sitemap' . $suffix . '.xml' ) ) . "</loc>\n";
+				$xml   .= "  </sitemap>\n";
+			}
 		}
 
 		$xml .= '</sitemapindex>';
@@ -196,6 +200,43 @@ class SitemapGenerator {
 		// phpcs:enable
 
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Published URLs the XML sitemap query includes.
+	 *
+	 * Same post types, noindex join, and excluded IDs as each sitemap file.
+	 * A noindex row on a draft does not reduce this count.
+	 */
+	public function countIndexableUrls(): int {
+		global $wpdb;
+
+		$postTypes = $this->getActivePostTypes();
+		if ( $postTypes === array() ) {
+			return 0;
+		}
+
+		$args       = $postTypes;
+		$excludeSql = esc_sql( $this->excludedIdFragment( $args ) );
+		$inList     = implode( ',', array_fill( 0, count( $postTypes ), '%s' ) );
+
+		// The IN list and the optional ID exclusion are placeholder strings. Values go through prepare().
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQL.NotPrepared
+		$sql   = $wpdb->prepare(
+			"SELECT COUNT(DISTINCT p.ID)
+			 FROM {$wpdb->posts} p
+			 LEFT JOIN {$wpdb->postmeta} pm
+			   ON p.ID = pm.post_id AND pm.meta_key = '_quinrel_noindex'
+			 WHERE p.post_status = 'publish'
+			   AND p.post_type IN ($inList)
+			   AND (pm.meta_value IS NULL OR pm.meta_value != 'yes')
+			   {$excludeSql}",
+			...$args
+		);
+		$count = $wpdb->get_var( $sql );
+		// phpcs:enable
+
+		return (int) $count;
 	}
 
 	/**

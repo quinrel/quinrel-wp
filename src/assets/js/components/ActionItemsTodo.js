@@ -34,15 +34,18 @@ export const ActionItemsTodo = ({
     const items = [];
 
     // 1. Search Engine Indexability
-    const isIndexable = standalone ? standalone.indexable !== false : true;
+    const visibilityKnown = standalone != null && Object.prototype.hasOwnProperty.call(standalone, 'indexable');
+    const isIndexable = visibilityKnown ? standalone.indexable !== false : null;
     items.push({
         id: 'indexability',
         title: __('Search Engine Visibility', 'quinrel'),
-        severity: isIndexable ? 'pass' : 'critical',
-        description: isIndexable
+        severity: !visibilityKnown ? 'info' : isIndexable ? 'pass' : 'critical',
+        description: !visibilityKnown
+            ? __('Search engine visibility has not loaded.', 'quinrel')
+            : isIndexable
             ? __('Search engines are permitted to index and display your site.', 'quinrel')
             : __('Search engine visibility is discouraged in WordPress Reading settings. Google and Bing are blocked.', 'quinrel'),
-        actionLabel: isIndexable ? null : __('Fix in Reading Settings', 'quinrel'),
+        actionLabel: isIndexable === false ? __('Fix in Reading Settings', 'quinrel') : null,
         actionUrl: 'options-reading.php',
         icon: TechIcon,
     });
@@ -61,45 +64,54 @@ export const ActionItemsTodo = ({
     }
 
     // 3. Missing Titles
-    const missingTitlesCount = standalone?.missing_titles_count || 0;
+    const titlesKnown = standalone != null && Object.prototype.hasOwnProperty.call(standalone, 'missing_titles');
+    const missingTitlesCount = titlesKnown ? Number(standalone.missing_titles) || 0 : null;
     const hasMissingTitles = missingTitlesCount > 0;
     items.push({
         id: 'missing_titles',
         title: __('Post & Page SEO Titles', 'quinrel'),
-        severity: hasMissingTitles ? 'warning' : 'pass',
-        description: hasMissingTitles
-            ? sprintf(__('%d published posts or pages are missing custom SEO titles.', 'quinrel'), missingTitlesCount)
-            : __('All published posts and pages have optimized titles.', 'quinrel'),
+        severity: !titlesKnown ? 'info' : hasMissingTitles ? 'warning' : 'pass',
+        description: !titlesKnown
+            ? __('Title coverage has not loaded.', 'quinrel')
+            : hasMissingTitles
+            ? sprintf(__('%d published posts or pages have an empty title.', 'quinrel'), missingTitlesCount)
+            : __('Published posts and pages have titles.', 'quinrel'),
         actionLabel: hasMissingTitles ? __('Edit Missing Titles', 'quinrel') : null,
         actionFn: () => setActiveTab('bulk_meta'),
         icon: TitlesIcon,
     });
 
     // 4. Missing Alt Text on Images
-    const missingAltCount = standalone?.missing_alt_count || 0;
+    const altKnown = standalone != null && Object.prototype.hasOwnProperty.call(standalone, 'missing_alt');
+    const missingAltCount = altKnown ? Number(standalone.missing_alt) || 0 : null;
     const hasMissingAlt = missingAltCount > 0;
     items.push({
         id: 'missing_alt',
         title: __('Image Accessibility & Alt Text', 'quinrel'),
-        severity: hasMissingAlt ? 'warning' : 'pass',
-        description: hasMissingAlt
-            ? sprintf(__('%d media images are missing alt text descriptions.', 'quinrel'), missingAltCount)
-            : __('Media library images have alt text descriptions.', 'quinrel'),
+        severity: !altKnown ? 'info' : hasMissingAlt ? 'warning' : 'pass',
+        description: !altKnown
+            ? __('Image alt coverage has not loaded.', 'quinrel')
+            : hasMissingAlt
+            ? sprintf(__('%d images have no alternative text.', 'quinrel'), missingAltCount)
+            : __('Images in the library have alternative text.', 'quinrel'),
         actionLabel: hasMissingAlt ? __('Audit & Fix Images', 'quinrel') : null,
         actionFn: () => setActiveTab('image_seo'),
         icon: ImageIcon,
     });
 
     // 5. Inbound 404 Errors
-    const notFoundCount = standalone?.not_found_count || 0;
+    const notFoundKnown = standalone != null && Object.prototype.hasOwnProperty.call(standalone, 'not_found');
+    const notFoundCount = notFoundKnown ? Number(standalone.not_found) || 0 : null;
     const has404s = notFoundCount > 0;
     items.push({
         id: 'not_found',
         title: __('Inbound 404 URL Errors', 'quinrel'),
-        severity: has404s ? 'warning' : 'pass',
-        description: has404s
-            ? sprintf(__('%d broken 404 requests recorded. Redirect them to recover lost traffic.', 'quinrel'), notFoundCount)
-            : __('Zero 404 errors detected in recent traffic.', 'quinrel'),
+        severity: !notFoundKnown ? 'info' : has404s ? 'warning' : 'pass',
+        description: !notFoundKnown
+            ? __('Not-found totals have not loaded.', 'quinrel')
+            : has404s
+            ? sprintf(__('%d not-found requests are logged on this site.', 'quinrel'), notFoundCount)
+            : __('No not-found requests are logged on this site.', 'quinrel'),
         actionLabel: has404s ? __('Inspect 404 Log', 'quinrel') : null,
         actionFn: () => {
             setTechSubTab('404s');
@@ -109,13 +121,18 @@ export const ActionItemsTodo = ({
     });
 
     // 6. XML Sitemaps
-    const sitemapUrl = standalone?.sitemap_url || '/sitemap.xml';
+    const sitemapUrl = standalone?.sitemap_url || '';
+    const indexNowOn = standalone?.indexnow_enabled === true;
     items.push({
         id: 'sitemaps',
         title: __('XML Sitemaps Generation', 'quinrel'),
-        severity: 'pass',
-        description: sprintf(__('Sitemap is actively published at %s with automatic update pings.', 'quinrel'), sitemapUrl),
-        actionLabel: __('View Sitemap', 'quinrel'),
+        severity: 'info',
+        description: !standalone
+            ? __('Sitemap status has not loaded.', 'quinrel')
+            : indexNowOn
+            ? sprintf(__('Sitemap is published at %s. IndexNow is on, so publishing a public URL notifies IndexNow.', 'quinrel'), sitemapUrl)
+            : sprintf(__('Sitemap is published at %s. IndexNow pings stay off until IndexNow is turned on.', 'quinrel'), sitemapUrl),
+        actionLabel: sitemapUrl ? __('View Sitemap', 'quinrel') : null,
         actionUrl: sitemapUrl,
         icon: SitemapIcon,
     });
@@ -161,9 +178,9 @@ export const ActionItemsTodo = ({
     // 10. Autonomous Link Self-Healing
     items.push({
         id: 'self_healing_links',
-        title: __('Autonomous In-Content Link Healing', 'quinrel'),
-        severity: 'pass',
-        description: __('Safely rewrites internal links in published post HTML pointing to 301 redirects directly to destination URLs.', 'quinrel'),
+        severity: 'info',
+        title: __('In-content link healing', 'quinrel'),
+        description: __('Link healing has not been checked on this site. Open crawl depth to run it.', 'quinrel'),
         actionLabel: __('Crawl Health & Depth', 'quinrel'),
         actionFn: () => setActiveTab('site_audit'),
         icon: BrokenLinkIcon,
@@ -172,20 +189,20 @@ export const ActionItemsTodo = ({
     // 11. Core Web Vitals Optimization
     items.push({
         id: 'cwv_autonomy',
-        title: __('Core Web Vitals & PageSpeed Autonomy', 'quinrel'),
-        severity: 'pass',
-        description: __('Non-critical script deferral, font-display: swap, and WebP compression are optimizing LCP, INP, and CLS.', 'quinrel'),
-        actionLabel: __('View Performance Gauges', 'quinrel'),
-        actionFn: () => setActiveTab('site_audit'),
+        title: __('Core Web Vitals options', 'quinrel'),
+        severity: 'info',
+        description: __('Script defer and Google Fonts swap stay off until you turn them on under Settings, Performance.', 'quinrel'),
+        actionLabel: __('Open Performance settings', 'quinrel'),
+        actionFn: () => setActiveTab('settings'),
         icon: AuditIcon,
     });
 
     // 12. Google Indexation Lifecycle Funnel
     items.push({
         id: 'indexation_funnel',
-        title: __('Google Indexation Funnel & Discovery', 'quinrel'),
-        severity: 'pass',
-        description: __('Tracks published URLs through sitemap discovery, Googlebot crawling, indexation, and search impressions.', 'quinrel'),
+        severity: 'info',
+        title: __('Indexation funnel', 'quinrel'),
+        description: __('Google discovery, crawling, indexation, and impressions stay blank until index status is stored.', 'quinrel'),
         actionLabel: __('View Funnel Chart', 'quinrel'),
         actionFn: () => setActiveTab('site_audit'),
         icon: SitemapIcon,
@@ -296,7 +313,9 @@ export const ActionItemsTodo = ({
                                             ? 'bg-rose-100 text-rose-700'
                                             : item.severity === 'warning'
                                             ? 'bg-amber-100 text-amber-700'
-                                            : 'bg-emerald-100 text-emerald-700'
+                                            : item.severity === 'pass'
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : 'bg-slate-100 text-slate-600'
                                     }`}
                                 >
                                     <ItemIcon className="w-5 h-5" />
@@ -312,14 +331,18 @@ export const ActionItemsTodo = ({
                                                     ? 'bg-rose-100 text-rose-800'
                                                     : item.severity === 'warning'
                                                     ? 'bg-amber-100 text-amber-800'
-                                                    : 'bg-emerald-100 text-emerald-800'
+                                                    : item.severity === 'pass'
+                                                    ? 'bg-emerald-100 text-emerald-800'
+                                                    : 'bg-slate-100 text-slate-700'
                                             }`}
                                         >
                                             {item.severity === 'critical'
                                                 ? __('Critical', 'quinrel')
                                                 : item.severity === 'warning'
                                                 ? __('Action Needed', 'quinrel')
-                                                : __('Resolved', 'quinrel')}
+                                                : item.severity === 'pass'
+                                                ? __('Resolved', 'quinrel')
+                                                : __('Info', 'quinrel')}
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-600 m-0 mt-1 max-w-2xl leading-relaxed">

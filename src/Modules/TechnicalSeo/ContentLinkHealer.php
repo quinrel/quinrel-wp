@@ -77,8 +77,8 @@ class ContentLinkHealer {
 		}
 
 		global $wpdb;
-		$tableLinks     = $wpdb->prefix . 'quinrel_links';
-		$tableRedirects = $wpdb->prefix . 'quinrel_redirects';
+		$tableLinks     = esc_sql( $wpdb->prefix . 'quinrel_links' );
+		$tableRedirects = esc_sql( $wpdb->prefix . 'quinrel_redirects' );
 
 		// Verify tables exist
 		$linksExists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $tableLinks ) ) );

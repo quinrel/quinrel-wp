@@ -56,6 +56,7 @@ class SmartTagResolver {
 			'post_title'       => static fn(): string => $resolvedId > 0 ? (string) get_the_title( $resolvedId ) : (string) get_the_title(),
 			'sitename'         => static fn(): string => (string) get_bloginfo( 'name' ),
 			'site_title'       => static fn(): string => (string) get_bloginfo( 'name' ),
+			'sitetitle'        => static fn(): string => (string) get_bloginfo( 'name' ),
 			'sitedesc'         => static fn(): string => (string) get_bloginfo( 'description' ),
 			'tagline'          => static fn(): string => (string) get_bloginfo( 'description' ),
 			'sep'              => static fn(): string => $sep,

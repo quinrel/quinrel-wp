@@ -122,26 +122,54 @@ class ContentGapAnalyser {
 
 	// ── Helpers ───────────────────────────────────────────────────────────────
 
+	/**
+	 * Focus keywords and titles for the newest published posts and pages that have a focus keyword.
+	 *
+	 * Capped at 200 strings. WordPress has no API that returns a title plus one meta value with a limit.
+	 *
+	 * @return array<int, string>
+	 */
 	private function getExistingTopics( string $keyword ): array {
-		$posts = get_posts(
-			array(
-				'post_type'      => array( 'post', 'page' ),
-				'post_status'    => 'publish',
-				'posts_per_page' => -1,
-				'fields'         => 'ids',
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Editor action. One bounded join of titles and focus keywords.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT p.post_title, pm.meta_value FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND pm.meta_value != '' AND p.post_status = %s AND p.post_type IN (%s, %s) ORDER BY p.post_modified_gmt DESC LIMIT %d",
+				'_quinrel_focus_keyword',
+				'publish',
+				'post',
+				'page',
+				200
 			)
 		);
 
 		$topics = array();
-		foreach ( $posts as $id ) {
-			$kw = get_post_meta( $id, '_quinrel_focus_keyword', true );
-			if ( ! empty( $kw ) ) {
-				$topics[] = (string) $kw;
+		if ( is_array( $rows ) ) {
+			foreach ( $rows as $row ) {
+				$focus = is_object( $row ) ? trim( (string) ( $row->meta_value ?? '' ) ) : '';
+				$title = is_object( $row ) ? trim( (string) ( $row->post_title ?? '' ) ) : '';
+				if ( $focus !== '' ) {
+					$topics[] = $focus;
+				}
+				if ( $title !== '' ) {
+					$topics[] = $title;
+				}
 			}
-			$topics[] = get_the_title( $id );
 		}
 
-		return array_unique( array_filter( $topics ) );
+		$unique = array();
+		foreach ( $topics as $topic ) {
+			if ( in_array( $topic, $unique, true ) ) {
+				continue;
+			}
+			$unique[] = $topic;
+			if ( count( $unique ) >= 200 ) {
+				break;
+			}
+		}
+
+		return $unique;
 	}
 
 	private function askLlmForGapTopics( string $keyword, array $existing ): array|\WP_Error {

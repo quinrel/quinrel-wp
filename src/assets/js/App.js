@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { Button, TextControl, TextareaControl, Notice, Spinner, ToggleControl } from '@wordpress/components';
 
@@ -14,32 +14,10 @@ import AccessibilityBreakdownChart from './components/charts/AccessibilityBreakd
 import IndexationFunnelChart from './components/charts/IndexationFunnelChart';
 import CoreWebVitalsGauge from './components/charts/CoreWebVitalsGauge';
 import GlobalSettingsHub from './components/GlobalSettingsHub';
+import { commitSettings, mapSettingsResponse, ollamaHostIsLoopback, settingsSaveErrors } from './settingsSave.mjs';
 import { AiVisibilityHub } from './components/AiVisibilityHub';
 import { OutreachHub } from './components/OutreachHub';
 import { CloudIcon, AnalyticsIcon } from './components/QuinrelIcons';
-
-function ollamaHostIsLoopback(url) {
-    try {
-        const parsed = new URL(url);
-        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-            return false;
-        }
-        const host = parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase();
-        if (host === 'localhost' || host.endsWith('.localhost') || host === '::1') {
-            return true;
-        }
-        if (host.startsWith('::ffff:')) {
-            return ollamaHostIsLoopback(`${parsed.protocol}//${host.slice(7)}`);
-        }
-        const parts = host.split('.');
-        if (parts.length === 4 && parts.every((part) => /^\d+$/.test(part) && Number(part) >= 0 && Number(part) <= 255)) {
-            return Number(parts[0]) === 127;
-        }
-        return false;
-    } catch (error) {
-        return false;
-    }
-}
 
 const App = () => {
     // Visibility & Discovery Intelligence for WordPress, with technical SEO included.
@@ -133,6 +111,7 @@ const App = () => {
     const [settings, setSettings] = useState({
         google_indexing_key: '',
         indexnow_key: '',
+        indexnow_key_url: '',
         auto_index: false,
         enable_google_indexing_api: false,
         google_indexing_configured: false,
@@ -151,6 +130,20 @@ const App = () => {
         ollama_url: 'http://localhost:11434',
         ollama_remote_confirmed: false,
         default_share_image: '',
+        gsc_client_id: '',
+        gsc_client_secret: '',
+        gsc_connected: false,
+        gsc_property: '',
+        bing_api_key: '',
+        rss_before_content: '',
+        rss_after_content: '',
+        rss_attribution: false,
+        noindex_paged_archives: false,
+        owns_head: false,
+        defer_non_critical_scripts: false,
+        defer_script_handles: '',
+        font_display_swap: false,
+        pagespeed_api_key: '',
     });
 
     const [isTestingAi, setIsTestingAi] = useState(false);
@@ -204,9 +197,13 @@ const App = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState(null);
     const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+    const [settingsLoaded, setSettingsLoaded] = useState(false);
+    const settingsLoadedRef = useRef(false);
+    const aiBaselineRef = useRef(null);
 
     useEffect(() => {
-        if (activeTab !== 'dashboard' || standalone || standaloneLoading) {
+        const needsStandalone = activeTab === 'dashboard' || activeTab === 'todo' || activeTab === 'site_audit';
+        if (!needsStandalone || standalone || standaloneLoading) {
             return;
         }
         setStandaloneLoading(true);
@@ -364,7 +361,7 @@ const App = () => {
             }
         }
 
-        if ((activeTab === 'settings' || activeTab.startsWith('settings_')) && isLoadingSettings) {
+        if ((activeTab === 'settings' || activeTab.startsWith('settings_') || activeTab === 'roles') && isLoadingSettings) {
             fetchSettings();
         }
     }, [activeTab, gscOpen]);
@@ -536,40 +533,45 @@ const App = () => {
     }, []);
     // ────────────────────────────────────────────────────────────────────────
 
+    const readSettingsPayload = async () => {
+        const response = await fetch(`${quinrelAdminConfig.apiUrl}/settings`, {
+            headers: {
+                'X-WP-Nonce': quinrelAdminConfig.nonce,
+            }
+        });
+        if (!response.ok) {
+            return null;
+        }
+        return response.json();
+    };
+
     const fetchSettings = async () => {
         try {
-            const response = await fetch(`${quinrelAdminConfig.apiUrl}/settings`, {
-                headers: {
-                    'X-WP-Nonce': quinrelAdminConfig.nonce,
+            const data = await readSettingsPayload();
+            if (!data) {
+                if (!settingsLoadedRef.current) {
+                    setSaveStatus({
+                        type: 'error',
+                        message: __('Settings could not be loaded. Reload this page before saving.', 'quinrel'),
+                    });
                 }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setSettings({
-                    google_indexing_key: '',
-                    indexnow_key: '',
-                    google_indexing_configured: Boolean(data.google_indexing_configured),
-                    indexnow_configured: Boolean(data.indexnow_configured),
-                    auto_index: data.auto_index !== undefined ? data.auto_index : false,
-                    enable_google_indexing_api: Boolean(data.enable_google_indexing_api),
-                    delete_data_on_uninstall: Boolean(data.delete_data_on_uninstall),
-                    google_verify: data.google_verify || '',
-                    bing_verify: data.bing_verify || '',
-                    yandex_verify: data.yandex_verify || '',
-                    pinterest_verify: data.pinterest_verify || '',
-                    breadcrumb_separator: data.breadcrumb_separator || '›',
-                    breadcrumb_home_label: data.breadcrumb_home_label || 'Home',
-                    breadcrumb_auto_insert: data.breadcrumb_auto_insert || 'none',
-                    ai_provider: data.ai_provider || 'openai',
-                    openai_key: data.openai_key || '',
-                    anthropic_key: data.anthropic_key || '',
-                    ollama_url: data.ollama_url || 'http://localhost:11434',
-                    ollama_remote_confirmed: Boolean(data.ollama_remote_ack),
-                    default_share_image: data.default_share_image || '',
+                return null;
+            }
+            const next = mapSettingsResponse(data);
+            setSettings(next);
+            aiBaselineRef.current = next;
+            settingsLoadedRef.current = true;
+            setSettingsLoaded(true);
+            return next;
+        } catch (error) {
+            console.error('Failed to fetch settings', error);
+            if (!settingsLoadedRef.current) {
+                setSaveStatus({
+                    type: 'error',
+                    message: __('Settings could not be loaded. Reload this page before saving.', 'quinrel'),
                 });
             }
-        } catch (error) {
-            console.error("Failed to fetch settings", error);
+            return null;
         } finally {
             setIsLoadingSettings(false);
         }
@@ -577,24 +579,12 @@ const App = () => {
 
     const [formErrors, setFormErrors] = useState({});
 
-    const validateSettings = () => {
-        const errors = {};
-        if (settings.ai_provider === 'openai' && !settings.openai_key.trim()) {
-            errors.openai_key = 'OpenAI API key is required when OpenAI is selected as the provider.';
-        }
-        if (settings.ai_provider === 'anthropic' && !settings.anthropic_key.trim()) {
-            errors.anthropic_key = 'Anthropic API key is required when Anthropic is selected as the provider.';
-        }
-        if (settings.ai_provider === 'ollama' && !settings.ollama_url.trim()) {
-            errors.ollama_url = 'Ollama URL is required when Ollama is selected as the provider.';
-        }
-        if (settings.ai_provider === 'ollama' && settings.ollama_url.trim() && !ollamaHostIsLoopback(settings.ollama_url) && !settings.ollama_remote_confirmed) {
-            errors.ollama_url = 'Confirm that this remote Ollama host may receive post content.';
-        }
-        return errors;
-    };
+    const validateSettings = () => settingsSaveErrors(settings, aiBaselineRef.current);
 
     const saveSettings = async () => {
+        if (!settingsLoadedRef.current) {
+            return;
+        }
         const errors = validateSettings();
         setFormErrors(errors);
         if (Object.keys(errors).length > 0) {
@@ -605,20 +595,27 @@ const App = () => {
         setIsSaving(true);
         setSaveStatus(null);
         try {
-            const response = await fetch(`${quinrelAdminConfig.apiUrl}/settings`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': quinrelAdminConfig.nonce,
-                },
-                body: JSON.stringify(settings)
+            const result = await commitSettings({
+                settings,
+                hydrated: true,
+                post: (body) => fetch(`${quinrelAdminConfig.apiUrl}/settings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': quinrelAdminConfig.nonce,
+                    },
+                    body: JSON.stringify(body),
+                }),
+                read: readSettingsPayload,
             });
-            
-            if (response.ok) {
+
+            if (result.saved) {
+                setSettings(result.settings);
+                aiBaselineRef.current = result.settings;
                 setSaveStatus({ type: 'success', message: 'Settings saved successfully!' });
                 setFormErrors({});
             } else {
-                const data = await response.json().catch(() => ({}));
+                const data = result.response ? await result.response.json().catch(() => ({})) : {};
                 setSaveStatus({ type: 'error', message: data.message || 'Failed to save settings.' });
             }
         } catch (error) {
@@ -1357,22 +1354,37 @@ const App = () => {
     const [rankMsg, setRankMsg]               = useState(null);
     const [newKeyword, setNewKeyword]         = useState('');
     const [serpApiKey, setSerpApiKey]         = useState('');
+    const [gscMovement, setGscMovement]       = useState(null);
 
     const loadRankData = async () => {
         setRankLoading(true);
         try {
-            const [kwRes, histRes] = await Promise.all([
+            const [kwRes, histRes, gscRes] = await Promise.all([
                 fetch(`${quinrelAdminConfig.apiUrl}/rank-tracker/keywords`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
                 fetch(`${quinrelAdminConfig.apiUrl}/rank-tracker/history?days=${rankDays}`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
+                fetch(`${quinrelAdminConfig.apiUrl}/rank-tracker/search-console`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } }),
             ]);
             const [kw, hist] = await Promise.all([kwRes.json(), histRes.json()]);
             setRankKeywords(kw.keywords || []);
             setRankHistory(hist.history || {});
+            if (gscRes.ok) {
+                const gsc = await gscRes.json();
+                setGscMovement({
+                    connected: gsc.connected === true,
+                    keywords: Array.isArray(gsc.keywords) ? gsc.keywords : [],
+                    message: typeof gsc.message === 'string' ? gsc.message : '',
+                    failed: false,
+                });
+            } else {
+                setGscMovement({ connected: true, keywords: [], message: '', failed: true });
+            }
             // Load SerpApi key from settings
             const sRes = await fetch(`${quinrelAdminConfig.apiUrl}/settings`, { headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce } });
             const s = await sRes.json();
             setSerpApiKey(s.serpapi_key || '');
-        } catch(e) {}
+        } catch(e) {
+            setGscMovement({ connected: true, keywords: [], message: '', failed: true });
+        }
         setRankLoading(false);
     };
 
@@ -1664,7 +1676,7 @@ const App = () => {
         if (activeTab === 'compliance') { loadCookieBanner(); }
         if (activeTab === 'image_seo') { loadCompressionData(); loadAltAudit(1); }
         if (activeTab === 'roles' || activeTab === 'settings_roles' || settingsSubTab === 'roles') { loadRoles(); }
-        if (activeTab === 'settings' || activeTab.startsWith('settings_')) { fetchSettings(); }
+        if (activeTab === 'settings' || activeTab.startsWith('settings_') || activeTab === 'roles') { fetchSettings(); }
         if (activeTab === 'network_seo' && isMultisite) { loadNetworkData(); }
         if (activeTab === 'site_audit') { loadAuditResults(); }
         if (activeTab === 'broken_links') { loadBlcProgress(); loadBlcResults(1, false); }
@@ -2330,6 +2342,7 @@ const App = () => {
                             settings={settings}
                             setSettings={setSettings}
                             isLoadingSettings={isLoadingSettings}
+                            settingsLoaded={settingsLoaded}
                             isSaving={isSaving}
                             saveSettings={saveSettings}
                             saveStatus={saveStatus}
@@ -3628,7 +3641,7 @@ const App = () => {
                                     <ul className="list-disc pl-5 text-sm text-slate-600 space-y-2">
                                         <li><strong>OpenAI / Anthropic:</strong> Receives post excerpts when using the LLM Writing Assistant.</li>
                                         <li><strong>Google APIs:</strong> Receives URLs for PageSpeed Insights and Indexing API if enabled.</li>
-                                        <li><strong>Bing IndexNow:</strong> Receives URLs automatically when posts are published to accelerate crawling.</li>
+                                        <li><strong>IndexNow:</strong> IndexNow sends a published URL only when that site has notifications on and a key saved.</li>
                                         <li><strong>SerpApi:</strong> Receives your focus keywords for rank tracking.</li>
                                     </ul>
                                     <p className="text-xs text-slate-500 mt-4">
@@ -3771,14 +3784,14 @@ const App = () => {
                                         <CrawlDepthChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
                                     </div>
 
-                                    <AccessibilityBreakdownChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />
+                                    <AccessibilityBreakdownChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} missingAlt={standalone?.missing_alt} />
                                 </div>
                             ) : (
                                 <div className="space-y-6">
                                     {auditSubView === 'cwv' && <CoreWebVitalsGauge apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />}
                                     {auditSubView === 'funnel' && <IndexationFunnelChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />}
                                     {auditSubView === 'crawl' && <CrawlDepthChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />}
-                                    {auditSubView === 'a11y' && <AccessibilityBreakdownChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} />}
+                                    {auditSubView === 'a11y' && <AccessibilityBreakdownChart apiBase={quinrelAdminConfig.apiUrl} nonce={quinrelAdminConfig.nonce} missingAlt={standalone?.missing_alt} />}
                                 </div>
                             )}
 
@@ -3951,21 +3964,61 @@ const App = () => {
                         <div className="space-y-6 w-full">
                             <div>
                                 <h2 className="text-xl font-semibold m-0 text-slate-800">Keyword Rank Tracker</h2>
-                                <p className="text-slate-500 text-sm mt-1">Track your Google ranking positions over time. Checks run daily via SerpApi.</p>
-                                {quinrelAdminConfig.cloudConfigured !== '1' && (
-                                    <p className="text-sm mt-3 mb-0 p-3 bg-slate-50 border border-slate-200 rounded text-slate-700">
-                                        {__('This site is not connected to Quinrel, so cloud rank tracking is unavailable. You can keep using Quinrel on this site.', 'quinrel')}
-                                    </p>
-                                )}
+                                <p className="text-slate-500 text-sm mt-1">{__('Positions come from Google Search Console. The change compares the last 28 days with the 28 days before that.', 'quinrel')}</p>
                             </div>
 
-                            {/* SerpApi key notice */}
-                            {!serpApiKey && (
-                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
-                                    ⚠ <strong>SerpApi key required.</strong> Add your <code className="font-mono text-xs">serpapi_key</code> in the Settings tab to enable rank checking.
-                                    <a href="https://serpapi.com" target="_blank" rel="noopener" className="ml-2 underline">Get a free key →</a>
+                            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                                <div className="px-5 py-3 border-b border-slate-200">
+                                    <h3 id="quinrel-query-movement" className="text-sm font-semibold text-slate-700 m-0">{__('Query movement', 'quinrel')}</h3>
                                 </div>
-                            )}
+                                {rankLoading || !gscMovement ? (
+                                    <div className="flex items-center gap-3 p-8"><Spinner /><span className="text-slate-500">{__('Loading query movement…', 'quinrel')}</span></div>
+                                ) : gscMovement.failed ? (
+                                    <p className="m-0 p-5 text-sm text-rose-700" role="alert">{__('Search Console movement could not be loaded.', 'quinrel')}</p>
+                                ) : !gscMovement.connected ? (
+                                    <p className="m-0 p-5 text-sm text-slate-600" role="status">{gscMovement.message || __('Connect Google Search Console to see how queries moved. A SerpApi key is not required.', 'quinrel')}</p>
+                                ) : gscMovement.keywords.length === 0 ? (
+                                    <p className="m-0 p-5 text-sm text-slate-600" role="status">{gscMovement.message || __('Search Console has no queries for this site yet.', 'quinrel')}</p>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm text-left" aria-labelledby="quinrel-query-movement">
+                                            <thead>
+                                                <tr className="bg-slate-50 border-b border-slate-200">
+                                                    <th scope="col" className="p-3 font-semibold text-slate-600">{__('Query', 'quinrel')}</th>
+                                                    <th scope="col" className="p-3 font-semibold text-slate-600">{__('Position', 'quinrel')}</th>
+                                                    <th scope="col" className="p-3 font-semibold text-slate-600">{__('Previous', 'quinrel')}</th>
+                                                    <th scope="col" className="p-3 font-semibold text-slate-600">{__('Change', 'quinrel')}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {gscMovement.keywords.map((row, index) => {
+                                                    const change = row.change;
+                                                    let changeLabel = '—';
+                                                    let changeClass = 'text-slate-400';
+                                                    if (change === null || change === undefined) {
+                                                        changeLabel = __('New', 'quinrel');
+                                                        changeClass = 'text-slate-500';
+                                                    } else if (Number(change) > 0) {
+                                                        changeLabel = `▲${Number(change).toFixed(1)}`;
+                                                        changeClass = 'text-green-600';
+                                                    } else if (Number(change) < 0) {
+                                                        changeLabel = `▼${Math.abs(Number(change)).toFixed(1)}`;
+                                                        changeClass = 'text-red-600';
+                                                    }
+                                                    return (
+                                                        <tr key={`${row.query}-${index}`}>
+                                                            <td className="p-3 text-slate-800">{row.query}</td>
+                                                            <td className="p-3 font-semibold text-slate-800">{Number(row.position).toFixed(1)}</td>
+                                                            <td className="p-3 text-slate-600">{row.previous_position === null || row.previous_position === undefined ? '—' : Number(row.previous_position).toFixed(1)}</td>
+                                                            <td className={`p-3 ${changeClass}`}>{changeLabel}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                                 {/* Keyword manager — left 2/5 on desktop */}
@@ -4010,11 +4063,19 @@ const App = () => {
 
                                         {rankMsg && <div className={`text-xs px-2 py-1.5 rounded ${rankMsg.type === 'success' ? 'bg-green-50 text-green-700' : rankMsg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>{rankMsg.text}</div>}
 
+                                        {quinrelAdminConfig.cloudConfigured !== '1' && (
+                                            <p className="text-sm m-0 p-3 bg-slate-50 border border-slate-200 rounded text-slate-700">
+                                                {__('This site is not connected to Quinrel, so cloud rank tracking is unavailable. You can keep using Quinrel on this site.', 'quinrel')}
+                                            </p>
+                                        )}
                                         <div className="flex gap-2 pt-1">
                                             <button type="button" onClick={() => checkRankNow()} disabled={rankChecking || rankKeywords.length === 0 || !serpApiKey} className="flex-1 px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded hover:bg-emerald-700 disabled:opacity-50">
                                                 {rankChecking ? 'Checking…' : '⚡ Check Top 5 Now'}
                                             </button>
                                         </div>
+                                        {!serpApiKey && (
+                                            <p className="text-xs text-slate-500 m-0">{__('A live Google results check uses a SerpApi key. Search Console movement above does not.', 'quinrel')}</p>
+                                        )}
                                     </div>
                                 </div>
 

@@ -159,12 +159,17 @@ class OperatingModeTest extends TestCase {
 		$request->set_param( 'url', 'https://example.com/' );
 		$request->set_param( 'strategy', 'mobile' );
 		$pageSpeed = ( new PageSpeedDashboard() )->getPageSpeed( $request );
-		$this->assertSame( 'quinrel_not_connected', $pageSpeed->get_error_code() );
+		$this->assertInstanceOf( \WP_REST_Response::class, $pageSpeed );
+		$this->assertSame( 'empty', $pageSpeed->get_data()['status'] );
 
 		$bulk = new \WP_REST_Request();
 		$bulk->set_json_params( array( 'urls' => array( 'https://example.com/' ) ) );
+		$beforeBulk = count( $GLOBALS['mock_http_log'] ?? array() );
 		$bulkResult = ( new PageSpeedDashboard() )->bulkCheck( $bulk );
-		$this->assertSame( 'quinrel_not_connected', $bulkResult->get_error_code() );
+		$this->assertInstanceOf( \WP_REST_Response::class, $bulkResult );
+		$this->assertArrayHasKey( 'error', $bulkResult->get_data()['results']['https://example.com/'] );
+		$this->assertStringContainsString( 'googleapis.com', $GLOBALS['mock_http_log'][ $beforeBulk ]['url'] );
+		$this->assertStringNotContainsString( 'api.quinrel.com', $GLOBALS['mock_http_log'][ $beforeBulk ]['url'] );
 
 		update_option( 'quinrel_tracked_keywords', array( 'widgets' ) );
 		delete_option( 'quinrel_serpapi_key' );
@@ -219,6 +224,8 @@ class OperatingModeTest extends TestCase {
 		delete_option( CloudCredential::VERIFICATION_OPTION );
 		delete_option( 'quinrel_serpapi_key' );
 		delete_option( 'quinrel_pagespeed_api_key' );
+		delete_option( 'quinrel_psi_key' );
+		delete_option( 'quinrel_pagespeed_reports' );
 		delete_option( 'quinrel_openai_key' );
 		delete_option( 'quinrel_openai_api_key' );
 		delete_option( OperatingMode::REVOKED_OPTION );

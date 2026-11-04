@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
+import { BING_KEY_MASK, bingTrafficReady } from '../settingsSave.mjs';
 import { TextControl, TextareaControl, ToggleControl, Button, Spinner, Notice } from '@wordpress/components';
 import {
     CloudIcon,
@@ -20,6 +21,7 @@ export const GlobalSettingsHub = ({
     settings,
     setSettings,
     isLoadingSettings,
+    settingsLoaded,
     isSaving,
     saveSettings,
     saveStatus,
@@ -79,6 +81,11 @@ export const GlobalSettingsHub = ({
     const [manualUrl, setManualUrl] = useState('');
     const [manualUrlBusy, setManualUrlBusy] = useState(false);
     const [manualUrlMsg, setManualUrlMsg] = useState(null);
+    const [indexNowLog, setIndexNowLog] = useState([]);
+    const [indexNowLogNote, setIndexNowLogNote] = useState(null);
+    const [bingTraffic, setBingTraffic] = useState(null);
+    const [bingTrafficError, setBingTrafficError] = useState('');
+    const [bingTrafficLoading, setBingTrafficLoading] = useState(false);
     const [gscConnecting, setGscConnecting] = useState(false);
     const [gscActionMsg, setGscActionMsg] = useState(null);
     const [gscProperties, setGscProperties] = useState([]);
@@ -99,7 +106,7 @@ export const GlobalSettingsHub = ({
         { id: 'cloud', label: __('Quinrel Cloud', 'quinrel'), icon: CloudIcon, badge: isCloudConnected ? __('Connected', 'quinrel') : null },
         { id: 'gsc', label: __('Google Search Console', 'quinrel'), icon: GoogleIcon, badge: settings.gsc_connected ? __('Connected', 'quinrel') : null },
         { id: 'webmasters', label: __('Bing & Verification', 'quinrel'), icon: AnalyticsIcon },
-        { id: 'indexing', label: __('Indexing & Instant Push', 'quinrel'), icon: LinkIcon },
+        { id: 'indexing', label: __('Indexing & APIs', 'quinrel'), icon: LinkIcon },
         { id: 'performance', label: __('Performance & Speed', 'quinrel'), icon: SpeedIcon },
         { id: 'ai', label: __('AI Engine Vault', 'quinrel'), icon: AiBotIcon },
         { id: 'roles', label: __('Roles & Capabilities', 'quinrel'), icon: RolesIcon },
@@ -107,6 +114,106 @@ export const GlobalSettingsHub = ({
     ];
 
     const currentTab = subTab || 'general';
+
+    const loadIndexNowLog = async () => {
+        try {
+            const resp = await fetch(`${quinrelAdminConfig.apiUrl}/indexing/indexnow-log`, {
+                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
+            });
+            const data = await resp.json().catch(() => null);
+            if (!resp.ok) {
+                setIndexNowLog([]);
+                setIndexNowLogNote({
+                    type: 'error',
+                    text: (data && data.message) ? data.message : __('You do not have permission to view IndexNow submissions.', 'quinrel'),
+                });
+                return;
+            }
+            setIndexNowLogNote(null);
+            setIndexNowLog(Array.isArray(data) ? data.slice(0, 10) : []);
+        } catch (e) {
+            setIndexNowLog([]);
+            setIndexNowLogNote({
+                type: 'error',
+                text: __('The submission list could not be loaded.', 'quinrel'),
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (currentTab === 'indexing') {
+            loadIndexNowLog();
+        }
+    }, [currentTab]);
+
+    useEffect(() => {
+        if (!bingTrafficReady(currentTab, settings.bing_api_key)) {
+            return undefined;
+        }
+        let cancelled = false;
+        setBingTrafficLoading(true);
+        setBingTrafficError('');
+        fetch(`${quinrelAdminConfig.apiUrl}/analytics/bing/traffic`, {
+            headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
+        })
+            .then(async (resp) => {
+                const data = await resp.json().catch(() => null);
+                if (cancelled) {
+                    return;
+                }
+                if (!resp.ok || !data || data.success !== true) {
+                    setBingTraffic(null);
+                    setBingTrafficError((data && data.message) ? data.message : __('Bing performance could not be loaded.', 'quinrel'));
+                    return;
+                }
+                setBingTraffic(data);
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setBingTraffic(null);
+                    setBingTrafficError(__('Bing performance could not be loaded.', 'quinrel'));
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setBingTrafficLoading(false);
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [currentTab, settings.bing_api_key]);
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('gsc_connected') === '1') {
+            setGscActionMsg({
+                type: 'success',
+                message: __('Google Search Console connected successfully! Live search performance metrics are now active.', 'quinrel'),
+            });
+            setSettings(prev => ({ ...prev, gsc_connected: true }));
+            urlParams.delete('gsc_connected');
+            const newSearch = urlParams.toString();
+            const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
+            window.history.replaceState({}, document.title, newUrl);
+        } else if (urlParams.get('gsc_error')) {
+            setGscActionMsg({
+                type: 'error',
+                message: decodeURIComponent(urlParams.get('gsc_error')),
+            });
+            setShowCustomGscDrawer(true);
+            urlParams.delete('gsc_error');
+            const newSearch = urlParams.toString();
+            const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (settings.gsc_property && !selectedProperty) {
+            setSelectedProperty(settings.gsc_property);
+        }
+    }, [settings.gsc_property]);
 
     useEffect(() => {
         if (settings.gsc_connected && currentTab === 'gsc') {
@@ -214,23 +321,40 @@ export const GlobalSettingsHub = ({
         setGscConnecting(true);
         setGscActionMsg(null);
         try {
+            const payload = {};
+            if (settings.gsc_client_id) {
+                payload.client_id = settings.gsc_client_id.trim();
+            }
+            if (settings.gsc_client_secret && settings.gsc_client_secret !== '••••••••••••') {
+                payload.client_secret = settings.gsc_client_secret.trim();
+            }
+
             const resp = await fetch(`${quinrelAdminConfig.apiUrl}/gsc/auth-url`, {
-                headers: { 'X-WP-Nonce': quinrelAdminConfig.nonce },
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': quinrelAdminConfig.nonce,
+                },
+                body: JSON.stringify(payload),
             });
-            const data = await resp.json();
-            if (resp.ok && data.auth_url) {
+            const data = await resp.json().catch(() => null);
+
+            if (resp.ok && data && data.auth_url) {
                 window.location.href = data.auth_url;
             } else {
+                const errorMsg = data?.message || (resp.status === 400
+                    ? __('Save a Google OAuth client ID and client secret in the section below, then connect again.', 'quinrel')
+                    : __('Failed to generate Google Search Console authorization URL.', 'quinrel'));
                 setGscActionMsg({
                     type: 'error',
-                    message: data.message || __('Failed to generate Google Search Console authorization URL. Verify your Client ID and Client Secret below.', 'quinrel'),
+                    message: errorMsg,
                 });
                 setShowCustomGscDrawer(true);
             }
         } catch (e) {
             setGscActionMsg({
                 type: 'error',
-                message: __('Network error connecting to Google Search Console.', 'quinrel'),
+                message: __('Unable to connect to Google Search Console. Please verify your credentials and network connection.', 'quinrel'),
             });
             setShowCustomGscDrawer(true);
         } finally {
@@ -272,7 +396,7 @@ export const GlobalSettingsHub = ({
         setManualUrlBusy(true);
         setManualUrlMsg(null);
         try {
-            const resp = await fetch(`${quinrelAdminConfig.apiUrl}/index-url`, {
+            const resp = await fetch(`${quinrelAdminConfig.apiUrl}/indexing/indexnow-submit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -284,23 +408,28 @@ export const GlobalSettingsHub = ({
             if (resp.ok && data.success) {
                 setManualUrlMsg({
                     type: 'success',
-                    text: data.message || __('Instant push notification dispatched successfully!', 'quinrel'),
+                    text: data.message || __('The URL was queued for IndexNow.', 'quinrel'),
                 });
+                loadIndexNowLog();
             } else {
                 setManualUrlMsg({
                     type: 'error',
-                    text: data.message || __('Instant push failed. Verify search engine API keys.', 'quinrel'),
+                    text: data.message || __('The URL was not queued.', 'quinrel'),
                 });
             }
         } catch (err) {
             setManualUrlMsg({
                 type: 'error',
-                text: __('Network error dispatching instant indexing request.', 'quinrel'),
+                text: __('The URL was not queued. Check the connection and try again.', 'quinrel'),
             });
         } finally {
             setManualUrlBusy(false);
         }
     };
+
+    const bingKeySaved = settings.bing_api_key === BING_KEY_MASK;
+    const bingSiteMissing = bingKeySaved && Boolean(bingTraffic) && !bingTrafficError && bingTraffic.measured_days === 0;
+    const showBingLink = !bingKeySaved || Boolean(bingTrafficError) || bingSiteMissing;
 
     const generateRandomIndexNowKey = () => {
         const chars = '0123456789abcdef';
@@ -332,7 +461,7 @@ export const GlobalSettingsHub = ({
                     <button
                         type="button"
                         onClick={saveSettings}
-                        disabled={isSaving}
+                        disabled={isSaving || !settingsLoaded}
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
                     >
                         {isSaving ? (
@@ -455,16 +584,46 @@ export const GlobalSettingsHub = ({
                                 </div>
                             </section>
 
+                            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4" aria-labelledby="quinrel-head-hdr">
+                                <div>
+                                    <h3 id="quinrel-head-hdr" className="text-base font-bold text-slate-900 m-0">
+                                        {__('Titles and archive pages', 'quinrel')}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mt-1 mb-0">
+                                        {__('A custom SEO title is used only when you have saved one. Archive pages after the first stay indexable.', 'quinrel')}
+                                    </p>
+                                </div>
+                                <ToggleControl
+                                    label={__('Noindex archive pages after the first', 'quinrel')}
+                                    help={__('Off by default. Page 2 and later keep a canonical link to themselves. Turn this on to mark those pages noindex.', 'quinrel')}
+                                    checked={!!settings.noindex_paged_archives}
+                                    onChange={(val) => setSettings({ ...settings, noindex_paged_archives: val })}
+                                />
+                                <ToggleControl
+                                    label={__('Quinrel owns the head while another SEO plugin is active', 'quinrel')}
+                                    help={__('Off by default. Titles and meta stay with Yoast, Rank Math, All in One SEO, or SEOPress until you turn this on.', 'quinrel')}
+                                    checked={!!settings.owns_head}
+                                    onChange={(val) => setSettings({ ...settings, owns_head: val })}
+                                />
+                            </section>
+
                             {/* RSS Content Feed Customization */}
                             <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4" aria-labelledby="quinrel-rss-hdr">
                                 <div>
                                     <h3 id="quinrel-rss-hdr" className="text-base font-bold text-slate-900 m-0">
-                                        {__('RSS Content Scraping Protection', 'quinrel')}
+                                        {__('RSS feed text', 'quinrel')}
                                     </h3>
                                     <p className="text-xs text-slate-500 mt-1 mb-0">
-                                        {__('Add attribution and backlinks before and after each post in your RSS feed to deter content scrapers and protect original authorship.', 'quinrel')}
+                                        {__('Add text before or after each feed item. The default attribution line stays off until you turn it on.', 'quinrel')}
                                     </p>
                                 </div>
+
+                                <ToggleControl
+                                    label={__('Add the default attribution line', 'quinrel')}
+                                    help={__('Off by default. When both boxes are empty, Quinrel adds “The post … first appeared on …” only if this is on. Text you save in the boxes is used either way.', 'quinrel')}
+                                    checked={!!settings.rss_attribution}
+                                    onChange={(val) => setSettings({ ...settings, rss_attribution: val })}
+                                />
 
                                 <div className="space-y-4">
                                     <TextareaControl
@@ -828,16 +987,15 @@ export const GlobalSettingsHub = ({
 
                                 {!settings.gsc_connected ? (
                                     <div className="space-y-6">
-                                        {/* Site Kit-Style 1-Click Connect Banner */}
                                         <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/50 border border-blue-100 shadow-2xs space-y-4">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                                                 <div className="space-y-1.5">
                                                     <h4 className="text-sm font-bold text-slate-900 m-0 flex items-center gap-2">
                                                         <GoogleIcon className="w-4 h-4" />
-                                                        <span>{__('Site Kit-Style Google Authorization', 'quinrel')}</span>
+                                                        <span>{__('Google Search Console', 'quinrel')}</span>
                                                     </h4>
                                                     <p className="text-xs text-slate-600 m-0 max-w-xl">
-                                                        {__('Connect your Google account with 1 click to verify ownership and unlock real-time organic search telemetry for this WordPress site.', 'quinrel')}
+                                                        {__('Save a Google OAuth client ID and client secret below. Connect opens Google so you can allow read-only access to this site\'s search data.', 'quinrel')}
                                                     </p>
                                                 </div>
 
@@ -866,7 +1024,7 @@ export const GlobalSettingsHub = ({
                                             </div>
                                         </div>
 
-                                        {/* Collapsible Advanced GCP Credentials Drawer */}
+                                        {/* Required Google OAuth client credentials */}
                                         <div className="border border-slate-200 rounded-xl overflow-hidden">
                                             <button
                                                 type="button"
@@ -875,7 +1033,7 @@ export const GlobalSettingsHub = ({
                                             >
                                                 <span className="flex items-center gap-2">
                                                     <span>⚙️</span>
-                                                    <span>{__('Advanced: Custom Google Cloud OAuth Credentials (GCP Console)', 'quinrel')}</span>
+                                                    <span>{__('Google OAuth client ID and client secret', 'quinrel')}</span>
                                                 </span>
                                                 <span className="text-slate-400 font-mono">{showCustomGscDrawer ? '▲' : '▼'}</span>
                                             </button>
@@ -883,7 +1041,7 @@ export const GlobalSettingsHub = ({
                                             {showCustomGscDrawer && (
                                                 <div className="p-5 bg-white space-y-4 border-t border-slate-200">
                                                     <p className="text-xs text-slate-500 m-0">
-                                                        {__('If you have your own Google Cloud Platform OAuth application, provide your Client ID and Client Secret below. Ensure the Authorized Redirect URI is added in your Google Cloud Console.', 'quinrel')}
+                                                        {__('Paste the client ID and client secret from your Google Cloud OAuth client. Add the redirect URI below to that client\'s authorized redirect URIs.', 'quinrel')}
                                                     </p>
 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -892,6 +1050,11 @@ export const GlobalSettingsHub = ({
                                                             value={settings.gsc_client_id || ''}
                                                             onChange={(val) => setSettings({ ...settings, gsc_client_id: val })}
                                                             placeholder="1234567890-xxx.apps.googleusercontent.com"
+                                                            help={
+                                                                settings.gsc_client_id && settings.gsc_client_id.includes('@') && !settings.gsc_client_id.endsWith('.apps.googleusercontent.com')
+                                                                    ? __('Note: Google OAuth Client ID should be the Client ID from Google Cloud Console (typically ending with .apps.googleusercontent.com), not an email address.', 'quinrel')
+                                                                    : null
+                                                            }
                                                         />
                                                         <TextControl
                                                             label={__('Google OAuth Client Secret', 'quinrel')}
@@ -1020,13 +1183,33 @@ export const GlobalSettingsHub = ({
                         <div id="settings-panel-webmasters" role="tabpanel" aria-labelledby="settings-tab-webmasters" className="space-y-6">
                             {/* Bing Webmaster Tools */}
                             <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4" aria-labelledby="quinrel-bing-hdr">
-                                <div>
-                                    <h3 id="quinrel-bing-hdr" className="text-base font-bold text-slate-900 m-0">
-                                        {__('Bing Webmaster Tools API', 'quinrel')}
-                                    </h3>
-                                    <p className="text-xs text-slate-500 mt-1 mb-0">
-                                        {__('Sync click and impression trends from Microsoft Bing to catch organic traffic shifts across multiple search engines.', 'quinrel')}
-                                    </p>
+                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                    <div>
+                                        <h3 id="quinrel-bing-hdr" className="text-base font-bold text-slate-900 m-0">
+                                            {__('Bing Webmaster Tools', 'quinrel')}
+                                        </h3>
+                                        <p className="text-xs text-slate-500 mt-1 mb-0">
+                                            {bingKeySaved
+                                                ? __('Opening this tab sends this site’s address to Bing and reads clicks and impressions.', 'quinrel')
+                                                : __('In Bing, open Settings, then API Access, and generate a key. Paste it below and save. The site in Bing must match this site’s address.', 'quinrel')}
+                                        </p>
+                                    </div>
+                                    {showBingLink && (
+                                        <a
+                                            href={bingSiteMissing ? 'https://www.bing.com/webmasters/' : 'https://www.bing.com/webmasters/home/api'}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors text-decoration-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                        >
+                                            <span>
+                                                {bingSiteMissing
+                                                    ? __('Open Bing Webmaster Tools', 'quinrel')
+                                                    : __('Open Bing API Access', 'quinrel')}
+                                            </span>
+                                            <ExternalLinkIcon className="w-3.5 h-3.5" />
+                                            <span className="screen-reader-text">{__('(opens in a new tab)', 'quinrel')}</span>
+                                        </a>
+                                    )}
                                 </div>
 
                                 <TextControl
@@ -1034,8 +1217,65 @@ export const GlobalSettingsHub = ({
                                     value={settings.bing_api_key || ''}
                                     type="password"
                                     onChange={(val) => setSettings({ ...settings, bing_api_key: val })}
-                                    placeholder="e.g. 1a2b3c4d5e6f7g8h9i0j..."
                                 />
+                                {settings.bing_api_key === BING_KEY_MASK && bingTrafficLoading && (
+                                    <p className="text-xs text-slate-600 m-0" role="status">
+                                        {__('Loading Bing performance…', 'quinrel')}
+                                    </p>
+                                )}
+                                {settings.bing_api_key === BING_KEY_MASK && bingTrafficError && (
+                                    <div className="p-3 rounded-xl text-xs bg-red-50 text-red-800 border border-red-200" role="alert">
+                                        {bingTrafficError}
+                                    </div>
+                                )}
+                                {settings.bing_api_key === BING_KEY_MASK && bingTraffic && !bingTrafficError && bingTraffic.measured_days > 0 && (
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                                                <div className="text-xs font-semibold text-slate-500">{__('Clicks', 'quinrel')}</div>
+                                                <div className="text-2xl font-bold text-slate-900 mt-1">{bingTraffic.clicks}</div>
+                                            </div>
+                                            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                                                <div className="text-xs font-semibold text-slate-500">{__('Impressions', 'quinrel')}</div>
+                                                <div className="text-2xl font-bold text-slate-900 mt-1">{bingTraffic.impressions}</div>
+                                            </div>
+                                            {(typeof bingTraffic.clicks_change_percent === 'number' || typeof bingTraffic.impressions_change_percent === 'number') && (
+                                                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                                                    <div className="text-xs font-semibold text-slate-500">{__('Change', 'quinrel')}</div>
+                                                    <div className="text-sm font-semibold text-slate-900 mt-1">
+                                                        {typeof bingTraffic.clicks_change_percent === 'number' && (
+                                                            <div>
+                                                                {sprintf(
+                                                                    /* translators: %s: signed percentage change in clicks. */
+                                                                    __('Clicks %s%%', 'quinrel'),
+                                                                    `${bingTraffic.clicks_change_percent > 0 ? '+' : ''}${bingTraffic.clicks_change_percent}`
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {typeof bingTraffic.impressions_change_percent === 'number' && (
+                                                            <div>
+                                                                {sprintf(
+                                                                    /* translators: %s: signed percentage change in impressions. */
+                                                                    __('Impressions %s%%', 'quinrel'),
+                                                                    `${bingTraffic.impressions_change_percent > 0 ? '+' : ''}${bingTraffic.impressions_change_percent}`
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 mt-1 mb-0">
+                                                        {__('Compared with the previous 28 days.', 'quinrel')}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {bingTraffic.message ? (
+                                            <p className="text-xs text-slate-600 m-0">{bingTraffic.message}</p>
+                                        ) : null}
+                                    </div>
+                                )}
+                                {settings.bing_api_key === BING_KEY_MASK && bingTraffic && !bingTrafficError && bingTraffic.measured_days === 0 && bingTraffic.message && (
+                                    <p className="text-xs text-slate-600 m-0" role="status">{bingTraffic.message}</p>
+                                )}
                             </section>
 
                             {/* Webmaster Verification Meta Tags */}
@@ -1161,10 +1401,10 @@ export const GlobalSettingsHub = ({
                             <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4" aria-labelledby="quinrel-indexnow-hdr">
                                 <div>
                                     <h3 id="quinrel-indexnow-hdr" className="text-base font-bold text-slate-900 m-0">
-                                        {__('Bing & IndexNow Instant Crawl Protocol', 'quinrel')}
+                                        {__('IndexNow', 'quinrel')}
                                     </h3>
                                     <p className="text-xs text-slate-500 mt-1 mb-0">
-                                        {__('IndexNow instantly alerts participating search engines (Bing, Yandex, Seznam, Naver) when content is created, updated, or deleted.', 'quinrel')}
+                                        {__('When this is on, publishing a public post queues its URL. A background job sends up to 10 URLs at a time to https://api.indexnow.org/indexnow. Deleting a post does not send a notice.', 'quinrel')}
                                     </p>
                                 </div>
 
@@ -1187,29 +1427,77 @@ export const GlobalSettingsHub = ({
                                         </button>
                                     </div>
 
-                                    {settings.indexnow_configured && (
-                                        <p className="text-xs text-emerald-700 m-0">
-                                            {__('✓ An IndexNow API Key is active.', 'quinrel')}
+                                    {settings.indexnow_key_url ? (
+                                        <p className="text-xs text-slate-600 m-0">
+                                            <a href={settings.indexnow_key_url} className="text-indigo-700 underline break-all">
+                                                {settings.indexnow_key_url}
+                                            </a>
+                                            {' '}
+                                            {__('IndexNow fetches this file to verify the key.', 'quinrel')}
                                         </p>
-                                    )}
+                                    ) : null}
 
                                     <ToggleControl
-                                        label={__('Enable automatic IndexNow notifications on post publish / update', 'quinrel')}
-                                        help={__('Automatically notifies IndexNow search engines on post publish or modification without slowing down save requests.', 'quinrel')}
+                                        label={__('Notify IndexNow when a public post is published', 'quinrel')}
+                                        help={__('The save finishes immediately. The notice is sent in the background.', 'quinrel')}
                                         checked={!!settings.auto_index}
                                         onChange={(val) => setSettings({ ...settings, auto_index: val })}
                                     />
                                 </div>
                             </section>
 
-                            {/* Manual Instant Push Diagnostic Test */}
+                            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4" aria-labelledby="quinrel-indexnow-log-hdr">
+                                <div>
+                                    <h3 id="quinrel-indexnow-log-hdr" className="text-base font-bold text-slate-900 m-0">
+                                        {__('Recent IndexNow submissions', 'quinrel')}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mt-1 mb-0">
+                                        {__('Accepted means the IndexNow hub took the batch. It does not mean the page was crawled or indexed.', 'quinrel')}
+                                    </p>
+                                </div>
+                                {indexNowLogNote && (
+                                    <div className="p-3 rounded-xl text-xs bg-red-50 text-red-800 border border-red-200" role="alert">
+                                        {indexNowLogNote.text}
+                                    </div>
+                                )}
+                                {indexNowLog.length === 0 && !indexNowLogNote ? (
+                                    <p className="text-xs text-slate-600 m-0">
+                                        {__('No IndexNow submissions yet. Publish a public post, or queue a test URL below.', 'quinrel')}
+                                    </p>
+                                ) : (
+                                    <ul className="m-0 p-0 list-none space-y-2">
+                                        {indexNowLog.map((row, index) => {
+                                            const code = Number(row.status_code);
+                                            const accepted = code === 200 || code === 202;
+                                            return (
+                                                <li key={`${row.submitted_at || 'row'}-${index}`} className="text-xs text-slate-700 break-all">
+                                                    <span title={row.url || ''}>{row.url}</span>
+                                                    {' · '}
+                                                    <span>{row.submitted_at}</span>
+                                                    {' · '}
+                                                    <span>
+                                                        {accepted
+                                                            ? __('Accepted', 'quinrel')
+                                                            : sprintf(
+                                                                /* translators: %d: HTTP status code returned for an IndexNow submission. */
+                                                                __('Not accepted (%d).', 'quinrel'),
+                                                                code
+                                                            )}
+                                                    </span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
+                            </section>
+
                             <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4" aria-labelledby="quinrel-manual-idx-hdr">
                                 <div>
                                     <h3 id="quinrel-manual-idx-hdr" className="text-base font-bold text-slate-900 m-0">
-                                        {__('Test Instant URL Dispatch', 'quinrel')}
+                                        {__('Send a test URL', 'quinrel')}
                                     </h3>
                                     <p className="text-xs text-slate-500 mt-1 mb-0">
-                                        {__('Manually dispatch an instant indexing notification for any live URL on your site.', 'quinrel')}
+                                        {__('Queues one URL from this site. IndexNow is notified in the background after you turn notifications on and save a key.', 'quinrel')}
                                     </p>
                                 </div>
 
@@ -1220,28 +1508,33 @@ export const GlobalSettingsHub = ({
                                                 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                                                 : 'bg-red-50 text-red-800 border border-red-200'
                                         }`}
-                                        role="alert"
+                                        role={manualUrlMsg.type === 'success' ? 'status' : 'alert'}
                                     >
                                         {manualUrlMsg.text}
                                     </div>
                                 )}
 
-                                <form onSubmit={handleTestManualIndex} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                                    <input
-                                        type="url"
-                                        required
-                                        placeholder="https://example.com/new-article"
-                                        value={manualUrl}
-                                        onChange={(e) => setManualUrl(e.target.value)}
-                                        className="flex-1 text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-2xs focus:border-indigo-500 focus:outline-none"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={manualUrlBusy || !manualUrl.trim()}
-                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
-                                    >
-                                        {manualUrlBusy ? __('Dispatching...', 'quinrel') : __('⚡ Dispatch Instant Push', 'quinrel')}
-                                    </button>
+                                <form onSubmit={handleTestManualIndex} className="space-y-3">
+                                    <label htmlFor="quinrel-indexnow-test-url" className="block text-xs font-semibold text-slate-700">
+                                        {__('URL on this site', 'quinrel')}
+                                    </label>
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                        <input
+                                            id="quinrel-indexnow-test-url"
+                                            type="url"
+                                            required
+                                            value={manualUrl}
+                                            onChange={(e) => setManualUrl(e.target.value)}
+                                            className="flex-1 text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg shadow-2xs focus:border-indigo-500 focus:outline-none"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={manualUrlBusy || !manualUrl.trim()}
+                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                                        >
+                                            {manualUrlBusy ? __('Queueing…', 'quinrel') : __('Queue URL', 'quinrel')}
+                                        </button>
+                                    </div>
                                 </form>
                             </section>
                         </div>
@@ -1258,24 +1551,41 @@ export const GlobalSettingsHub = ({
                                         {__('Core Web Vitals & Asset Delivery', 'quinrel')}
                                     </h3>
                                     <p className="text-xs text-slate-500 mt-1 mb-0">
-                                        {__('Safe, non-destructive front-end performance optimizations designed to improve Interaction to Next Paint (INP) and Largest Contentful Paint (LCP).', 'quinrel')}
+                                        {__('Both options stay off until you turn them on. Nothing here runs on a normal page view while they are off.', 'quinrel')}
                                     </p>
                                 </div>
 
                                 <div className="space-y-4 divide-y divide-slate-100">
-                                    <div className="pt-2">
+                                    <div className="pt-2 space-y-3">
                                         <ToggleControl
-                                            label={__('Defer non-critical front-end JavaScript', 'quinrel')}
-                                            help={__('Applies the defer loading strategy to non-essential scripts on the front end, allowing the browser to parse HTML without blocking render.', 'quinrel')}
+                                            label={__('Defer listed front-end scripts', 'quinrel')}
+                                            help={__('Off by default. Defers only the script handles you list. An empty list defers nothing. jquery and other WordPress core handles stay as they are.', 'quinrel')}
                                             checked={!!settings.defer_non_critical_scripts}
                                             onChange={(val) => setSettings({ ...settings, defer_non_critical_scripts: val })}
+                                        />
+                                        <TextControl
+                                            label={__('Script handles to defer', 'quinrel')}
+                                            help={__('Comma-separated handles, up to 40. Example: contact-form-7, woocommerce', 'quinrel')}
+                                            value={settings.defer_script_handles || ''}
+                                            onChange={(val) => setSettings({ ...settings, defer_script_handles: val })}
+                                        />
+                                    </div>
+
+                                    <div className="pt-4 space-y-3">
+                                        <TextControl
+                                            label={__('PageSpeed Insights API key', 'quinrel')}
+                                            help={__('Used only when you run a PageSpeed check. The URL you check is sent to Google. Leave this blank to try without a key. A QUINREL_PSI_KEY constant in wp-config.php overrides this field.', 'quinrel')}
+                                            type="password"
+                                            value={settings.pagespeed_api_key || ''}
+                                            onChange={(val) => setSettings({ ...settings, pagespeed_api_key: val })}
+                                            autoComplete="off"
                                         />
                                     </div>
 
                                     <div className="pt-4">
                                         <ToggleControl
-                                            label={__('Apply font-display: swap & preconnect for Google Fonts', 'quinrel')}
-                                            help={__('Ensures text remains visible during webfont load (FOIT elimination) and injects preconnect hints for fonts.gstatic.com.', 'quinrel')}
+                                            label={__('Swap Google Fonts and preconnect when a page already loads them', 'quinrel')}
+                                            help={__('Off by default. When a page already loads fonts.googleapis.com, Quinrel adds display=swap and a preconnect for that request.', 'quinrel')}
                                             checked={!!settings.font_display_swap}
                                             onChange={(val) => setSettings({ ...settings, font_display_swap: val })}
                                         />

@@ -6,6 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use Quinrel\WordPress\Modules\Indexing\BingIndexNowApi;
+
 /**
  * Local answers for the first admin screen.
  *
@@ -67,6 +69,7 @@ class StandaloneDashboard {
 					? __( 'Search engines may index this site.', 'quinrel' )
 					: __( 'Search engines are discouraged from indexing this site.', 'quinrel' ),
 				'sitemap_url'          => esc_url_raw( home_url( '/sitemap.xml' ) ),
+				'indexnow_enabled'     => ( new BingIndexNowApi() )->isEnabled(),
 				'missing_titles'       => $counts['missing_titles'],
 				'missing_alt'          => $counts['missing_alt'],
 				'redirects'            => $redirects,

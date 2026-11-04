@@ -2,6 +2,7 @@
 
 namespace Quinrel\WordPress\Tests\Unit;
 
+use Quinrel\WordPress\Modules\Schema\VideoExtractor;
 use Quinrel\WordPress\Modules\Sitemap\NewsSitemapGenerator;
 use Quinrel\WordPress\Modules\Sitemap\SitemapGenerator;
 use Quinrel\WordPress\Modules\Sitemap\SitemapModule;
@@ -78,7 +79,8 @@ class SitemapBehaviorTest extends TestCase {
 			$GLOBALS['mock_user_caps'],
 			$GLOBALS['mock_filter_callbacks']['quinrel_sitemap_urls_per_file'],
 			$GLOBALS['mock_filter_callbacks']['quinrel_sitemap_conflicting_plugins'],
-			$GLOBALS['wp_rewrite']
+			$GLOBALS['wp_rewrite'],
+			$GLOBALS['mock_published_posts']
 		);
 		parent::tearDown();
 	}
@@ -111,7 +113,41 @@ class SitemapBehaviorTest extends TestCase {
 		$this->assertStringContainsString( 'https://example.com/sitemap-posts-2026-10-3.xml', $xml );
 		$this->assertStringNotContainsString( 'sitemap-posts-2026-10-1.xml', $xml );
 		$this->assertStringNotContainsString( 'sitemap-posts-2026-10-4.xml', $xml );
+		$this->assertStringNotContainsString( 'video-sitemap', $xml );
 		$this->assertSame( 2, SitemapGenerator::urlLimit() );
+	}
+
+	public function testVideoSitemapListsEveryPageOfFiveHundredPosts(): void {
+		update_option( 'quinrel_enable_video_sitemap', 'yes' );
+		$GLOBALS['mock_post_types']       = array( 'post' );
+		$GLOBALS['mock_published_posts']  = 1000;
+		$GLOBALS['mock_wpdb_results']     = static function (): array {
+			return array();
+		};
+		$seen                         = array();
+		$GLOBALS['mock_get_posts']    = static function ( array $args ) use ( &$seen ): array {
+			$seen = $args;
+			return array();
+		};
+
+		$xml = ( new SitemapGenerator() )->indexXml();
+
+		$this->assertStringContainsString( 'https://example.com/video-sitemap.xml', $xml );
+		$this->assertStringContainsString( 'https://example.com/video-sitemap-2.xml', $xml );
+		$this->assertStringNotContainsString( 'video-sitemap-3.xml', $xml );
+
+		$page = ( new VideoSitemapGenerator() )->generateXml( 2 );
+
+		$this->assertSame( 500, $seen['posts_per_page'] );
+		$this->assertSame( 2, $seen['paged'] );
+		$this->assertTrue( $seen['no_found_rows'] );
+		$this->assertStringContainsString( '<urlset ', $page );
+		$this->assertStringNotContainsString( '<url>', $page );
+
+		update_option( 'quinrel_video_sitemap_cache_ver', 1, false );
+		VideoSitemapGenerator::clearCache();
+		$this->assertSame( 2, (int) get_option( 'quinrel_video_sitemap_cache_ver' ) );
+		$this->assertFalse( $GLOBALS['mock_option_autoload']['quinrel_video_sitemap_cache_ver'] );
 	}
 
 	public function testNoindexPostsAndExcludedTypesStayOut(): void {
@@ -351,7 +387,65 @@ class SitemapBehaviorTest extends TestCase {
 		$this->assertStringContainsString( '<video:video>', $xml );
 		$this->assertStringNotContainsString( 'https://example.com/post-9/', $xml );
 		$this->assertStringNotContainsString( 'https://example.com/</loc>', $xml );
+		$this->assertStringNotContainsString( '<video:duration>', $xml );
 		$this->assertSame( 1, substr_count( $xml, '<loc>' ) );
+		$this->assertArrayNotHasKey( 'duration', VideoExtractor::extractVideoObjects( 8 )[0] );
+	}
+
+	public function testVideoSitemapUsesOnlyADurationTheEditorSaved(): void {
+		$GLOBALS['mock_posts'] = array(
+			10 => new \WP_Post(
+				array(
+					'ID'           => 10,
+					'post_title'   => 'Manual',
+					'post_content' => '',
+					'post_excerpt' => 'Saved length',
+				)
+			),
+			11 => new \WP_Post(
+				array(
+					'ID'           => 11,
+					'post_title'   => 'Unknown length',
+					'post_content' => '',
+					'post_excerpt' => 'No length',
+				)
+			),
+			12 => new \WP_Post(
+				array(
+					'ID'           => 12,
+					'post_title'   => 'Hour',
+					'post_content' => '<video src="https://example.com/clip.mp4"></video>',
+					'post_excerpt' => 'File',
+				)
+			),
+		);
+		$GLOBALS['mock_post_meta'][10] = array(
+			'_quinrel_video_url'      => 'https://example.com/talk.mp4',
+			'_quinrel_video_duration' => '90',
+		);
+		$GLOBALS['mock_post_meta'][11] = array(
+			'_quinrel_video_url'      => 'https://example.com/untitled.mp4',
+			'_quinrel_video_duration' => '0',
+		);
+		$GLOBALS['mock_get_posts'] = static function (): array {
+			return array_values( $GLOBALS['mock_posts'] );
+		};
+
+		$saved = VideoExtractor::extractVideoObjects( 10 );
+		$this->assertSame( 'PT90S', $saved[0]['duration'] );
+		$this->assertArrayNotHasKey( 'duration', VideoExtractor::extractVideoObjects( 11 )[0] );
+		$this->assertArrayNotHasKey( 'duration', VideoExtractor::extractVideoObjects( 12 )[0] );
+		$this->assertSame( '', VideoExtractor::isoDuration( 'PT0S' ) );
+		$this->assertSame( '', VideoExtractor::isoDuration( 'about a minute' ) );
+		$this->assertSame( 'PT1H2M', VideoExtractor::isoDuration( 'PT1H2M' ) );
+		$this->assertSame( 3720, VideoExtractor::secondsFromIso( 'PT1H2M' ) );
+
+		$xml = ( new VideoSitemapGenerator() )->generateXml();
+
+		$this->assertStringContainsString( '<video:duration>90</video:duration>', $xml );
+		$this->assertSame( 1, substr_count( $xml, '<video:duration>' ) );
+		$this->assertStringContainsString( 'https://example.com/post-11/', $xml );
+		$this->assertStringContainsString( 'https://example.com/post-12/', $xml );
 	}
 
 	public function testActivationRegistersRulesAndFlushesOnce(): void {
@@ -373,7 +467,9 @@ class SitemapBehaviorTest extends TestCase {
 		$this->assertArrayHasKey( '^sitemap-posts-(\d{4}-\d{2})(?:-([2-9]|[1-9]\d+))?\.xml$', $rules );
 		$this->assertStringContainsString( 'quinrel_sitemap_page=$matches[2]', $rules['^sitemap-posts-(\d{4}-\d{2})(?:-([2-9]|[1-9]\d+))?\.xml$'] );
 		$this->assertArrayHasKey( '^sitemap-news\.xml$', $rules );
-		$this->assertArrayHasKey( '^video-sitemap\.xml$', $rules );
+		$videoRule = '^video-sitemap(?:-([2-9]|[1-9]\d+))?\.xml$';
+		$this->assertArrayHasKey( $videoRule, $rules );
+		$this->assertStringContainsString( 'quinrel_sitemap_page=$matches[1]', $rules[ $videoRule ] );
 		$this->assertArrayHasKey( '^shop$', $rules );
 
 		$routes->removeRulesAndFlush();
@@ -382,7 +478,7 @@ class SitemapBehaviorTest extends TestCase {
 		$this->assertArrayNotHasKey( '^sitemap\.xml$', $GLOBALS['wp_rewrite']->extra_rules_top );
 		$this->assertArrayNotHasKey( '^sitemap-posts-(\d{4}-\d{2})(?:-([2-9]|[1-9]\d+))?\.xml$', $GLOBALS['wp_rewrite']->extra_rules_top );
 		$this->assertArrayNotHasKey( '^sitemap-news\.xml$', $GLOBALS['wp_rewrite']->extra_rules_top );
-		$this->assertArrayNotHasKey( '^video-sitemap\.xml$', $GLOBALS['wp_rewrite']->extra_rules_top );
+		$this->assertArrayNotHasKey( '^video-sitemap(?:-([2-9]|[1-9]\d+))?\.xml$', $GLOBALS['wp_rewrite']->extra_rules_top );
 		$this->assertSame( 'index.php?post_type=product', $GLOBALS['wp_rewrite']->extra_rules_top['^shop$'] );
 
 		$plugin     = (string) file_get_contents( dirname( __DIR__, 2 ) . '/src/Plugin.php' );
@@ -392,6 +488,7 @@ class SitemapBehaviorTest extends TestCase {
 		$this->assertSame( 0, substr_count( $activate, 'removeRulesAndFlush()' ) );
 		$this->assertSame( 1, substr_count( $deactivate, 'removeRulesAndFlush()' ) );
 		$this->assertSame( 0, substr_count( $deactivate, 'flushRules()' ) );
+		$this->assertStringContainsString( 'video-sitemap(?:-(?:[2-9]|[1-9]\d+))?\.xml', $plugin );
 	}
 
 	public function testConflictingSeoPluginAsksTheUserToDisableOne(): void {

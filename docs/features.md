@@ -77,13 +77,13 @@ Roles & Capabilities control who can manage redirects, edit SEO meta, and open S
 
 ## Google Analytics 4, Google Search Console, and IndexNow
 
-Google Analytics 4 and Google Search Console load after you connect them. Google Search Console connects via a 1-click Google OAuth flow with automatic property selection, or with manual property entry in its dedicated settings tab. Search Console can list queries matched by more than one page.
+Google Analytics 4 and Google Search Console load after you connect them. Google Search Console connects after an administrator saves a Google OAuth client ID and client secret. Connect then opens Google's account screen for read-only access. The administrator chooses the Search Console property. Search Console can list queries matched by more than one page.
 
-IndexNow sends published URLs only after an administrator saves a key and turns notifications on. IndexNow does not guarantee indexing. The Google Indexing API is optional, applies to eligible JobPosting or livestream pages, and does not guarantee indexing.
+IndexNow sends published URLs to https://api.indexnow.org/indexnow only after an administrator saves a key and turns notifications on. IndexNow does not guarantee indexing. The Google Indexing API is optional, applies to eligible JobPosting or livestream pages, and does not guarantee indexing.
 
-The Keyword Rank Tracker uses a SerpApi key saved on this site.
+The Keyword Rank Tracker shows how queries moved in Google Search Console. A SerpApi key is optional and is used only for a live Google results check.
 
-A Bing Webmaster tools verification code can be saved in settings. Quinrel does not include a Bing traffic screen. The Bing Webmaster API is used only when a Bing API key is already stored.
+A Bing Webmaster tools verification code can be saved in settings. An administrator who saves a Bing API key can read the last 28 days of clicks and impressions for this site. The site address is sent to https://ssl.bing.com only when that administrator opens the Bing section. Quinrel does not submit pages or sitemaps to the Bing Webmaster API.
 
 Social posting can send to Facebook, X, LinkedIn, and Pinterest. Instagram and YouTube can be stored as profile URLs. Quinrel does not post to Instagram or TikTok.
 
@@ -97,7 +97,7 @@ Settings Portability lets administrators export plugin settings as a JSON file o
 
 The setup wizard can store a site type and profile URLs. Technical SEO already works before you finish it.
 
-Quinrel can import titles, descriptions, and settings from Yoast SEO, Rank Math, and All in One SEO. The import shows how many fields it will copy and does not write until you confirm.
+Quinrel can import titles, descriptions, and settings from Yoast SEO, Rank Math, All in One SEO, SEOPress, and The SEO Framework. The import shows how many fields it will copy and does not write until you confirm.
 
 On a multisite network, a network screen is available. It is not shown on a single site.
 
