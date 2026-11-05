@@ -23,6 +23,7 @@ class AdminModule {
 
 	public function boot(): void {
 		$this->eventManager->addAction( 'admin_menu', array( $this->adminMenu, 'registerMenu' ) );
+		$this->eventManager->addAction( 'admin_enqueue_scripts', array( $this->adminMenu, 'enqueueMenuIcon' ) );
 		$this->eventManager->addAction( 'admin_enqueue_scripts', array( $this->adminMenu, 'enqueueAssets' ) );
 		$this->eventManager->addAction( 'rest_api_init', array( $this, 'registerRestRoutes' ) );
 

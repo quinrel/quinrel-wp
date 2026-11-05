@@ -32,6 +32,7 @@ descriptions in the `== Screenshots ==` section of readme.txt.
 - PNG or JPG accepted; PNG preferred for icons, JPG for banners
 - Do NOT commit screenshots to trunk — only to /assets/
 - Max file size: 1 MB per asset
-- The icon files are 128 and 256 pixels. They do not contain a product name and were left unchanged.
-- The banner files are 772 by 250 and 1544 by 500. They use the same mark and map, with the word Quinrel.
+- The icon files are 128 and 256 pixels. They are the official square mark in `docs/quinrel-logo.jpeg`.
+- The banner files are 772 by 250 and 1544 by 500. They use the official wordmark in `docs/quinrel.jpeg`.
+- `assets/brand/quinrel-mark.png` is the Q from `docs/quinrel-light.jpeg`, for the admin menu and the screen header.
 - screenshot-1.png through screenshot-8.png, here and in assets/screenshots/, are captures from the Quinrel admin on the local UAT site. readme.txt names those files.

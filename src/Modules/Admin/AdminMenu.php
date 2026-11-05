@@ -16,7 +16,7 @@ class AdminMenu {
 			'edit_seo_meta',
 			'quinrel',
 			array( $this, 'renderAdminPage' ),
-			'dashicons-chart-area',
+			QUINREL_PLUGIN_URL . 'assets/brand/quinrel-mark.png',
 			85
 		);
 
@@ -121,6 +121,15 @@ class AdminMenu {
 		);
 	}
 
+	public function enqueueMenuIcon(): void {
+		wp_register_style( 'quinrel-menu-icon', false, array(), QUINREL_VERSION );
+		wp_enqueue_style( 'quinrel-menu-icon' );
+		wp_add_inline_style(
+			'quinrel-menu-icon',
+			'#adminmenu #toplevel_page_quinrel .wp-menu-image img,#adminmenu #toplevel_page_quinrel-network .wp-menu-image img{width:20px;height:20px;padding:7px 0 0;opacity:1;object-fit:contain;}'
+		);
+	}
+
 	public function enqueueAssets( string $hook ): void {
 		// Only load assets on our plugin pages
 		if ( $hook !== 'toplevel_page_quinrel' && false === strpos( $hook, 'page_quinrel' ) ) {
@@ -154,6 +163,7 @@ class AdminMenu {
 				'setupComplete'   => get_option( 'quinrel_setup_complete' ) ? '1' : '0',
 				'initialTab'      => $initialTab,
 				'version'         => QUINREL_VERSION,
+				'markUrl'         => esc_url_raw( QUINREL_PLUGIN_URL . 'assets/brand/quinrel-mark.png' ),
 				'isMultisite'     => is_multisite() ? '1' : '0',
 				'cloudConfigured' => \Quinrel\WordPress\Core\Mode\OperatingMode::isCloudConfigured() ? '1' : '0',
 				'capabilities'    => array(

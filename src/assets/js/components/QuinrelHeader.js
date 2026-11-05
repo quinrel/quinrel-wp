@@ -12,15 +12,20 @@ export const QuinrelHeader = ({
     version,
 }) => {
     const displayVersion = version || window.quinrelAdminConfig?.version || '1.1.0';
+    const markUrl = window.quinrelAdminConfig?.markUrl || '';
 
     return (
         <header className="mb-6 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 {/* Brand & Status */}
                 <div className="flex items-center gap-3.5">
-                    <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25 flex-shrink-0">
-                        <LogoMark className="w-6 h-6 text-white" />
-                    </div>
+                    {markUrl ? (
+                        <img src={markUrl} alt="" width="44" height="44" className="h-11 w-11 flex-shrink-0 object-contain" />
+                    ) : (
+                        <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25 flex-shrink-0">
+                            <LogoMark className="w-6 h-6 text-white" />
+                        </div>
+                    )}
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
                             <h1 className="text-2xl font-black tracking-tight text-slate-900 m-0">Quinrel</h1>

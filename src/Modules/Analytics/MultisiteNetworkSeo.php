@@ -232,7 +232,7 @@ class MultisiteNetworkSeo {
 			'manage_network_options',
 			'quinrel-network',
 			array( $this, 'renderNetworkAdminPage' ),
-			'dashicons-chart-area',
+			QUINREL_PLUGIN_URL . 'assets/brand/quinrel-mark.png',
 			30
 		);
 	}
