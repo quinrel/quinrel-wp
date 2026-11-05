@@ -1,74 +1,31 @@
-# AI Visibility, llms.txt & Crawler Shield
+# llms.txt and crawler visits
 
-As search behavior shifts toward conversational answers and synthetic citations, web publishers require granular governance over how Large Language Model (LLM) systems ingest, summarize, and attribute their content.
+Answer engines sometimes fetch a short reading list, the schema on a page, or the page itself, before they decide what to use. Quinrel prepares those on this site. A Quinrel account is optional. None of the steps below call https://api.quinrel.com.
 
-Quinrel provides an AI Governance suite built around the open `/llms.txt` specification, dynamic crawler access controls, and explicit copyright training opt-outs.
+Quinrel publishes an llms.txt file on this site. It does not submit the site to ChatGPT, Perplexity, or Claude, and it does not check whether they mention it. It does not score AI mentions, Google presence, or competitors.
 
----
+## The reading list
 
-## 1. The llms.txt Standard
+The file is ready when the plugin is active. It is built from the site name, the tagline, and recent posts, and it is served at `/llms.txt`. Open that address on the site to read what was published. Publishing it does not place the site in an answer.
 
-The `/llms.txt` file format is an open standard designed to provide AI agents, research crawlers, and LLMs with a clean, lightweight, machine-readable digest of your website's authoritative content.
+On the llms.txt screen, choose the summary and the post types included. Set a contact URL when the site has no page named "contact". With neither a contact URL nor that page, the public file includes the administrator email address.
 
-### What Quinrel Publishes:
-* **Primary Manifest (`/llms.txt`):** A curated markdown document containing your organization profile, core topics, and direct links to foundational cornerstone articles.
-* **Extended Content Digest:** A comprehensive markdown digest of all published public articles, stripped of CSS, JavaScript, sidebars, and navigation menus, exposing purely semantic headings and text.
+## Schema
 
-### Configuring Your Digest:
-1. Navigate to **Quinrel > AI Visibility > llms.txt Generator**.
-2. Toggle **Enable llms.txt Output**.
-3. **Site Summary / Bio:** Provide a concise 2–3 sentence description of your publication, its editorial standards, and its primary areas of subject-matter expertise.
-4. **Included Post Types:** Check which public post types to include (e.g., Posts, Knowledge Base, Case Studies).
-5. **Cornerstone Prioritization:** Toggle whether cornerstone content is grouped into an "Essential Reading" section at the top of the manifest.
-6. Verify output by visiting `https://example.com/llms.txt` in your browser.
+Schema Markup is printed with the page. A machine that fetches the HTML can tell a product, a place, an article, or an event from a generic post. The markup stays in the response. It is not sent to Quinrel. Structured data does not guarantee a rich result, and it does not place the page in an AI answer.
 
----
+## Crawler rules and the training opt-out
 
-## 2. 3-Tier AI Crawler Shield
+AI crawler rules are added to robots.txt when you turn them on. They stay off until then. WordPress still builds the rest of the file. Quinrel appends its lines unless an administrator confirms a full replacement.
 
-Quinrel introduces a 3-tier crawler management model integrated into your dynamic `robots.txt` configuration:
+The `noai` and `noimageai` tag, and a `tdm-reservation` tag, are added when the training opt-out is on, or when a post is marked opted out. Both stay off until then. The site owner remains responsible for any legal reservation. Quinrel does not make a site compliant with a copyright or privacy law.
 
-### Tier 1: Traditional Search Crawlers
-* **Bots:** `Googlebot`, `Bingbot`, `YandexBot`, `DuckDuckBot`.
-* **Policy:** Always allowed to index web pages, images, and sitemaps for standard organic web search.
+## Crawler visits
 
-### Tier 2: Search & Citation Crawlers
-* **Bots:** `PerplexityBot`, `SearchGPT`, `BingPreview`.
-* **Purpose:** These systems browse the web in real time to fetch factual citations for user search prompts.
-* **Control:** Configurable under **Quinrel > AI Visibility > Crawler Permissions**. Allowing these bots enables your content to be cited as an authoritative source in conversational search answers.
+Quinrel can record visits from known AI crawlers, including GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Applebot-Extended. The screen shows a visit count and the last hit.
 
-### Tier 3: Model Training & Scraping Bots
-* **Bots:** `GPTBot`, `CCBot` (Common Crawl), `Bytespider` (ByteDance/TikTok), `ClaudeBot`, `Anthropic-AI`, `cohere-ai`, `Diffbot`.
-* **Purpose:** Bulk crawling to train commercial foundation models without necessarily driving direct referral traffic.
-* **Control:** You can selectively block Tier 3 scrapers with a single click. When blocked, Quinrel adds standard `Disallow: /` directives for each targeted user-agent in your virtual `robots.txt`.
+The count is stored on this site and kept for 30 days after the latest visit. It increases only when the request reaches WordPress. A page cache that serves the HTML without running PHP does not record that hit. Clearing the object cache can clear the count. That count is not a citation score, and it is not a ranking.
 
----
+You can also add an AI content disclosure on content you choose. The cookie notice is separate. It records a visitor choice and does not block third-party scripts.
 
-## 3. Training Opt-Out Headers (`noai`, `noimageai`)
-
-In addition to `robots.txt` rules, Quinrel provides machine-readable HTTP response headers and `<meta>` tags to assert your copyright preferences:
-
-* **HTTP Header:**
-  ```http
-  X-Robots-Tag: noai, noimageai
-  ```
-* **HTML Head Meta Tag:**
-  ```html
-  <meta name="robots" content="noai, noimageai" />
-  ```
-
-### Why Use Both?
-While `robots.txt` governs crawler access before a request is fetched, `X-Robots-Tag` and `<meta>` directives attach directly to individual files (including PDFs and images) and persist across CDNs and caching layers. This provides legal and technical evidence of training opt-out under jurisdictions recognizing machine-readable reservations of rights (e.g., EU Copyright Directive Article 4).
-
----
-
-## 4. AI Content Disclosures & Schema Authorship
-
-Transparency regarding AI involvement in content generation is increasingly valued by search engines and human audiences alike. Quinrel allows you to disclose content generation methodology per post under the **Advanced** tab in the editor:
-
-* **Human Authored:** 100% created and verified by human authors.
-* **AI-Assisted (Human Reviewed):** Researched or drafted with AI tooling, edited and fact-checked by human editorial staff.
-* **AI-Generated:** Automated content produced via algorithmic pipelines with human oversight.
-
-These selections inject corresponding structured data attributes into your JSON-LD entity graph, differentiating human expertise (`author`) from algorithmic generation tools.
-
+A count of citations inside ChatGPT, Perplexity, Google AI Overviews, or Claude is coming soon.

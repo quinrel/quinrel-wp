@@ -1,6 +1,6 @@
 # Privacy Compliance, GPC & AI Governance Playbook
 
-In an evolving global regulatory landscape, SEO and website discovery tools must maintain strict privacy safeguards. Quinrel is engineered with privacy-by-design principles, offering native compliance with CCPA/CPRA, GDPR, Global Privacy Control (GPC), and modern AI training reservation standards.
+Quinrel can record a visitor's cookie choice, and it can honor a Global Privacy Control header when that option is on. The cookie notice does not block third-party scripts and is not a consent-management platform. The site owner remains responsible for legal compliance. Quinrel does not make a site compliant with a privacy law.
 
 ---
 
@@ -37,32 +37,20 @@ When a GDPR Right to Be Forgotten erasure request is executed:
 
 ---
 
-## 3. AI Training Rights Reservation (EU Copyright Directive Article 4)
+## 3. AI training opt-out
 
-Under Article 4 of the European Union Directive on Copyright in the Digital Single Market (Directive 2019/790), web publishers are permitted to reserve the rights to text and data mining (TDM) provided such reservation is expressed in a machine-readable manner.
+The training opt-out stays off until an administrator turns it on, or a single post is marked opted out. When it is on, Quinrel adds these tags to the HTML response:
 
-Quinrel implements this requirement through dual protocols:
-
-### A. HTTP Transport Headers
-Every HTML response, media file, and document served can emit:
-```http
-X-Robots-Tag: noai, noimageai
-```
-This ensures proxies, caches, and headless API consumers inherit the copyright reservation even if HTML `<meta>` tags are stripped.
-
-### B. In-Document Semantic Directives
-Within the `<head>` of all HTML responses:
 ```html
 <meta name="robots" content="noai, noimageai" />
+<meta name="tdm-reservation" content="1" />
 ```
 
-### C. Crawler Shield Directives (`robots.txt`)
-Quinrel dynamically configures `Disallow: /` directives for identified AI training bots:
-* `GPTBot` (OpenAI training)
-* `CCBot` (Common Crawl foundation corpus)
-* `Bytespider` (ByteDance / TikTok LLMs)
-* `ClaudeBot` / `Anthropic-AI` (Anthropic training)
-* `cohere-ai` (Cohere models)
+On the paths that support the header, Quinrel can also send `X-Robots-Tag: noai, noimageai`. A normal page does not emit these tags while the opt-out is off.
+
+AI crawler rules in `robots.txt` are a separate switch. They stay off until an administrator turns them on. The screen names the crawlers, including GPTBot, ClaudeBot, and PerplexityBot. The site owner remains responsible for any legal reservation. Quinrel does not make a site compliant with a copyright or privacy law.
+
+`llms.txt`, schema, the crawler rules, and the visit count stay on this site. They do not call `https://api.quinrel.com`. The visit count is kept for 30 days after the latest visit, and only when the request reaches WordPress.
 
 ---
 
@@ -71,6 +59,6 @@ Quinrel dynamically configures `Disallow: /` directives for identified AI traini
 Quinrel does not collect telemetry, analytics, or user behavior data unless explicitly configured by the site administrator:
 
 * **Bounded 404 Logs:** Retains a maximum of 1,000 unique records; older non-recurring errors are automatically purged by scheduled WP-Cron events.
-* **No Cloud Transmissions by Default:** All keyword rankings, schema generation, and readability calculations execute locally on your WordPress server. No page contents are transmitted to external services without an explicit API key configured by the administrator.
+* **No cloud transmission for the on-site reading tools:** `llms.txt`, schema, AI crawler rules, and the crawler visit count stay on this site. Query movement is read from Google Search Console after you connect it. A live rank check uses a SerpApi key. Page contents are sent out only when an editor runs the writing assistant or content gap analysis, or when another service in [third-party services](../third-party-services.md) is turned on.
 * **Tenant Isolation in Multisite:** In WordPress Multisite (WPMU) installations, each subsite's redirect tables, outreach prospects, and schema configurations are strictly isolated by site ID (`$wpdb->prefix`).
 

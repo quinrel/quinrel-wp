@@ -1,6 +1,8 @@
 # WooCommerce SEO Integration Playbook
 
-When WooCommerce is active, Quinrel automatically enhances standard WooCommerce product schema and taxonomy management to provide Google Merchant Center compliance and cleaner e-commerce site architecture.
+When WooCommerce is active, product schema can include an aggregate rating if that product has reviews. A GTIN, MPN, or ISBN already stored on the product can be included in that schema. Quinrel does not submit a Google Merchant Center feed. Structured data does not guarantee a rich result.
+
+If a step below names a screen you cannot find, set the schema on the product. A separate Merchant Center feed is coming soon.
 
 ---
 

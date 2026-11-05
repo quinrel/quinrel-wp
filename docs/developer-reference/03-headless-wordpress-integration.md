@@ -1,18 +1,14 @@
 # Headless WordPress Integration Guide
 
-Quinrel provides dedicated, public headless REST endpoints designed to feed decoupled frontends (Next.js, Nuxt, Astro, Remix, SvelteKit) with complete metadata and JSON-LD structured data graphs.
-
----
-
-## 1. The Headless REST Endpoint
-
-Unlike default WordPress REST responses that scatter metadata across disparate fields, Quinrel provides a single consolidated headless route:
+A public read of SEO fields for a published post is:
 
 ```http
-GET /wp-json/quinrel/v1/headless/post/{id}
+GET /wp-json/quinrel/v1/seo/{post_id}
 ```
 
-This endpoint requires zero authentication and delivers a fully computed SEO payload ready for client injection.
+Writing SEO data is `PUT` on the same route and requires a user who can edit that post. Site-wide public fields are `GET /wp-json/quinrel/v1/seo/global`.
+
+The examples further down were written against an older path, `/headless/post/{id}`. Use `/seo/{post_id}`. A Quinrel account is optional. The settings screen cannot change the Quinrel API host.
 
 ---
 

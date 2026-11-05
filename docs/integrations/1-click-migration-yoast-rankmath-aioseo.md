@@ -1,6 +1,8 @@
-# 1-Click Migration Playbook: Yoast, Rank Math & AIOSEO
+# Import from another SEO plugin
 
-Switching your WordPress SEO plugin should never risk your search rankings, traffic, or metadata. Quinrel includes a non-destructive 1-click migration engine that extracts and converts existing data from Yoast SEO, Rank Math, and All in One SEO (AIOSEO).
+Quinrel can copy titles, descriptions, and related fields from Yoast SEO, Rank Math, All in One SEO, SEOPress, and The SEO Framework. The import shows how many fields it will copy and does not write until you confirm. Your existing posts stay as they are until that confirmation.
+
+Take a database backup before you run it on a live site. Leave the other SEO plugin active until you have checked the preview. While Yoast, Rank Math, All in One SEO, or SEOPress is active, Quinrel does not replace titles and meta until an administrator confirms it.
 
 ---
 
@@ -23,7 +25,7 @@ Before initiating migration on a production site:
 
 ## 2. Supported Data Mapping Reference
 
-Quinrel safely converts the following metadata structures:
+The table shows Yoast SEO, Rank Math, and All in One SEO. SEOPress and The SEO Framework are included in the same preview. The count on the screen is the list Quinrel will copy.
 
 | Field Type | Yoast SEO Field | Rank Math Field | AIOSEO Field | Quinrel Destination |
 | :--- | :--- | :--- | :--- | :--- |

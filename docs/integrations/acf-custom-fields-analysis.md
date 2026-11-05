@@ -1,8 +1,6 @@
 # Advanced Custom Fields (ACF) & Meta Analysis Playbook
 
-In modern custom WordPress themes, vital editorial prose often resides outside standard `post_content`—stored instead in **Advanced Custom Fields (ACF)**, Flexible Content modules, Repeaters, or custom post meta.
-
-Unlike legacy SEO plugins that inspect only `post_content` (producing false "thin content" warnings or missed keywords), Quinrel includes deep ACF aggregation and schema mapping.
+Quinrel can read an Advanced Custom Fields value, a Meta Box value, or post meta when a title, description, or schema template uses `acf:`, `cf:`, or `custom_field:`. Flexible content and repeaters are flattened to text for that lookup. Quinrel does not score the page as thin content.
 
 ---
 
