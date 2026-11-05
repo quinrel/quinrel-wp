@@ -105,6 +105,8 @@ class RobotsTxtEditorTest extends TestCase
         $this->assertStringContainsString('# Block AI Crawlers and LLM Bots', $output);
         $this->assertStringContainsString("User-agent: GPTBot\nDisallow: /", $output);
         $this->assertStringContainsString("User-agent: ClaudeBot\nDisallow: /", $output);
+        $this->assertStringContainsString("User-agent: OAI-SearchBot\nDisallow: /", $output);
+        $this->assertStringContainsString("User-agent: Claude-SearchBot\nDisallow: /", $output);
         $this->assertStringContainsString("User-agent: MyTestCrawler\nDisallow: /", $output);
     }
 
@@ -117,8 +119,18 @@ class RobotsTxtEditorTest extends TestCase
         $this->assertStringContainsString('# Block AI Training Crawlers (Allow AI Search Agents)', $output);
         $this->assertStringContainsString("User-agent: GPTBot\nDisallow: /", $output);
         $this->assertStringContainsString("User-agent: CCBot\nDisallow: /", $output);
+        $this->assertStringContainsString("User-agent: ClaudeBot\nDisallow: /", $output);
         $this->assertStringNotContainsString("User-agent: PerplexityBot\nDisallow: /", $output);
         $this->assertStringNotContainsString("User-agent: ChatGPT-User\nDisallow: /", $output);
+        $this->assertStringContainsString("User-agent: OAI-SearchBot\nAllow: /", $output);
+        $this->assertStringContainsString("User-agent: Claude-SearchBot\nAllow: /", $output);
+        $this->assertStringNotContainsString("User-agent: OAI-SearchBot\nDisallow: /", $output);
+        $this->assertStringNotContainsString("User-agent: Claude-SearchBot\nDisallow: /", $output);
+        $this->assertFalse($this->editor->userAgentMatchesTrainingBot('Mozilla/5.0 (compatible; OAI-SearchBot/1.0)'));
+        $this->assertFalse($this->editor->userAgentMatchesTrainingBot('Mozilla/5.0 (compatible; Claude-SearchBot/1.0)'));
+        $this->assertTrue($this->editor->userAgentMatchesTrainingBot('Mozilla/5.0 (compatible; GPTBot/1.2)'));
+        $this->assertTrue($this->editor->userAgentMatchesAiBot('Mozilla/5.0 (compatible; OAI-SearchBot/1.0)'));
+        $this->assertTrue($this->editor->userAgentMatchesAiBot('Mozilla/5.0 (compatible; Claude-SearchBot/1.0)'));
     }
 
     public function testUpdateAiBotPolicyViaRest(): void

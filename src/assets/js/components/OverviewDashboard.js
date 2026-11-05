@@ -171,24 +171,24 @@ export const OverviewDashboard = ({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:border-indigo-200 transition-colors">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500">ChatGPT / GPTBot</span>
+                            <span className="text-xs font-semibold text-slate-500">{__('OAI-SearchBot', 'quinrel')}</span>
                             <span className="w-2 h-2 rounded-full bg-emerald-400" />
                         </div>
                         <div className="text-xl font-bold text-slate-900 mt-1">
-                            {aiBotActivity ? aiBotActivity.gptbot : 0}
+                            {aiBotActivity ? (aiBotActivity.oai_searchbot || 0) : 0}
                         </div>
-                        <span className="text-[10px] text-slate-400">{__('OpenAI Web Indexer', 'quinrel')}</span>
+                        <span className="text-[10px] text-slate-400">{__('ChatGPT search', 'quinrel')}</span>
                     </div>
 
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:border-indigo-200 transition-colors">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500">Claude / Anthropic</span>
+                            <span className="text-xs font-semibold text-slate-500">{__('Claude-SearchBot', 'quinrel')}</span>
                             <span className="w-2 h-2 rounded-full bg-purple-400" />
                         </div>
                         <div className="text-xl font-bold text-slate-900 mt-1">
-                            {aiBotActivity ? aiBotActivity.claudebot : 0}
+                            {aiBotActivity ? (aiBotActivity.claude_searchbot || 0) : 0}
                         </div>
-                        <span className="text-[10px] text-slate-400">{__('ClaudeBot Search', 'quinrel')}</span>
+                        <span className="text-[10px] text-slate-400">{__('Claude search', 'quinrel')}</span>
                     </div>
 
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:border-indigo-200 transition-colors">

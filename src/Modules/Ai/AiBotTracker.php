@@ -16,12 +16,14 @@ class AiBotTracker {
 	public const TTL_SECONDS   = 2592000; // 30 days
 
 	private const KNOWN_BOTS = array(
-		'gptbot'          => array( 'GPTBot', 'ChatGPT-User' ),
-		'claudebot'       => array( 'ClaudeBot', 'Anthropic-AI', 'Claude-Web' ),
-		'perplexitybot'   => array( 'PerplexityBot' ),
-		'google_extended' => array( 'Google-Extended' ),
-		'applebot'        => array( 'Applebot-Extended' ),
-		'other_ai'        => array( 'CCBot', 'cohere-ai', 'YouBot', 'Omgilibot' ),
+		'oai_searchbot'    => array( 'OAI-SearchBot' ),
+		'claude_searchbot' => array( 'Claude-SearchBot' ),
+		'gptbot'           => array( 'GPTBot', 'ChatGPT-User' ),
+		'claudebot'        => array( 'ClaudeBot', 'Anthropic-AI', 'Claude-Web' ),
+		'perplexitybot'    => array( 'PerplexityBot' ),
+		'google_extended'  => array( 'Google-Extended' ),
+		'applebot'         => array( 'Applebot-Extended' ),
+		'other_ai'         => array( 'CCBot', 'cohere-ai', 'YouBot', 'Omgilibot' ),
 	);
 
 	/**
@@ -66,17 +68,7 @@ class AiBotTracker {
 	public function incrementCount( string $botKey ): void {
 		$data = get_transient( self::TRANSIENT_KEY );
 		if ( ! is_array( $data ) ) {
-			$data = array(
-				'gptbot'          => 0,
-				'claudebot'       => 0,
-				'perplexitybot'   => 0,
-				'google_extended' => 0,
-				'applebot'        => 0,
-				'other_ai'        => 0,
-				'total'           => 0,
-				'last_seen'       => '',
-				'last_bot'        => '',
-			);
+			$data = $this->emptyActivity();
 		}
 
 		if ( ! isset( $data[ $botKey ] ) ) {
@@ -99,20 +91,31 @@ class AiBotTracker {
 	public function getActivity(): array {
 		$data = get_transient( self::TRANSIENT_KEY );
 		if ( ! is_array( $data ) ) {
-			return array(
-				'gptbot'          => 0,
-				'claudebot'       => 0,
-				'perplexitybot'   => 0,
-				'google_extended' => 0,
-				'applebot'        => 0,
-				'other_ai'        => 0,
-				'total'           => 0,
-				'last_seen'       => '',
-				'last_bot'        => '',
-			);
+			return $this->emptyActivity();
 		}
 
-		return $data;
+		return array_merge( $this->emptyActivity(), $data );
+	}
+
+	/**
+	 * Zeroed counters, including crawlers recorded after older transients were stored.
+	 *
+	 * @return array<string, int|string>
+	 */
+	private function emptyActivity(): array {
+		return array(
+			'gptbot'           => 0,
+			'oai_searchbot'    => 0,
+			'claudebot'        => 0,
+			'claude_searchbot' => 0,
+			'perplexitybot'    => 0,
+			'google_extended'  => 0,
+			'applebot'         => 0,
+			'other_ai'         => 0,
+			'total'            => 0,
+			'last_seen'        => '',
+			'last_bot'         => '',
+		);
 	}
 
 	/**

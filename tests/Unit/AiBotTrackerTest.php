@@ -29,7 +29,9 @@ class AiBotTrackerTest extends TestCase
     {
         $this->assertSame('gptbot', $this->tracker->detectBot('Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)'));
         $this->assertSame('gptbot', $this->tracker->detectBot('Mozilla/5.0 ChatGPT-User/1.0'));
+        $this->assertSame('oai_searchbot', $this->tracker->detectBot('Mozilla/5.0 (compatible; OAI-SearchBot/1.0; +https://openai.com/searchbot)'));
         $this->assertSame('claudebot', $this->tracker->detectBot('Mozilla/5.0 ClaudeBot/1.0; +claudebot@anthropic.com'));
+        $this->assertSame('claude_searchbot', $this->tracker->detectBot('Mozilla/5.0 (compatible; Claude-SearchBot/1.0; +searchbot@anthropic.com)'));
         $this->assertSame('claudebot', $this->tracker->detectBot('Anthropic-AI/1.0'));
         $this->assertSame('perplexitybot', $this->tracker->detectBot('Mozilla/5.0 (compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)'));
         $this->assertSame('google_extended', $this->tracker->detectBot('Google-Extended'));
@@ -83,6 +85,23 @@ class AiBotTrackerTest extends TestCase
         $data = $response->get_data();
         $this->assertTrue($data['success']);
         $this->assertSame(1, $data['data']['gptbot']);
+        $this->assertArrayHasKey('oai_searchbot', $data['data']);
+        $this->assertArrayHasKey('claude_searchbot', $data['data']);
+    }
+
+    public function testSearchCrawlersAreCountedApartFromTrainingCrawlers(): void
+    {
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (compatible; OAI-SearchBot/1.0; +https://openai.com/searchbot)';
+        $this->tracker->trackRequest();
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (compatible; Claude-SearchBot/1.0; +searchbot@anthropic.com)';
+        $this->tracker->trackRequest();
+
+        $data = $this->tracker->getActivity();
+        $this->assertSame(1, $data['oai_searchbot']);
+        $this->assertSame(1, $data['claude_searchbot']);
+        $this->assertSame(0, $data['gptbot']);
+        $this->assertSame(0, $data['claudebot']);
+        $this->assertSame(2, $data['total']);
     }
 }
 

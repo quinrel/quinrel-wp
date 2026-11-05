@@ -22,7 +22,9 @@ The `noai` and `noimageai` tag, and a `tdm-reservation` tag, are added when the 
 
 ## Crawler visits
 
-Quinrel can record visits from known AI crawlers, including GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Applebot-Extended. The screen shows a visit count and the last hit.
+Quinrel can record visits from known AI crawlers, including OAI-SearchBot, Claude-SearchBot, GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Applebot-Extended. OAI-SearchBot fetches pages for ChatGPT search. Claude-SearchBot fetches pages for Claude search. GPTBot and ClaudeBot are training crawlers, and a visit from either one is counted on its own.
+
+The screen shows a visit count and the last hit. Choose "Search agents only" to block training crawlers and leave OAI-SearchBot, Claude-SearchBot, and PerplexityBot allowed. Choose "Block all AI crawlers" when those search crawlers should be disallowed too. Allowing a crawler does not submit the site to that engine.
 
 The count is stored on this site and kept for 30 days after the latest visit. It increases only when the request reaches WordPress. A page cache that serves the HTML without running PHP does not record that hit. Clearing the object cache can clear the count. That count is not a citation score, and it is not a ranking.
 

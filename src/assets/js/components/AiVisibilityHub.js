@@ -269,16 +269,30 @@ export const AiVisibilityHub = ({
 
     const botStats = [
         {
+            key: 'oai_searchbot',
+            name: 'OAI-SearchBot',
+            type: 'ChatGPT search',
+            count: aiBotActivity ? (aiBotActivity.oai_searchbot || 0) : 0,
+            badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        },
+        {
             key: 'gptbot',
             name: 'OpenAI (GPTBot)',
-            type: 'Training & Search',
+            type: 'Training crawler',
             count: aiBotActivity ? (aiBotActivity.gptbot || 0) : 0,
             badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
         },
         {
+            key: 'claude_searchbot',
+            name: 'Claude-SearchBot',
+            type: 'Claude search',
+            count: aiBotActivity ? (aiBotActivity.claude_searchbot || 0) : 0,
+            badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+        },
+        {
             key: 'claudebot',
             name: 'Anthropic (ClaudeBot)',
-            type: 'Training & Search',
+            type: 'Training crawler',
             count: aiBotActivity ? (aiBotActivity.claudebot || 0) : 0,
             badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
         },
@@ -671,7 +685,7 @@ export const AiVisibilityHub = ({
                                     </span>
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1 mb-0">
-                                    {__('Allows Perplexity & ChatGPT search to cite your pages, but blocks bulk model training scrapers (CCBot, ByteSpider).', 'quinrel')}
+                                    {__('Blocks training crawlers such as GPTBot, ClaudeBot, and CCBot. OAI-SearchBot, Claude-SearchBot, and PerplexityBot stay allowed.', 'quinrel')}
                                 </p>
                             </button>
 

@@ -25,16 +25,26 @@ class RobotsTxtEditor {
 	private const AI_BOTS = array(
 		'GPTBot',
 		'ChatGPT-User',
+		'OAI-SearchBot',
 		'CCBot',
 		'Google-Extended',
 		'Anthropic-AI',
 		'Claude-Web',
 		'ClaudeBot',
+		'Claude-SearchBot',
 		'cohere-ai',
 		'Omgilibot',
 		'Omgili',
 		'PerplexityBot',
 		'YouBot',
+	);
+
+	/**
+	 * Crawlers that fetch pages for answers. Blocking training crawlers leaves these allowed.
+	 */
+	private const SEARCH_AGENTS = array(
+		'OAI-SearchBot',
+		'Claude-SearchBot',
 	);
 
 	// Crawlers used exclusively for training data scraping
@@ -491,6 +501,12 @@ class RobotsTxtEditor {
 			foreach ( $this->getTrainingBotsList() as $bot ) {
 				$lines[] = 'User-agent: ' . $bot;
 				$lines[] = 'Disallow: /';
+				$lines[] = '';
+			}
+			$lines[] = '# ChatGPT search and Claude search stay allowed';
+			foreach ( self::SEARCH_AGENTS as $agent ) {
+				$lines[] = 'User-agent: ' . $agent;
+				$lines[] = 'Allow: /';
 				$lines[] = '';
 			}
 			$blocks[] = rtrim( implode( "\n", $lines ), "\n" );
