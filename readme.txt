@@ -4,7 +4,7 @@ Tags: seo, schema, sitemap, indexing, search console
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -269,6 +269,11 @@ https://wordpress.org/support/plugin/quinrel/
 When reporting a problem, include your WordPress version, PHP version, Quinrel version, and the steps required to reproduce the issue.
 
 == Changelog ==
+
+= 1.1.2 =
+
+* The description states the on-site discovery work, the optional Quinrel account, and that a citation count from ChatGPT, Perplexity, Google AI Overviews, or Claude is not in this release.
+* OAI-SearchBot and Claude-SearchBot are counted on their own for 30 days, and only when the request reaches WordPress. Search agents only leaves those crawlers allowed. Block all AI crawlers disallows them.
 
 = 1.1.1 =
 

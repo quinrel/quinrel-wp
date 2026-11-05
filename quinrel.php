@@ -3,7 +3,7 @@
  * Plugin Name: Quinrel
  * Plugin URI: https://quinrel.com
  * Description: Visibility & Discovery Intelligence for WordPress, with technical SEO included.
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: Skoorite Team
  * Author URI: https://quinrel.com
  * License: GPLv2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin constants.
 if ( ! defined( 'QUINREL_VERSION' ) ) {
-	define( 'QUINREL_VERSION', '1.1.1' );
+	define( 'QUINREL_VERSION', '1.1.2' );
 }
 if ( ! defined( 'QUINREL_PLUGIN_FILE' ) ) {
 	define( 'QUINREL_PLUGIN_FILE', __FILE__ );

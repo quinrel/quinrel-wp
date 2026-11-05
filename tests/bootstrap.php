@@ -25,7 +25,7 @@ if (!defined('WP_CONTENT_DIR')) {
     define('WP_CONTENT_DIR', dirname(__DIR__) . '/wp-content');
 }
 if (!defined('QUINREL_VERSION')) {
-    define('QUINREL_VERSION', '1.1.1');
+    define('QUINREL_VERSION', '1.1.2');
 }
 if (!defined('SECURE_AUTH_KEY')) {
     define('SECURE_AUTH_KEY', 'test_secure_auth_key_1234567890abcdef');
