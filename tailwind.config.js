@@ -7,13 +7,28 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Sampled from docs/quinrel-logo.jpeg. 600 is the logo blue: white text on it is 5.2:1.
+        // 700 is the pressed blue. 950 is the banner navy. Status colors stay green, amber, and red.
         brand: {
-          50: '#f4f7fa',
-          100: '#e5ecf3',
-          500: '#4361ee', // Primary brand color
-          600: '#3a0ca3',
-          900: '#0f172a', // Dark text
-        }
+          50: '#F0F5FF',
+          100: '#E0ECFE',
+          500: '#0060F9',
+          600: '#0140AC',
+          900: '#000F2E',
+        },
+        indigo: {
+          50: '#F0F5FF',
+          100: '#E0ECFE',
+          200: '#BFD7FE',
+          300: '#8CB7FC',
+          400: '#4C90FB',
+          500: '#0060F9',
+          600: '#0060F9',
+          700: '#0140AC',
+          800: '#013083',
+          900: '#021E58',
+          950: '#020822',
+        },
       }
     },
   },

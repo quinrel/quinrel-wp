@@ -135,7 +135,7 @@ export const OverviewDashboard = ({
             )}
 
             {/* ══════════ LIVE AI SEARCH ENGINE RADAR (MARKET DIFFERENTIATOR) ══════════ */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-white border border-indigo-100 p-5 sm:p-6 shadow-xs">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50/70 via-indigo-50/40 to-white border border-indigo-100 p-5 sm:p-6 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div className="flex items-center gap-2.5">
                         <span className="flex h-3 w-3 relative">

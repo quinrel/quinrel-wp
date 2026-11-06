@@ -679,7 +679,7 @@ const AiAssistantPanel = ({ title, content, focusKeyword, updateMeta, meta }) =>
                     isBusy={isGenerating} 
                     onClick={runAiAction} 
                     className="w-full justify-center"
-                    style={{ background: '#4f46e5', borderColor: '#4f46e5' }}
+                    style={{ background: '#0060F9', borderColor: '#0060F9' }}
                 >
                     {isGenerating ? __('Querying Agent Gateway...', 'quinrel') : __('Get AI SEO Insights', 'quinrel')}
                 </Button>
@@ -865,7 +865,7 @@ const InternalLinkPanel = ({ postId, content }) => {
                             <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
                                 {rec.title}
                             </strong>
-                            <a href={rec.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '10px', color: '#4f46e5', fontWeight: '600', textDecoration: 'none' }}>
+                            <a href={rec.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '10px', color: '#0060F9', fontWeight: '600', textDecoration: 'none' }}>
                                 {__('View ↗', 'quinrel')}
                             </a>
                         </div>
@@ -990,8 +990,8 @@ const CustomFieldsSeoPanel = ({ postId }) => {
                                             fontWeight: '500',
                                             padding: '1px 6px',
                                             borderRadius: '4px',
-                                            background: f.source === 'ACF' ? '#e0e7ff' : '#f1f5f9',
-                                            color: f.source === 'ACF' ? '#3730a3' : '#475569'
+                                            background: f.source === 'ACF' ? '#E0ECFE' : '#f1f5f9',
+                                            color: f.source === 'ACF' ? '#0140AC' : '#475569'
                                         }}>
                                             {f.source}
                                         </span>
@@ -2333,7 +2333,7 @@ const SchemaStackEditor = ({ stackJson, updateMeta }) => {
                 <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>
                     {__('Additional Schema Layers', 'quinrel')}
                 </div>
-                <span style={{ fontSize: '10px', background: '#4f46e5', color: '#fff', padding: '2px 8px', borderRadius: '99px' }}>
+                <span style={{ fontSize: '10px', background: '#0060F9', color: '#fff', padding: '2px 8px', borderRadius: '99px' }}>
                     {sprintf(_n('%d schema', '%d schemas', stack.length + 1, 'quinrel'), stack.length + 1)}
                 </span>
             </div>
@@ -2376,7 +2376,7 @@ const PerformanceBadges = ({ seoScore, readabilityScore, hasKeyword, isPillar, i
     else if (seoScore >= 50) badges.push({ label: __('SEO Improving', 'quinrel'), color: '#854d0e', bg: '#fef9c3' });
     else if (seoScore > 0) badges.push({ label: __('Needs SEO Work', 'quinrel'), color: '#991b1b', bg: '#fee2e2' });
 
-    if (readabilityScore >= 60) badges.push({ label: __('Easy to Read', 'quinrel'), color: '#1e40af', bg: '#dbeafe' });
+    if (readabilityScore >= 60) badges.push({ label: __('Easy to Read', 'quinrel'), color: '#0140AC', bg: '#E0ECFE' });
 
     if (isPillar) badges.push({ label: __('Pillar Content', 'quinrel'), color: '#6b21a8', bg: '#f3e8ff' });
     else if (isCornerstone) badges.push({ label: __('Cornerstone', 'quinrel'), color: '#0e7490', bg: '#cffafe' });
@@ -2559,7 +2559,7 @@ const QuinrelSidebar = () => {
                             pagespeedMobile={pagespeedCache?.mobile ?? 0}
                         />
                         {totalKeywords > 1 && (
-                            <div style={{ fontSize: '11px', color: '#6366f1', fontWeight: '600', marginTop: '6px' }}>
+                            <div style={{ fontSize: '11px', color: '#0060F9', fontWeight: '600', marginTop: '6px' }}>
                                 ✓ Optimizing {totalKeywords} keywords
                             </div>
                         )}

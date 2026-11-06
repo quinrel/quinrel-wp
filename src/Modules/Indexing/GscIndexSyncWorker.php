@@ -119,9 +119,9 @@ class GscIndexSyncWorker {
 		return rest_ensure_response(
 			array(
 				'funnel'            => array(
-					$this->funnelStage( __( 'Published Content', 'quinrel' ), $totalPosts, true, '#6366f1', $totalPosts ),
-					$this->funnelStage( __( 'Included in XML Sitemap', 'quinrel' ), $inSitemap, true, '#8b5cf6', $totalPosts ),
-					$this->funnelStage( __( 'Discovered by Google', 'quinrel' ), $discoveredCount, $discoveredCount > 0, '#3b82f6', $totalPosts ),
+					$this->funnelStage( __( 'Published Content', 'quinrel' ), $totalPosts, true, '#0060F9', $totalPosts ),
+					$this->funnelStage( __( 'Included in XML Sitemap', 'quinrel' ), $inSitemap, true, '#9A37F4', $totalPosts ),
+					$this->funnelStage( __( 'Discovered by Google', 'quinrel' ), $discoveredCount, $discoveredCount > 0, '#0140AC', $totalPosts ),
 					$this->funnelStage( __( 'Crawled by Googlebot', 'quinrel' ), $crawledCount, $crawledCount > 0, '#0ea5e9', $totalPosts ),
 					$this->funnelStage( __( 'Indexed in Google Search', 'quinrel' ), $indexedCount, $indexedCount > 0, '#10b981', $totalPosts ),
 					$this->funnelStage( __( 'Generating Impressions (90d)', 'quinrel' ), 0, false, '#059669', $totalPosts ),

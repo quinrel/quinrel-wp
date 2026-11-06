@@ -757,7 +757,7 @@ export const GlobalSettingsHub = ({
                                 {!isCloudConnected ? (
                                     <div className="space-y-5">
                                         {/* Primary 1-Click Automated Connection Hero */}
-                                        <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/60 border border-indigo-100/80 shadow-2xs space-y-4">
+                                        <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-indigo-50/60 border border-indigo-100/80 shadow-2xs space-y-4">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                 <div className="space-y-1">
                                                     <h4 className="text-sm font-bold text-slate-900 m-0 flex items-center gap-2">

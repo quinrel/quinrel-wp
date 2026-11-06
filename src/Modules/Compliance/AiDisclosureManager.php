@@ -53,7 +53,7 @@ class AiDisclosureManager {
 		$position = get_option( self::DISCLOSURE_POS, 'after' );
 
 		$notice = sprintf(
-			'<aside class="quinrel-ai-disclosure" aria-label="%s" role="note" style="padding:12px 16px;margin:16px 0;border-left:4px solid #4f46e5;background:#f5f3ff;font-size:0.875em;">'
+			'<aside class="quinrel-ai-disclosure" aria-label="%s" role="note" style="padding:12px 16px;margin:16px 0;border-left:4px solid #0060F9;background:#F0F5FF;font-size:0.875em;">'
 			. '<p style="margin:0;">🤖 %s</p>'
 			. '</aside>',
 			esc_attr__( 'AI Content Disclosure', 'quinrel' ),

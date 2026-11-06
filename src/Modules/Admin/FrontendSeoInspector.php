@@ -241,7 +241,7 @@ class FrontendSeoInspector {
 	var shadow = host.attachShadow({mode:\'open\'});
 
 	var style = \':host { all: initial; }\' +
-		\'#toggle { width:48px;height:48px;border-radius:50%;background:#2563eb;color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.25); }\' +
+		\'#toggle { width:48px;height:48px;border-radius:50%;background:#0060F9;color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.25); }\' +
 		\'#toggle:focus-visible { outline:2px solid #1e293b; outline-offset:2px; }\' +
 		\'#panel { display:none;position:absolute;bottom:58px;right:0;width:340px;max-height:70vh;overflow-y:auto;background:#fff;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:16px; }\' +
 		\'#panel.open { display:block; }\' +
@@ -252,7 +252,7 @@ class FrontendSeoInspector {
 		\'.pass { background:#dcfce7;color:#15803d; }\' +
 		\'.warn { background:#fef9c3;color:#854d0e; }\' +
 		\'.fail { background:#fee2e2;color:#b91c1c; }\' +
-		\'.score { font-size:28px;font-weight:800;margin:0 0 12px;color:#2563eb; }\';
+		\'.score { font-size:28px;font-weight:800;margin:0 0 12px;color:#0060F9; }\';
 
 	shadow.innerHTML = \'<style>\' + style + \'</style>\' +
 		\'<div id="panel" role="dialog" aria-label="\' + escapeAttr(cfg.title) + \'">\' +

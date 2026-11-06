@@ -38,7 +38,7 @@ class PostQuickEdit {
 		<fieldset class="inline-edit-col-right inline-edit-quinrel-seo" style="margin-top:10px;">
 			<div class="inline-edit-col" style="padding:10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;">
 				<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-					<span class="dashicons dashicons-chart-area" style="color:#4f46e5;font-size:16px;width:16px;height:16px;"></span>
+					<span class="dashicons dashicons-chart-area" style="color:#0060F9;font-size:16px;width:16px;height:16px;"></span>
 					<strong style="color:#0f172a;font-size:12px;"><?php esc_html_e( 'Quinrel SEO Quick Settings', 'quinrel' ); ?></strong>
 				</div>
 

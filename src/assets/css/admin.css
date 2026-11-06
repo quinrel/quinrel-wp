@@ -39,7 +39,7 @@
 .quinrel-wrapper select:focus-visible,
 .quinrel-wrapper textarea:focus-visible,
 .quinrel-wrapper summary:focus-visible {
-	outline: 2px solid #4f46e5;
+	outline: 2px solid #0060F9;
 	outline-offset: 2px;
 }
 

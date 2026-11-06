@@ -5,8 +5,8 @@
 	left: 0;
 	right: 0;
 	z-index: 99999;
-	background: #1e293b;
-	color: #f1f5f9;
+	background: #020822;
+	color: #F0F5FF;
 	box-shadow: 0 -2px 16px rgba(0,0,0,.25);
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 	font-size: 14px;
@@ -26,11 +26,11 @@
 .quinrel-cookie-banner__text {
 	margin: 0;
 	flex: 1 1 300px;
-	color: #cbd5e1;
+	color: #D5E0F0;
 }
 
 .quinrel-cookie-banner__text a {
-	color: #93c5fd;
+	color: #01A5FD;
 	text-decoration: underline;
 }
 
@@ -55,14 +55,14 @@
 }
 
 .quinrel-cookie-btn--accept {
-	background: #3b82f6;
+	background: #0060F9;
 	color: #fff;
 }
 
 .quinrel-cookie-btn--decline {
 	background: transparent;
-	color: #94a3b8;
-	border: 1px solid #475569;
+	color: #D5E0F0;
+	border: 1px solid #8AA0BE;
 }
 
 @media (max-width: 600px) {

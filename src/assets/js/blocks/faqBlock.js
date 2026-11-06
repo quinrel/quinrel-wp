@@ -37,9 +37,9 @@ registerBlockType('quinrel/faq', {
         return (
             <div className="quinrel-editor-block-faq" style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span className="dashicons dashicons-editor-help" style={{ color: '#2563eb' }} />
+                    <span className="dashicons dashicons-editor-help" style={{ color: '#0060F9' }} />
                     <strong style={{ fontSize: '15px' }}>{__('FAQ Accordion & Schema', 'quinrel')}</strong>
-                    <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '9999px', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: '11px', background: '#E0ECFE', color: '#0140AC', padding: '2px 8px', borderRadius: '9999px', marginLeft: 'auto' }}>
                         {__('Auto FAQPage Schema', 'quinrel')}
                     </span>
                 </div>

@@ -164,7 +164,7 @@ const SetupWizard = ({ onComplete }) => {
                                 onClick={() => setSiteType(type.id)}
                                 style={{
                                     ...styles.typeButton,
-                                    borderColor: siteType === type.id ? '#3b82f6' : '#e2e8f0',
+                                    borderColor: siteType === type.id ? '#0060F9' : '#e2e8f0',
                                     background: siteType === type.id ? '#eff6ff' : '#fff',
                                 }}
                             >

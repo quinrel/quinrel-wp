@@ -44,7 +44,7 @@ const GscTrendChart = ({ data = [] }) => {
                 <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
                 <Tooltip />
-                <Line yAxisId="left" type="monotone" dataKey="clicks" stroke="#6366f1" strokeWidth={2} dot={false} name={__('Clicks', 'quinrel')} />
+                <Line yAxisId="left" type="monotone" dataKey="clicks" stroke="#0060F9" strokeWidth={2} dot={false} name={__('Clicks', 'quinrel')} />
                 <Line yAxisId="right" type="monotone" dataKey="impressions" stroke="#cbd5e1" strokeWidth={1} dot={false} name={__('Impressions', 'quinrel')} />
             </LineChart>
         </ResponsiveContainer>

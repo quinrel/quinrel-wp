@@ -1927,7 +1927,7 @@ const App = () => {
                                 {standaloneError && <p role="alert" className="text-sm text-amber-800 m-0">{standaloneError}</p>}
                                 {standalone && (
                                     <dl className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 m-0">
-                                        <div className="border border-indigo-100 bg-gradient-to-br from-indigo-50/70 via-purple-50/30 to-white rounded-2xl p-5 col-span-1 md:col-span-2 lg:col-span-3 shadow-2xs">
+                                        <div className="border border-indigo-100 bg-gradient-to-br from-indigo-50/70 via-indigo-50/30 to-white rounded-2xl p-5 col-span-1 md:col-span-2 lg:col-span-3 shadow-2xs">
                                             <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center gap-2">
                                                     <span className="flex h-2.5 w-2.5 relative">
@@ -4120,7 +4120,7 @@ const App = () => {
                                                                         const y = 38 - ((maxPos - p) / range) * 34; // Lower rank = higher y
                                                                         return `${x},${y}`;
                                                                     }).join(' ');
-                                                                    return <polyline points={points} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />;
+                                                                    return <polyline points={points} fill="none" stroke="#0060F9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />;
                                                                 })()}
                                                             </svg>
                                                             {latest?.url && <a href={latest.url} target="_blank" rel="noopener" className="text-xs text-indigo-500 hover:underline truncate block mt-1">{latest.url}</a>}

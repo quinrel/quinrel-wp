@@ -53,9 +53,9 @@ registerBlockType('quinrel/howto', {
         return (
             <div className="quinrel-editor-block-howto" style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span className="dashicons dashicons-list-view" style={{ color: '#2563eb' }} />
+                    <span className="dashicons dashicons-list-view" style={{ color: '#0060F9' }} />
                     <strong style={{ fontSize: '15px' }}>{__('HowTo Guide & Schema', 'quinrel')}</strong>
-                    <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '9999px', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: '11px', background: '#E0ECFE', color: '#0140AC', padding: '2px 8px', borderRadius: '9999px', marginLeft: 'auto' }}>
                         {__('Auto HowTo Schema', 'quinrel')}
                     </span>
                 </div>

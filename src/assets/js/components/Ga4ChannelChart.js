@@ -1,7 +1,7 @@
 import { useState, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
-const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
+const CHART_COLORS = ['#0060F9', '#10b981', '#f59e0b', '#ef4444', '#9A37F4', '#64748b'];
 
 const Ga4ChannelChart = ({ data = [] }) => {
     const [Charts, setCharts] = useState(null);

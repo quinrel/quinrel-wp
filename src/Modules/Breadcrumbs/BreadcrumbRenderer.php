@@ -88,7 +88,7 @@ class BreadcrumbRenderer {
 		$html .= '</nav>';
 
 		// Inline minimal styles
-		$html .= '<style>.quinrel-breadcrumbs{font-size:14px;line-height:1.4;margin:8px 0 16px;color:#64748b}.quinrel-breadcrumb-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:0}.quinrel-breadcrumb-list li{display:inline-flex;align-items:center}.quinrel-breadcrumb-link{color:#3b82f6;text-decoration:none}.quinrel-breadcrumb-link:hover{text-decoration:underline}.quinrel-breadcrumb-sep{margin:0 6px;color:#94a3b8}.quinrel-breadcrumb-current{color:#334155;font-weight:500}</style>';
+		$html .= '<style>.quinrel-breadcrumbs{font-size:14px;line-height:1.4;margin:8px 0 16px;color:#64748b}.quinrel-breadcrumb-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:0}.quinrel-breadcrumb-list li{display:inline-flex;align-items:center}.quinrel-breadcrumb-link{color:#0060F9;text-decoration:none}.quinrel-breadcrumb-link:hover{text-decoration:underline}.quinrel-breadcrumb-sep{margin:0 6px;color:#94a3b8}.quinrel-breadcrumb-current{color:#334155;font-weight:500}</style>';
 
 		return $html;
 	}

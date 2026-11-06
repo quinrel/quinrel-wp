@@ -50,7 +50,7 @@ class TaxonomySeo {
 		?>
 		<div class="form-field quinrel-taxonomy-seo-wrap" style="margin-top:20px;padding:16px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;">
 			<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-				<span class="dashicons dashicons-chart-area" style="color:#4f46e5;"></span>
+				<span class="dashicons dashicons-chart-area" style="color:#0060F9;"></span>
 				<h3 style="margin:0;font-size:14px;font-weight:700;color:#0f172a;"><?php esc_html_e( 'Quinrel SEO Optimization', 'quinrel' ); ?></h3>
 			</div>
 
@@ -100,9 +100,9 @@ class TaxonomySeo {
 		<tr class="form-field">
 			<th colspan="2" style="padding-top:20px;padding-bottom:10px;">
 				<div style="display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:2px solid #e2e8f0;">
-					<span class="dashicons dashicons-chart-area" style="color:#4f46e5;font-size:20px;width:20px;height:20px;"></span>
+					<span class="dashicons dashicons-chart-area" style="color:#0060F9;font-size:20px;width:20px;height:20px;"></span>
 					<strong style="font-size:16px;color:#0f172a;"><?php esc_html_e( 'Quinrel SEO Settings', 'quinrel' ); ?></strong>
-					<span style="font-size:11px;font-weight:600;background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:12px;"><?php esc_html_e( 'Live Preview & Indexing', 'quinrel' ); ?></span>
+					<span style="font-size:11px;font-weight:600;background:#E0ECFE;color:#0140AC;padding:2px 8px;border-radius:12px;"><?php esc_html_e( 'Live Preview & Indexing', 'quinrel' ); ?></span>
 				</div>
 			</th>
 		</tr>

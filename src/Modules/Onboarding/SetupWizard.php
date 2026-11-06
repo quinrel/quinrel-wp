@@ -47,14 +47,14 @@ class SetupWizard {
 		$setupUrl = admin_url( 'admin.php?page=quinrel#setup' );
 		$nonce    = wp_create_nonce( 'quinrel_dismiss_setup_notice' );
 
-		echo '<div class="notice notice-info is-dismissible quinrel-setup-notice" style="border-left-color: #3b82f6; padding: 16px 20px;" data-nonce="' . esc_attr( $nonce ) . '">';
+		echo '<div class="notice notice-info is-dismissible quinrel-setup-notice" style="border-left-color: #0060F9; padding: 16px 20px;" data-nonce="' . esc_attr( $nonce ) . '">';
 		echo '<div>';
 		echo '<p style="margin:0; font-size:15px; font-weight:600; color:#0f172a;">' . esc_html__( 'Welcome to Quinrel!', 'quinrel' ) . '</p>';
 		echo '<p style="margin:4px 0 0; color:#475569;">';
 		printf(
 			wp_kses(
 				/* translators: %s: setup wizard URL */
-				__( 'Your SEO is already working with smart defaults. <a href="%s" style="color:#3b82f6; font-weight:500;">Complete the 30-second setup</a> to customize site type and import existing SEO data.', 'quinrel' ),
+				__( 'Your SEO is already working with smart defaults. <a href="%s" style="color:#0060F9; font-weight:500;">Complete the 30-second setup</a> to customize site type and import existing SEO data.', 'quinrel' ),
 				array(
 					'a' => array(
 						'href'  => true,
