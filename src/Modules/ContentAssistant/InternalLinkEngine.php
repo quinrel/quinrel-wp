@@ -134,13 +134,23 @@ class InternalLinkEngine {
 		}
 
 		$path = wp_make_link_relative( $permalink );
+		if ( ! is_string( $path ) ) {
+			$path = '';
+		}
+
+		$normalizedRel = '' !== $path ? ( '/' === $path ? '/' : '/' . ltrim( $path, '/' ) ) : '/';
+		$altRel        = ( '/' !== $normalizedRel )
+			? ( str_ends_with( $normalizedRel, '/' ) ? rtrim( $normalizedRel, '/' ) : $normalizedRel . '/' )
+			: '/';
 
 		// Lightning-fast indexed query against the link index table
 		$incomingCount = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->prefix}quinrel_links WHERE target_url = %s OR target_url = %s",
+				"SELECT COUNT(DISTINCT post_id) FROM {$wpdb->prefix}quinrel_links WHERE post_id != %d AND target_url IN (%s, %s, %s)",
+				$postId,
 				$permalink,
-				$path
+				$normalizedRel,
+				$altRel
 			)
 		);
 
@@ -187,7 +197,8 @@ class InternalLinkEngine {
 			return;
 		}
 
-		$inserted = array();
+		$inserted  = array();
+		$targetIds = array();
 		foreach ( $matches as $match ) {
 			$href   = $match[1];
 			$anchor = wp_strip_all_tags( $match[2] );
@@ -216,6 +227,18 @@ class InternalLinkEngine {
 				),
 				array( '%d', '%s', '%s' )
 			);
+
+			if ( function_exists( 'url_to_postid' ) ) {
+				$resolvedId = (int) url_to_postid( home_url( $targetUrl ) );
+				if ( $resolvedId > 0 && $resolvedId !== $postId ) {
+					$targetIds[ $resolvedId ] = $resolvedId;
+				}
+			}
+		}
+
+		foreach ( $targetIds as $targetId ) {
+			$status = $this->checkOrphanStatus( $targetId );
+			update_post_meta( $targetId, '_quinrel_inbound_links', (int) $status['incoming_count'] );
 		}
 	}
 

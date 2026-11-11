@@ -325,10 +325,29 @@ class TechnicalSeoAuditEngine {
              FROM {$wpdb->prefix}quinrel_redirects a
              INNER JOIN {$wpdb->prefix}quinrel_redirects b ON a.target = b.source
              WHERE a.is_regex = 0 AND b.is_regex = 0
-             LIMIT 20"
+             LIMIT 20",
+			ARRAY_A
 		);
 
-		return (array) $chains;
+		if ( empty( $chains ) ) {
+			return array();
+		}
+
+		return array_map(
+			fn( $c ) => array(
+				'source'      => (string) ( $c['source'] ?? '' ),
+				'target'      => (string) ( $c['target'] ?? '' ),
+				'next_target' => (string) ( $c['next_target'] ?? '' ),
+				'issue'       => sprintf(
+					/* translators: 1: source, 2: target, 3: next target */
+					__( 'Redirect chain detected: %1$s -> %2$s -> %3$s', 'quinrel' ),
+					$c['source'] ?? '',
+					$c['target'] ?? '',
+					$c['next_target'] ?? ''
+				),
+			),
+			$chains
+		);
 	}
 
 	private function orphanedPages(): array {
@@ -338,34 +357,31 @@ class TechnicalSeoAuditEngine {
 				'post_status'    => 'publish',
 				'posts_per_page' => 10,
 				'meta_query'     => array(
+					'relation' => 'OR',
 					array(
 						'key'     => '_quinrel_inbound_links',
 						'value'   => '0',
 						'compare' => '=',
 						'type'    => 'NUMERIC',
+					),
+					array(
+						'key'     => '_quinrel_inbound_links',
+						'compare' => 'NOT EXISTS',
 					),
 				),
 			)
 		);
 
-		$total = ( new \WP_Query(
-			array(
-				'post_type'      => array( 'post', 'page' ),
-				'post_status'    => 'publish',
-				'posts_per_page' => 1,
-				'meta_query'     => array(
-					array(
-						'key'     => '_quinrel_inbound_links',
-						'value'   => '0',
-						'compare' => '=',
-						'type'    => 'NUMERIC',
-					),
-				),
-			)
-		) )->found_posts;
+		$total = (int) $query->found_posts;
 
 		return $total > 0 ? array_merge(
-			array( array( 'total_orphaned' => $total ) ),
+			array(
+				array(
+					'total_orphaned' => $total,
+					/* translators: %d: number of published posts or pages without incoming internal links. */
+					'message'        => sprintf( __( '%d published posts/pages have no incoming internal links.', 'quinrel' ), $total ),
+				),
+			),
 			array_map(
 				fn( $p ) => array(
 					'post_id' => $p->ID,
@@ -453,7 +469,8 @@ class TechnicalSeoAuditEngine {
 				'meta_query'     => array(
 					array(
 						'key'     => '_quinrel_primary_schema',
-						'compare' => 'NOT EXISTS',
+						'value'   => 'none',
+						'compare' => '=',
 					),
 				),
 			)
@@ -463,8 +480,8 @@ class TechnicalSeoAuditEngine {
 			? array(
 				array(
 					'count'   => $query->found_posts,
-					/* translators: %d: number of recent posts without an explicit primary schema override. */
-					'message' => sprintf( __( '%d recent posts have no schema type set.', 'quinrel' ), (int) $query->found_posts ),
+					/* translators: %d: number of recent posts with schema markup explicitly disabled. */
+					'message' => sprintf( __( '%d recent posts have schema markup disabled.', 'quinrel' ), (int) $query->found_posts ),
 				),
 			)
 			: array();
@@ -480,10 +497,27 @@ class TechnicalSeoAuditEngine {
                AND meta_value != ''
              GROUP BY meta_value
              HAVING count > 1
-             LIMIT 10"
+             LIMIT 10",
+			ARRAY_A
 		);
 
-		return (array) $dupes;
+		if ( empty( $dupes ) ) {
+			return array();
+		}
+
+		return array_map(
+			fn( $d ) => array(
+				'title'   => (string) ( $d['title'] ?? '' ),
+				'count'   => (int) ( $d['count'] ?? 0 ),
+				'message' => sprintf(
+					/* translators: 1: title, 2: count */
+					__( 'Title "%1$s" is duplicated across %2$d posts.', 'quinrel' ),
+					(string) ( $d['title'] ?? '' ),
+					(int) ( $d['count'] ?? 0 )
+				),
+			),
+			$dupes
+		);
 	}
 
 	private function staleCornerstone(): array {
@@ -531,12 +565,21 @@ class TechnicalSeoAuditEngine {
 			return 'No issues found.';
 		}
 
-		if ( ! empty( $items[0]['message'] ) ) {
-			return $items[0]['message'];
-		}
-
-		if ( ! empty( $items[0]['issue'] ) ) {
-			return $items[0]['issue'];
+		$first = $items[0] ?? null;
+		if ( is_array( $first ) ) {
+			if ( ! empty( $first['message'] ) ) {
+				return (string) $first['message'];
+			}
+			if ( ! empty( $first['issue'] ) ) {
+				return (string) $first['issue'];
+			}
+		} elseif ( is_object( $first ) ) {
+			if ( ! empty( $first->message ) ) {
+				return (string) $first->message;
+			}
+			if ( ! empty( $first->issue ) ) {
+				return (string) $first->issue;
+			}
 		}
 
 		return count( $items ) . ' issue(s) detected.';

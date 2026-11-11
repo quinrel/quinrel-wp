@@ -2240,7 +2240,7 @@ const App = () => {
                             <h2 className="text-xl font-semibold m-0 text-slate-800">Link Health</h2>
 
                             <div className="flex gap-2 border-b border-slate-200">
-                                {[['orphans','🏝 Orphan Pages'],['stats','📊 Link Statistics']].map(([id, label]) => (
+                                {[['orphans','Orphan Pages'],['stats','Link Statistics']].map(([id, label]) => (
                                     <button type="button" key={id} onClick={() => setLinksSubTab(id)}
                                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors bg-transparent cursor-pointer ${linksSubTab === id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>{label}</button>
                                 ))}
@@ -2253,19 +2253,19 @@ const App = () => {
                                         <>
                                             <div className="grid grid-cols-3 gap-4">
                                                 <StatCard title="Total Posts/Pages" value={String(orphanData.total)} />
-                                                <StatCard title="Orphan Pages" value={String(orphanData.orphan_count)} type={orphanData.orphan_count > 0 ? 'default' : 'success'} />
-                                                <StatCard title="Linked Pages" value={String(orphanData.linked_count)} type="success" />
+                                                <StatCard title={orphanData.total_pages > 1 ? `Orphan Pages (Page ${orphanData.page || 1})` : 'Orphan Pages'} value={String(orphanData.orphan_count)} type={orphanData.orphan_count > 0 ? 'default' : 'success'} />
+                                                <StatCard title={orphanData.total_pages > 1 ? `Linked Pages (Page ${orphanData.page || 1})` : 'Linked Pages'} value={String(orphanData.linked_count)} type="success" />
                                             </div>
                                             {orphanData.orphan_count === 0 ? (
-                                                <div className="p-6 text-center text-green-700 bg-green-50 rounded-lg border border-green-200">✅ No orphan pages detected. Every page has at least one incoming internal link.</div>
+                                                <div className="p-6 text-center text-green-700 bg-green-50 rounded-lg border border-green-200">No orphan pages detected on this page. Every listed page has at least one incoming internal link.</div>
                                             ) : (
-                                                <div className="bg-white border rounded-lg overflow-hidden">
-                                                    <div className="px-4 py-3 border-b bg-slate-50 flex items-center justify-between">
+                                                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                                                    <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                                                         <span className="text-sm font-semibold text-slate-700">Orphan Pages — No Incoming Internal Links</span>
-                                                        <span className="text-xs text-slate-400">{orphanData.orphan_count} pages need links</span>
+                                                        <span className="text-xs text-slate-500 tabular-nums">{orphanData.orphan_count} pages on this view</span>
                                                     </div>
                                                     <table className="w-full text-left border-collapse">
-                                                        <thead><tr className="bg-slate-50 border-b">
+                                                        <thead><tr className="bg-slate-50 border-b border-slate-200">
                                                             <th className="p-3 text-xs font-semibold text-slate-500 uppercase">Page</th>
                                                             <th className="p-3 text-xs font-semibold text-slate-500 uppercase">Type</th>
                                                             <th className="p-3 text-xs font-semibold text-slate-500 uppercase">Modified</th>
@@ -2273,11 +2273,11 @@ const App = () => {
                                                         </tr></thead>
                                                         <tbody>
                                                             {orphanData.orphans.map((p, i) => (
-                                                                <tr key={i} className="border-b last:border-0 hover:bg-slate-50">
+                                                                <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                                                                     <td className="p-3"><div className="text-sm font-medium text-slate-800">{p.title}</div><div className="text-xs text-slate-400 truncate max-w-sm">{p.url}</div></td>
                                                                     <td className="p-3"><span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{p.post_type}</span></td>
-                                                                    <td className="p-3 text-xs text-slate-500">{p.modified}</td>
-                                                                    <td className="p-3 text-right">{p.edit_url && <a href={p.edit_url} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 hover:underline">Edit →</a>}</td>
+                                                                    <td className="p-3 text-xs text-slate-500 tabular-nums">{p.modified}</td>
+                                                                    <td className="p-3 text-right">{p.edit_url && <a href={p.edit_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-indigo-600 hover:underline">Edit →</a>}</td>
                                                                 </tr>
                                                             ))}
                                                         </tbody>
@@ -2287,7 +2287,7 @@ const App = () => {
                                             {orphanData.total_pages > 1 && (
                                                 <div className="flex items-center justify-between">
                                                     <button type="button" className="px-3 py-1 text-sm border rounded disabled:opacity-40" disabled={(orphanData.page || 1) <= 1} onClick={() => loadOrphans((orphanData.page || 1) - 1)}>Previous page</button>
-                                                    <span className="text-xs text-slate-500">Page {orphanData.page || 1} of {orphanData.total_pages}</span>
+                                                    <span className="text-xs text-slate-500 tabular-nums">Page {orphanData.page || 1} of {orphanData.total_pages}</span>
                                                     <button type="button" className="px-3 py-1 text-sm border rounded disabled:opacity-40" disabled={(orphanData.page || 1) >= orphanData.total_pages} onClick={() => loadOrphans((orphanData.page || 1) + 1)}>Next page</button>
                                                 </div>
                                             )}
@@ -2299,29 +2299,29 @@ const App = () => {
                             {linksSubTab === 'stats' && (
                                 <div className="space-y-6">
                                     {linkStatsLoading && <div className="flex items-center gap-3 p-6 bg-slate-50 rounded-lg"><Spinner /><span className="text-slate-500">Loading link statistics…</span></div>}
-                                    {linkStats?.message && <div className="p-4 bg-slate-50 border rounded-lg text-sm text-slate-600">ℹ {linkStats.message}</div>}
+                                    {linkStats?.message && <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600">{linkStats.message}</div>}
                                     {linkStats && linkStats.total_links !== undefined && (
                                         <>
                                             <StatCard title="Total Indexed Internal Links" value={fmtNum(linkStats.total_links)} type="success" />
                                             <div className="grid grid-cols-2 gap-6">
-                                                <div className="bg-white border rounded-lg overflow-hidden">
-                                                    <div className="px-4 py-3 border-b bg-slate-50 text-sm font-semibold text-slate-700">Most Linked-To Pages</div>
+                                                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                                                    <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700">Most Linked-To Pages</div>
                                                     <table className="w-full text-left"><tbody>
                                                         {(linkStats.top_targets || []).map((t, i) => (
-                                                            <tr key={i} className="border-b last:border-0 hover:bg-slate-50">
+                                                            <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                                                                 <td className="p-3 text-sm"><div className="font-medium text-slate-700 truncate max-w-xs">{t.title}</div><div className="text-xs text-slate-400">{t.target_url}</div></td>
-                                                                <td className="p-3 text-sm text-right text-indigo-600 font-semibold whitespace-nowrap">{t.link_count} links</td>
+                                                                <td className="p-3 text-sm text-right text-indigo-600 font-semibold whitespace-nowrap tabular-nums">{t.link_count} links</td>
                                                             </tr>
                                                         ))}
                                                     </tbody></table>
                                                 </div>
-                                                <div className="bg-white border rounded-lg overflow-hidden">
-                                                    <div className="px-4 py-3 border-b bg-slate-50 text-sm font-semibold text-slate-700">Pages With Most Outgoing Links</div>
+                                                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                                                    <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700">Pages With Most Outgoing Links</div>
                                                     <table className="w-full text-left"><tbody>
                                                         {(linkStats.top_sources || []).map((s, i) => (
-                                                            <tr key={i} className="border-b last:border-0 hover:bg-slate-50">
+                                                            <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                                                                 <td className="p-3 text-sm"><div className="font-medium text-slate-700 truncate max-w-xs">{s.title}</div></td>
-                                                                <td className="p-3 text-sm text-right text-green-600 font-semibold whitespace-nowrap">{s.link_count} links</td>
+                                                                <td className="p-3 text-sm text-right text-green-600 font-semibold whitespace-nowrap tabular-nums">{s.link_count} links</td>
                                                             </tr>
                                                         ))}
                                                     </tbody></table>
@@ -3747,28 +3747,27 @@ const App = () => {
                                     <h2 className="text-xl font-semibold m-0 text-slate-800">Technical SEO Audit</h2>
                                     <p className="text-slate-500 text-sm mt-1">{__('This audit runs on this site. It checks meta descriptions, image alt text, 404s, redirect chains, orphaned pages, noindex directives, the sitemap, robots.txt, the site icon, SSL, schema, duplicate titles, cornerstone staleness, and canonicals. It does not score AI mentions, Google presence, or competitors.', 'quinrel')}</p>
                                 </div>
-                                <button type="button" onClick={runSiteAudit} disabled={auditRunning} className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap">
-                                    {auditRunning ? '⏳ Running…' : '▶ Run Audit'}
+                                <button type="button" onClick={runSiteAudit} disabled={auditRunning} className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap cursor-pointer">
+                                    {auditRunning ? __('Running Audit…', 'quinrel') : __('Run Audit', 'quinrel')}
                                 </button>
                             </div>
 
                             {/* Sub-view Navigation Bar */}
-                            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
+                            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit border border-slate-200">
                                 {[
-                                    { id: 'overview', label: __('Diagnostic Suite', 'quinrel'), icon: '📊' },
-                                    { id: 'crawl', label: __('Crawl & Depth', 'quinrel'), icon: '🕸️' },
-                                    { id: 'a11y', label: __('WCAG Accessibility', 'quinrel'), icon: '♿' },
-                                    { id: 'cwv', label: __('Core Web Vitals', 'quinrel'), icon: '⚡' },
-                                    { id: 'funnel', label: __('Indexation Funnel', 'quinrel'), icon: '📈' },
-                                    { id: 'checks', label: __('Technical Checklist', 'quinrel'), icon: '📋' },
+                                    { id: 'overview', label: __('Diagnostic Suite', 'quinrel') },
+                                    { id: 'crawl', label: __('Crawl & Depth', 'quinrel') },
+                                    { id: 'a11y', label: __('WCAG Accessibility', 'quinrel') },
+                                    { id: 'cwv', label: __('Core Web Vitals', 'quinrel') },
+                                    { id: 'funnel', label: __('Indexation Funnel', 'quinrel') },
+                                    { id: 'checks', label: __('Technical Checklist', 'quinrel') },
                                 ].map((v) => (
                                     <button
                                         key={v.id}
                                         type="button"
                                         onClick={() => setAuditSubView(v.id)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${auditSubView === v.id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${auditSubView === v.id ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                                     >
-                                        <span>{v.icon}</span>
                                         <span>{v.label}</span>
                                     </button>
                                 ))}
@@ -3802,7 +3801,7 @@ const App = () => {
                                 <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-3">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-slate-600 font-medium">{auditProgress.current_check}</span>
-                                        <span className="text-slate-400">{auditProgress.percent}%</span>
+                                        <span className="text-slate-400 tabular-nums">{auditProgress.percent}%</span>
                                     </div>
                                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                                         <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${auditProgress.percent}%` }} />
@@ -3814,13 +3813,31 @@ const App = () => {
                             {auditResults?.summary && (
                                 <div className="grid grid-cols-3 gap-4">
                                     {[
-                                        { label: 'Critical', count: auditResults.summary.critical, color: 'red' },
-                                        { label: 'Warnings', count: auditResults.summary.warnings, color: 'amber' },
-                                        { label: 'Passed',   count: auditResults.summary.passed,   color: 'green' },
-                                    ].map(({ label, count, color }) => (
-                                        <div key={label} className={`bg-${color}-50 border border-${color}-200 rounded-lg p-4 text-center`}>
-                                            <div className={`text-3xl font-bold text-${color}-700`}>{count}</div>
-                                            <div className={`text-xs text-${color}-600 mt-1`}>{label}</div>
+                                        {
+                                            label: 'Critical',
+                                            count: auditResults.summary.critical,
+                                            cardClass: 'bg-red-50 border border-red-200',
+                                            numClass: 'text-red-700',
+                                            labelClass: 'text-red-600',
+                                        },
+                                        {
+                                            label: 'Warnings',
+                                            count: auditResults.summary.warnings,
+                                            cardClass: 'bg-amber-50 border border-amber-200',
+                                            numClass: 'text-amber-700',
+                                            labelClass: 'text-amber-600',
+                                        },
+                                        {
+                                            label: 'Passed',
+                                            count: auditResults.summary.passed,
+                                            cardClass: 'bg-green-50 border border-green-200',
+                                            numClass: 'text-green-700',
+                                            labelClass: 'text-green-600',
+                                        },
+                                    ].map(({ label, count, cardClass, numClass, labelClass }) => (
+                                        <div key={label} className={`${cardClass} rounded-lg p-4 text-center`}>
+                                            <div className={`text-3xl font-bold tabular-nums ${numClass}`}>{count}</div>
+                                            <div className={`text-xs font-medium mt-1 ${labelClass}`}>{label}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -3830,24 +3847,40 @@ const App = () => {
                             {auditResults?.checks && (
                                 <div className="bg-white border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
                                     {auditResults.checks.map(check => {
-                                        const icon = check.status === 'critical' ? '🔴' : check.status === 'warning' ? '🟡' : check.status === 'passed' ? '🟢' : 'ℹ️';
-                                        const bg   = check.status === 'critical' ? 'bg-red-50' : check.status === 'warning' ? 'bg-amber-50' : '';
+                                        const dotClass = check.status === 'critical'
+                                            ? 'bg-red-600'
+                                            : check.status === 'warning'
+                                                ? 'bg-amber-500'
+                                                : check.status === 'passed'
+                                                    ? 'bg-green-600'
+                                                    : 'bg-slate-400';
+                                        const badgeClass = check.status === 'critical'
+                                            ? 'bg-red-100 text-red-700'
+                                            : check.status === 'warning'
+                                                ? 'bg-amber-100 text-amber-800'
+                                                : check.status === 'passed'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-slate-100 text-slate-600';
+                                        const bg = check.status === 'critical' ? 'bg-red-50/40' : check.status === 'warning' ? 'bg-amber-50/40' : '';
                                         return (
                                             <div key={check.id} className={`px-5 py-4 ${bg}`}>
                                                 <div className="flex items-start justify-between gap-4">
                                                     <div className="flex items-start gap-3 flex-1">
-                                                        <span className="text-lg mt-0.5">{icon}</span>
-                                                        <div>
-                                                            <div className="text-sm font-semibold text-slate-800">{check.name}</div>
-                                                            <div className="text-sm text-slate-500 mt-0.5">{check.message}</div>
+                                                        <span className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${dotClass}`} aria-hidden="true" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-semibold text-slate-800">{check.name}</span>
+                                                                <span className={`text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${badgeClass}`}>{check.status}</span>
+                                                            </div>
+                                                            <div className="text-sm text-slate-600 mt-0.5">{check.message}</div>
                                                             {check.items?.length > 0 && check.status !== 'passed' && (
-                                                                <ul className="mt-2 space-y-1">
+                                                                <ul className="mt-2.5 space-y-1">
                                                                     {check.items.slice(0, 5).map((item, i) => (
-                                                                        <li key={i} className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">
+                                                                        <li key={i} className="text-xs text-slate-600 font-mono bg-slate-100 px-2.5 py-1 rounded border border-slate-200/80">
                                                                             {item.title || item.source || item.issue || item.message || JSON.stringify(item).slice(0, 100)}
                                                                         </li>
                                                                     ))}
-                                                                    {check.items.length > 5 && <li className="text-xs text-slate-400">…and {check.items.length - 5} more</li>}
+                                                                    {check.items.length > 5 && <li className="text-xs text-slate-500 tabular-nums">+{check.items.length - 5} more items</li>}
                                                                 </ul>
                                                             )}
                                                         </div>

@@ -351,6 +351,17 @@ class BackgroundWorkTest extends TestCase {
 		$this->assertSame( array(), $this->jobsFor( \Quinrel\WordPress\Modules\Admin\TechnicalAuditJob::class ) );
 	}
 
+	public function testTechnicalAuditRunAllChecksHandlesDuplicateTitlesAndObjects(): void {
+		global $wpdb;
+		$engine  = new TechnicalSeoAuditEngine();
+		$results = $engine->runAllChecks();
+
+		$this->assertCount( 14, $results );
+		$this->assertArrayHasKey( 'duplicate_titles', $results );
+		$this->assertArrayHasKey( 'redirect_chains', $results );
+		$this->assertNotEmpty( $results['duplicate_titles']['message'] );
+	}
+
 	/**
 	 * @return array<int, array<string, mixed>>
 	 */

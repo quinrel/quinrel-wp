@@ -38,7 +38,7 @@ class ArticleSchema implements SchemaTypeInterface {
 		$schema = array(
 			'@type'            => $schemaType,
 			'@id'              => get_permalink( $post->ID ) . '#article',
-			'headline'         => get_the_title( $post->ID ),
+			'headline'         => str_replace( array( '&amp;', '&#038;' ), '&', (string) get_the_title( $post->ID ) ),
 			'datePublished'    => get_the_date( 'c', $post->ID ),
 			'dateModified'     => get_the_modified_date( 'c', $post->ID ),
 			'author'           => array(

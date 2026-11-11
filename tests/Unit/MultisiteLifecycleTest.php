@@ -300,26 +300,27 @@ class MultisiteLifecycleTest extends TestCase {
 	}
 
 	private function removeBackupTree(): void {
-		$root = dirname( __DIR__, 2 ) . '/wp-content/quinrel-backups';
-		if ( ! is_dir( $root ) ) {
-			return;
-		}
-		$iterator = new \RecursiveIteratorIterator(
-			new \RecursiveDirectoryIterator( $root, \FilesystemIterator::SKIP_DOTS ),
-			\RecursiveIteratorIterator::CHILD_FIRST
-		);
-		foreach ( $iterator as $item ) {
-			if ( $item->isDir() && ! $item->isLink() ) {
-				rmdir( $item->getPathname() );
-				continue;
-			}
-			unlink( $item->getPathname() );
-		}
-		rmdir( $root );
+		$root    = dirname( __DIR__, 2 ) . '/wp-content/quinrel-backups';
 		$content = dirname( $root );
-		$left    = scandir( $content );
-		if ( is_array( $left ) && array( '.', '..' ) === $left ) {
-			rmdir( $content );
+		if ( is_dir( $root ) ) {
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator( $root, \FilesystemIterator::SKIP_DOTS ),
+				\RecursiveIteratorIterator::CHILD_FIRST
+			);
+			foreach ( $iterator as $item ) {
+				if ( $item->isDir() && ! $item->isLink() ) {
+					rmdir( $item->getPathname() );
+					continue;
+				}
+				unlink( $item->getPathname() );
+			}
+			rmdir( $root );
+		}
+		if ( is_dir( $content ) ) {
+			$left = scandir( $content );
+			if ( is_array( $left ) && array( '.', '..' ) === $left ) {
+				rmdir( $content );
+			}
 		}
 	}
 }

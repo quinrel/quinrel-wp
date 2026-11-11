@@ -130,7 +130,7 @@ class BreadcrumbRenderer {
 
 		$trail = array(
 			array(
-				'name' => $this->homeLabel,
+				'name' => $this->decodeLabel( $this->homeLabel ),
 				'url'  => home_url( '/' ),
 			),
 		);
@@ -144,12 +144,12 @@ class BreadcrumbRenderer {
 			}
 
 			$trail[] = array(
-				'name' => $term->name,
+				'name' => $this->decodeLabel( (string) $term->name ),
 				'url'  => get_term_link( $term ),
 			);
 		} elseif ( is_post_type_archive() ) {
 			$trail[] = array(
-				'name' => post_type_archive_title( '', false ),
+				'name' => $this->decodeLabel( (string) post_type_archive_title( '', false ) ),
 				'url'  => get_post_type_archive_link( get_query_var( 'post_type' ) ),
 			);
 		} elseif ( is_search() ) {
@@ -173,7 +173,7 @@ class BreadcrumbRenderer {
 	private function trailForPost( \WP_Post $post ): array {
 		$trail = array(
 			array(
-				'name' => $this->homeLabel,
+				'name' => $this->decodeLabel( $this->homeLabel ),
 				'url'  => home_url( '/' ),
 			),
 		);
@@ -185,7 +185,7 @@ class BreadcrumbRenderer {
 				$parents = $this->getCategoryParents( $cat );
 				$trail   = array_merge( $trail, $parents );
 				$trail[] = array(
-					'name' => $cat->name,
+					'name' => $this->decodeLabel( (string) $cat->name ),
 					'url'  => get_category_link( $cat->term_id ),
 				);
 			}
@@ -193,7 +193,7 @@ class BreadcrumbRenderer {
 			$shopId = function_exists( 'wc_get_page_id' ) ? (int) wc_get_page_id( 'shop' ) : 0;
 			if ( $shopId > 0 && get_post( $shopId ) ) {
 				$trail[] = array(
-					'name' => get_the_title( $shopId ),
+					'name' => $this->decodeLabel( (string) get_the_title( $shopId ) ),
 					'url'  => get_permalink( $shopId ),
 				);
 			}
@@ -217,7 +217,7 @@ class BreadcrumbRenderer {
 				$termParents = $this->getTermParents( $targetTerm, 'product_cat' );
 				$trail       = array_merge( $trail, $termParents );
 				$trail[]     = array(
-					'name' => $targetTerm->name,
+					'name' => $this->decodeLabel( (string) $targetTerm->name ),
 					'url'  => get_term_link( $targetTerm ),
 				);
 			}
@@ -227,14 +227,14 @@ class BreadcrumbRenderer {
 			$ancestors = array_reverse( get_post_ancestors( $post->ID ) );
 			foreach ( $ancestors as $ancestorId ) {
 				$trail[] = array(
-					'name' => get_the_title( $ancestorId ),
+					'name' => $this->decodeLabel( (string) get_the_title( $ancestorId ) ),
 					'url'  => get_permalink( $ancestorId ),
 				);
 			}
 		}
 
 		$trail[] = array(
-			'name' => get_the_title( $post->ID ),
+			'name' => $this->decodeLabel( (string) get_the_title( $post->ID ) ),
 			'url'  => get_permalink( $post->ID ),
 		);
 
@@ -252,7 +252,7 @@ class BreadcrumbRenderer {
 			if ( $parent && ! is_wp_error( $parent ) ) {
 				$parents   = array_merge( $this->getCategoryParents( $parent ), $parents );
 				$parents[] = array(
-					'name' => $parent->name,
+					'name' => $this->decodeLabel( (string) $parent->name ),
 					'url'  => get_category_link( $parent->term_id ),
 				);
 			}
@@ -271,7 +271,7 @@ class BreadcrumbRenderer {
 			if ( $parent && ! is_wp_error( $parent ) ) {
 				$parents   = array_merge( $this->getTermParents( $parent, $taxonomy ), $parents );
 				$parents[] = array(
-					'name' => $parent->name,
+					'name' => $this->decodeLabel( (string) $parent->name ),
 					'url'  => get_term_link( $parent ),
 				);
 			}
@@ -280,10 +280,19 @@ class BreadcrumbRenderer {
 	}
 
 	/**
-	 * Output BreadcrumbList JSON-LD schema in the footer.
+	 * Decode HTML entities in breadcrumb labels so JSON-LD receives plain text
+	 * while HTML rendering escapes via esc_html().
+	 */
+	private function decodeLabel( string $label ): string {
+		return str_replace( array( '&amp;', '&#038;' ), '&', $label );
+	}
+
+	/**
+	 * Output BreadcrumbList JSON-LD schema in the footer on non-singular archives.
+	 * Singular pages already include BreadcrumbList inside SchemaGenerator's @graph.
 	 */
 	public function outputSchema(): void {
-		if ( is_front_page() || is_admin() ) {
+		if ( is_front_page() || is_singular() || is_admin() ) {
 			return;
 		}
 

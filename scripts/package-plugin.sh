@@ -22,8 +22,8 @@ mkdir -p "${TARGET_DIR}"
 
 # 1. Copy essential production files
 cp "${ROOT_DIR}/quinrel.php" "${TARGET_DIR}/"
+cp "${ROOT_DIR}/uninstall.php" "${TARGET_DIR}/"
 cp "${ROOT_DIR}/readme.txt" "${TARGET_DIR}/"
-cp "${ROOT_DIR}/README.md" "${TARGET_DIR}/"
 if [ -f "${ROOT_DIR}/license.txt" ]; then
     cp "${ROOT_DIR}/license.txt" "${TARGET_DIR}/"
 elif [ -f "${ROOT_DIR}/LICENSE" ]; then
@@ -31,11 +31,16 @@ elif [ -f "${ROOT_DIR}/LICENSE" ]; then
 fi
 cp "${ROOT_DIR}/composer.json" "${TARGET_DIR}/"
 
-# 2. Copy code and assets
+# 2. Copy code and assets (retain src/assets for quick-edit.js and WP.org Guideline 4 human-readable source requirement)
 cp -R "${ROOT_DIR}/src" "${TARGET_DIR}/"
 cp -R "${ROOT_DIR}/build" "${TARGET_DIR}/"
-if [ -d "${ROOT_DIR}/assets" ]; then
-    cp -R "${ROOT_DIR}/assets" "${TARGET_DIR}/"
+if [ -d "${ROOT_DIR}/assets/css" ]; then
+    mkdir -p "${TARGET_DIR}/assets"
+    cp -R "${ROOT_DIR}/assets/css" "${TARGET_DIR}/assets/"
+fi
+if [ -d "${ROOT_DIR}/assets/images" ]; then
+    mkdir -p "${TARGET_DIR}/assets"
+    cp -R "${ROOT_DIR}/assets/images" "${TARGET_DIR}/assets/"
 fi
 if [ -d "${ROOT_DIR}/languages" ]; then
     cp -R "${ROOT_DIR}/languages" "${TARGET_DIR}/"
@@ -43,9 +48,11 @@ fi
 
 # 3. Generate production autoloader without dev dependencies
 echo "==> Generating production autoloader..."
+PHP_BIN="$(command -v php || echo /Applications/XAMPP/xamppfiles/bin/php)"
+COMPOSER_BIN="$(command -v composer || echo /usr/local/bin/composer)"
 (
     cd "${TARGET_DIR}"
-    /Applications/XAMPP/xamppfiles/bin/php /usr/local/bin/composer dump-autoload --no-dev --optimize --quiet
+    "${PHP_BIN}" "${COMPOSER_BIN}" dump-autoload --no-dev --optimize --quiet
 )
 
 # 4. Create ZIP

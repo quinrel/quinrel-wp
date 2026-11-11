@@ -56,6 +56,10 @@ class PublicSeoPayloadTest extends TestCase {
 		$this->assertSame( 'https://example.com/public/', $data['canonical_url'] );
 		$this->assertArrayHasKey( 'robots', $data );
 		$this->assertArrayHasKey( 'open_graph', $data );
+		$this->assertSame( 'Search title', $data['open_graph']['title'] );
+		$this->assertSame( 'Search description', $data['open_graph']['description'] );
+		$this->assertSame( 'Search title', $data['twitter_card']['title'] );
+		$this->assertSame( 'Search description', $data['twitter_card']['description'] );
 		$this->assertArrayHasKey( 'structured_data', $data );
 
 		foreach ( array( 'focus_keyword', 'search_intent', 'is_cornerstone', 'ai_generated', 'schema_type' ) as $hidden ) {

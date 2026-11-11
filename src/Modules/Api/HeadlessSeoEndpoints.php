@@ -77,26 +77,56 @@ class HeadlessSeoEndpoints {
 		$post   = get_post( $postId );
 		$schema = ( new \Quinrel\WordPress\Modules\Schema\SchemaGenerator() )->getSchemaForPost( $postId );
 
+		$rawMetaTitle = (string) get_post_meta( $postId, '_quinrel_meta_title', true );
+		$metaTitle    = '' !== trim( $rawMetaTitle )
+			? \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $rawMetaTitle, $postId )
+			: '';
+		if ( '' === $metaTitle ) {
+			$metaTitle = (string) $post->post_title;
+		}
+
+		$rawMetaDesc = (string) get_post_meta( $postId, '_quinrel_meta_description', true );
+		$metaDesc    = '' !== trim( $rawMetaDesc )
+			? \Quinrel\WordPress\Modules\Seo\SmartTagResolver::resolve( $rawMetaDesc, $postId )
+			: '';
+		if ( '' === $metaDesc ) {
+			$excerpt  = (string) ( $post->post_excerpt ?? '' );
+			$metaDesc = '' !== trim( $excerpt )
+				? \Quinrel\WordPress\Modules\Seo\SmartTagResolver::cleanContentSnippet( $excerpt, 25 )
+				: \Quinrel\WordPress\Modules\Seo\SmartTagResolver::cleanContentSnippet( (string) ( $post->post_content ?? '' ), 25 );
+		}
+
+		$ogTitle = (string) get_post_meta( $postId, '_quinrel_og_title', true ) ?: $metaTitle;
+		$ogDesc  = (string) get_post_meta( $postId, '_quinrel_og_description', true ) ?: $metaDesc;
+		$ogImage = (string) get_post_meta( $postId, '_quinrel_og_image', true );
+		if ( '' === $ogImage && function_exists( 'get_the_post_thumbnail_url' ) ) {
+			$ogImage = (string) get_the_post_thumbnail_url( $postId, 'large' );
+		}
+
+		$twitterTitle = (string) get_post_meta( $postId, '_quinrel_twitter_title', true ) ?: $ogTitle;
+		$twitterDesc  = (string) get_post_meta( $postId, '_quinrel_twitter_description', true ) ?: $ogDesc;
+		$twitterImage = (string) get_post_meta( $postId, '_quinrel_twitter_image', true ) ?: $ogImage;
+
 		return array(
 			'post_id'                => $postId,
 			'post_type'              => $post->post_type,
 			'url'                    => get_permalink( $postId ),
-			'meta_title'             => (string) get_post_meta( $postId, '_quinrel_meta_title', true ) ?: $post->post_title,
-			'meta_description'       => (string) get_post_meta( $postId, '_quinrel_meta_description', true ),
+			'meta_title'             => $metaTitle,
+			'meta_description'       => $metaDesc,
 			'canonical_url'          => (string) get_post_meta( $postId, '_quinrel_canonical_url', true ) ?: get_permalink( $postId ),
 			'robots'                 => array(
 				'noindex'  => get_post_meta( $postId, '_quinrel_noindex', true ) === 'yes',
 				'nofollow' => get_post_meta( $postId, '_quinrel_nofollow', true ) === 'yes',
 			),
 			'open_graph'             => array(
-				'title'       => (string) get_post_meta( $postId, '_quinrel_og_title', true ),
-				'description' => (string) get_post_meta( $postId, '_quinrel_og_description', true ),
-				'image'       => (string) get_post_meta( $postId, '_quinrel_og_image', true ),
+				'title'       => $ogTitle,
+				'description' => $ogDesc,
+				'image'       => $ogImage,
 			),
 			'twitter_card'           => array(
-				'title'       => (string) get_post_meta( $postId, '_quinrel_twitter_title', true ),
-				'description' => (string) get_post_meta( $postId, '_quinrel_twitter_description', true ),
-				'image'       => (string) get_post_meta( $postId, '_quinrel_twitter_image', true ),
+				'title'       => $twitterTitle,
+				'description' => $twitterDesc,
+				'image'       => $twitterImage,
 			),
 			'structured_data'        => $schema ?: null,
 			'custom_fields_included' => \Quinrel\WordPress\Modules\ContentAssistant\CustomFieldScanner::getConfiguredSeoFields(),

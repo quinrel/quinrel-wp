@@ -25,7 +25,16 @@ if (!defined('WP_CONTENT_DIR')) {
     define('WP_CONTENT_DIR', dirname(__DIR__) . '/wp-content');
 }
 if (!defined('QUINREL_VERSION')) {
-    define('QUINREL_VERSION', '1.1.2');
+    define('QUINREL_VERSION', '1.1.3');
+}
+if (!defined('QUINREL_PLUGIN_FILE')) {
+    define('QUINREL_PLUGIN_FILE', dirname(__DIR__) . '/quinrel.php');
+}
+if (!defined('QUINREL_PLUGIN_DIR')) {
+    define('QUINREL_PLUGIN_DIR', dirname(__DIR__) . '/');
+}
+if (!defined('QUINREL_PLUGIN_URL')) {
+    define('QUINREL_PLUGIN_URL', 'http://example.org/wp-content/plugins/quinrel/');
 }
 if (!defined('SECURE_AUTH_KEY')) {
     define('SECURE_AUTH_KEY', 'test_secure_auth_key_1234567890abcdef');

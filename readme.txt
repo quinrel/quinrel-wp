@@ -4,7 +4,7 @@ Tags: seo, schema, sitemap, indexing, search console
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -269,6 +269,15 @@ https://wordpress.org/support/plugin/quinrel/
 When reporting a problem, include your WordPress version, PHP version, Quinrel version, and the steps required to reproduce the issue.
 
 == Changelog ==
+
+= 1.1.3 =
+
+* The Technical SEO Audit formats duplicate-title and redirect-chain findings as arrays, queries orphaned pages once per check, and flags missing schema only when a post turns primary schema off.
+* Singular posts print BreadcrumbList structured data once in the main @graph and decode stored HTML ampersands in breadcrumb and article section names.
+* The headless SEO endpoint resolves smart tags in post titles and descriptions and falls back to the post excerpt and featured image when social card fields are empty.
+* Keyword cannibalization detection filters duplicate focus keywords in SQL and primes post caches before reading permalinks.
+* Internal link indexing refreshes inbound link counts on target posts and labels paginated orphan counts in Link Health.
+* The official Quinrel mark and brand blue are used across wp-admin and directory assets.
 
 = 1.1.2 =
 

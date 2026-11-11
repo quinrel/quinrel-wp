@@ -184,6 +184,11 @@ class SchemaFixtureTest extends TestCase {
 		$this->assertStringContainsString( 'Guide', $html );
 		$this->assertStringContainsString( 'https://example.com/', $html );
 		$this->assertSame( 'https://example.com/post-23/', $schema['itemListElement'][1]['item'] );
+
+		ob_start();
+		( new BreadcrumbRenderer() )->outputSchema();
+		$footerJsonLd = ob_get_clean();
+		$this->assertSame( '', $footerJsonLd );
 	}
 
 	private function post( int $id, string $title, string $type = 'post' ): \WP_Post {
